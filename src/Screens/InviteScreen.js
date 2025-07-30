@@ -10,6 +10,7 @@ import {
     Clipboard,
     ActivityIndicator,
     RefreshControl,
+    Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +21,482 @@ import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSn
 import { onAuthStateChanged } from 'firebase/auth';
 import ActivityLogger from '../utils/ActivityLogger';
 import NotificationService from '../utils/NotificationService';
+
+// Loading Skeleton Components
+const LoadingSkeleton = ({ theme }) => {
+    const animatedValue = new Animated.Value(0);
+
+    React.useEffect(() => {
+        const animation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+        animation.start();
+        return () => animation.stop();
+    }, []);
+
+    const opacity = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 0.7],
+    });
+
+    return (
+        <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary, theme.colors.primary]}
+            style={styles.container}
+        >
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+                {/* Header Skeleton */}
+                <View style={styles.header}>
+                    <View style={styles.headerTop}>
+                        <Animated.View
+                            style={[
+                                styles.skeletonIcon,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                        <Animated.View
+                            style={[
+                                styles.skeletonTextLarge,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                        <Animated.View
+                            style={[
+                                styles.skeletonIcon,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                    </View>
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextMedium,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+                </View>
+
+                {/* Invite Code Card Skeleton */}
+                <Animated.View
+                    style={[
+                        styles.inviteCard,
+                        {
+                            backgroundColor: theme.colors.card,
+                            opacity
+                        }
+                    ]}
+                >
+                    <View style={styles.inviteHeader}>
+                        <Animated.View
+                            style={[
+                                styles.skeletonIcon,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                        <Animated.View
+                            style={[
+                                styles.skeletonTextMedium,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                    </View>
+
+                    <Animated.View
+                        style={[
+                            styles.codeContainer,
+                            {
+                                backgroundColor: theme.colors.background,
+                                opacity
+                            }
+                        ]}
+                    >
+                        <Animated.View
+                            style={[
+                                styles.skeletonTextLarge,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                        <Animated.View
+                            style={[
+                                styles.skeletonIcon,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                    </Animated.View>
+
+                    <Animated.View
+                        style={[
+                            styles.shareButton,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+                </Animated.View>
+
+                {/* Stats Cards Skeleton */}
+                <View style={styles.statsContainer}>
+                    {[1, 2].map((index) => (
+                        <Animated.View
+                            key={index}
+                            style={[
+                                styles.statCard,
+                                {
+                                    backgroundColor: theme.colors.card,
+                                    opacity
+                                }
+                            ]}
+                        >
+                            <Animated.View
+                                style={[
+                                    styles.skeletonIcon,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextMedium,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextSmall,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                        </Animated.View>
+                    ))}
+                </View>
+
+                {/* How It Works Skeleton */}
+                <Animated.View
+                    style={[
+                        styles.howItWorksCard,
+                        {
+                            backgroundColor: theme.colors.card,
+                            opacity
+                        }
+                    ]}
+                >
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextMedium,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+
+                    {[1, 2, 3].map((index) => (
+                        <View key={index} style={styles.stepContainer}>
+                            <Animated.View
+                                style={[
+                                    styles.stepNumber,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextMedium,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                        </View>
+                    ))}
+                </Animated.View>
+
+                {/* Referral Statistics Skeleton */}
+                <Animated.View
+                    style={[
+                        styles.statsCard,
+                        {
+                            backgroundColor: theme.colors.card,
+                            opacity
+                        }
+                    ]}
+                >
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextMedium,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+
+                    <View style={styles.statsGrid}>
+                        {[1, 2, 3, 4].map((index) => (
+                            <Animated.View
+                                key={index}
+                                style={[
+                                    styles.statBox,
+                                    {
+                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                        opacity
+                                    }
+                                ]}
+                            >
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonIcon,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonTextMedium,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonTextSmall,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                            </Animated.View>
+                        ))}
+                    </View>
+                </Animated.View>
+
+                {/* Top Performers Skeleton */}
+                <Animated.View
+                    style={[
+                        styles.topPerformersCard,
+                        {
+                            backgroundColor: theme.colors.card,
+                            opacity
+                        }
+                    ]}
+                >
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextMedium,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+
+                    {[1, 2, 3].map((index) => (
+                        <Animated.View
+                            key={index}
+                            style={[
+                                styles.performerItem,
+                                {
+                                    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+                                    opacity
+                                }
+                            ]}
+                        >
+                            <Animated.View
+                                style={[
+                                    styles.skeletonIcon,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <View style={styles.performerInfo}>
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonTextMedium,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonTextSmall,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                            </View>
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextSmall,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                        </Animated.View>
+                    ))}
+                </Animated.View>
+
+                {/* Referrals List Skeleton */}
+                <View style={styles.referralsSection}>
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextMedium,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+
+                    <Animated.View
+                        style={[
+                            styles.referralsList,
+                            {
+                                backgroundColor: theme.colors.card,
+                                opacity
+                            }
+                        ]}
+                    >
+                        {[1, 2, 3].map((index) => (
+                            <Animated.View
+                                key={index}
+                                style={[
+                                    styles.referralItem,
+                                    {
+                                        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+                                        opacity
+                                    }
+                                ]}
+                            >
+                                <View style={styles.referralInfo}>
+                                    <View style={styles.referralHeader}>
+                                        <Animated.View
+                                            style={[
+                                                styles.skeletonTextMedium,
+                                                {
+                                                    backgroundColor: theme.colors.accent,
+                                                    opacity
+                                                }
+                                            ]}
+                                        />
+                                        <Animated.View
+                                            style={[
+                                                styles.skeletonIcon,
+                                                {
+                                                    backgroundColor: theme.colors.accent,
+                                                    opacity
+                                                }
+                                            ]}
+                                        />
+                                    </View>
+                                    <Animated.View
+                                        style={[
+                                            styles.skeletonTextSmall,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                opacity
+                                            }
+                                        ]}
+                                    />
+                                    <View style={styles.referralStats}>
+                                        {[1, 2, 3].map((statIndex) => (
+                                            <Animated.View
+                                                key={statIndex}
+                                                style={[
+                                                    styles.statItem,
+                                                    {
+                                                        backgroundColor: theme.colors.accent,
+                                                        opacity
+                                                    }
+                                                ]}
+                                            />
+                                        ))}
+                                    </View>
+                                    <Animated.View
+                                        style={[
+                                            styles.skeletonTextSmall,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                opacity
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonTextSmall,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                            </Animated.View>
+                        ))}
+                    </Animated.View>
+                </View>
+            </ScrollView>
+        </LinearGradient>
+    );
+};
 
 const InviteScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -32,6 +509,7 @@ const InviteScreen = ({ navigation }) => {
     const [referrals, setReferrals] = useState([]);
     const [copied, setCopied] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -49,6 +527,11 @@ const InviteScreen = ({ navigation }) => {
     const loadInviteData = async (uid) => {
         try {
             setLoading(true);
+            setError(null);
+
+            // Add minimum loading delay of 2 seconds
+            const startTime = Date.now();
+
             const userRef = doc(db, "users", uid);
             const userDoc = await getDoc(userRef);
 
@@ -72,8 +555,18 @@ const InviteScreen = ({ navigation }) => {
                 // Load referrals list
                 await loadReferrals(uid);
             }
+
+            // Ensure minimum 2-second loading time
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = Math.max(0, 2000 - elapsedTime);
+
+            if (remainingTime > 0) {
+                await new Promise(resolve => setTimeout(resolve, remainingTime));
+            }
+
         } catch (error) {
             console.error('Error loading invite data:', error);
+            setError('Failed to load invite data. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -115,11 +608,29 @@ const InviteScreen = ({ navigation }) => {
                     });
                 });
                 setReferrals(referralsList);
+            }, (error) => {
+                console.error('Error in referrals listener:', error);
+                // Handle permission error gracefully
+                if (error.code === 'permission-denied') {
+                    console.log('Referrals permission denied - this is expected for new users');
+                    setReferrals([]); // Set empty array instead of showing error
+                } else {
+                    console.error('Unexpected error in referrals listener:', error);
+                    setReferrals([]); // Set empty array for any other errors
+                }
             });
 
             return unsubscribe;
         } catch (error) {
             console.error('Error loading referrals:', error);
+            // Handle permission error gracefully
+            if (error.code === 'permission-denied') {
+                console.log('Referrals permission denied - this is expected for new users');
+                setReferrals([]); // Set empty array instead of showing error
+            } else {
+                console.error('Unexpected error loading referrals:', error);
+                setReferrals([]); // Set empty array for any other errors
+            }
         }
     };
 
@@ -172,26 +683,22 @@ const InviteScreen = ({ navigation }) => {
     const onRefresh = async () => {
         try {
             setRefreshing(true);
+            setError(null);
             const user = auth.currentUser;
             if (user) {
                 await loadInviteData(user.uid);
             }
         } catch (error) {
             console.error('Error refreshing invite data:', error);
+            setError('Failed to refresh data. Please try again.');
         } finally {
             setRefreshing(false);
         }
     };
 
+    // Show loading skeleton while data is loading
     if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: theme.colors.primary }]}>
-                <ActivityIndicator size="large" color={theme.colors.accent} />
-                <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-                    Loading invite data...
-                </Text>
-            </View>
-        );
+        return <LoadingSkeleton theme={theme} />;
     }
 
     return (
@@ -213,6 +720,14 @@ const InviteScreen = ({ navigation }) => {
                     />
                 }
             >
+                {/* Error Message */}
+                {error && (
+                    <View style={[styles.errorContainer, { backgroundColor: theme.colors.card }]}>
+                        <Ionicons name="warning" size={20} color="#FF6B6B" />
+                        <Text style={[styles.errorText, { color: '#FF6B6B' }]}>{error}</Text>
+                    </View>
+                )}
+
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerTop}>
@@ -221,7 +736,7 @@ const InviteScreen = ({ navigation }) => {
                             onPress={() => navigation.goBack()}
                         >
                             <Ionicons name="arrow-back" size={24} color={theme.colors.accent} />
-                        </TouchableOpacity> 
+                        </TouchableOpacity>
                         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
                             Invite Friends
                         </Text>
@@ -254,7 +769,8 @@ const InviteScreen = ({ navigation }) => {
                     <TouchableOpacity
                         activeOpacity={0.8}
                         onPress={copyInviteCode}
-                    style={[styles.codeContainer, { backgroundColor: theme.colors.background }]}>
+                        style={[styles.codeContainer, { backgroundColor: theme.colors.background }]}
+                    >
                         <Text style={[styles.inviteCode, { color: theme.colors.accent }]}>
                             {inviteCode}
                         </Text>
@@ -890,6 +1406,45 @@ const styles = StyleSheet.create({
     backButton: {
         padding: 8,
         marginRight: 8,
+    },
+    // Error styles
+    errorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 16,
+        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    },
+    errorText: {
+        marginLeft: 8,
+        fontSize: 14,
+        flex: 1,
+    },
+    // Skeleton loading styles
+    skeletonTextLarge: {
+        height: 28,
+        width: 200,
+        borderRadius: 4,
+        marginBottom: 8,
+    },
+    skeletonTextMedium: {
+        height: 18,
+        width: 150,
+        borderRadius: 4,
+        marginBottom: 8,
+    },
+    skeletonTextSmall: {
+        height: 14,
+        width: 100,
+        borderRadius: 4,
+        marginBottom: 4,
+    },
+    skeletonIcon: {
+        width: 20,
+        height: 20,
+        borderRadius: 4,
+        marginRight: 12,
     },
 });
 

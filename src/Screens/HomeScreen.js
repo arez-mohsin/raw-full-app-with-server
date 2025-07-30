@@ -66,7 +66,7 @@ let requestCount = 0;
 
 // Server configuration
 const SERVER_CONFIG = {
-    BASE_URL: 'http://192.168.1.8:5000',
+    BASE_URL: 'https://raw-full-app-with-server.onrender.com',
 };
 
 // Configure notification behavior

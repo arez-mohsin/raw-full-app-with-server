@@ -11,20 +11,6 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Check if user is admin
-    function isAdmin() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    // Check if user is super admin
-    function isSuperAdmin() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'super_admin';
-    }
-    
     // Check if user owns the document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
@@ -35,18 +21,9 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.email_verified == true;
     }
     
-    // Check if user is not suspended
-    function isNotSuspended() {
-      return isAuthenticated() && 
-             (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
-              !get(/databases/$(database)/documents/users/$(request.auth.uid)).data.suspended);
-    }
-    
-    // Check if user has low suspicious activity
-    function hasLowSuspiciousActivity() {
-      return isAuthenticated() && 
-             (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.security.suspiciousActivity < 10);
+    // Check if user is the referrer of the document
+    function isReferrer(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
     // Validate user data structure
@@ -65,31 +42,20 @@ service cloud.firestore {
              data.lastName.size() <= 50;
     }
     
-    // Validate mining session data
-    function isValidMiningSession(data) {
-      return data.keys().hasAll(['userId', 'startTime', 'duration']) &&
-             data.userId is string &&
-             data.startTime is timestamp &&
-             data.duration is number &&
-             data.duration >= 1800 && // Minimum 30 minutes
-             data.duration <= 7200;   // Maximum 2 hours
-    }
-    
-    // Check if user can mine (not suspended, verified, low suspicious activity)
-    function canMine() {
-      return isAuthenticated() && 
-             isEmailVerified() && 
-             isNotSuspended() && 
-             hasLowSuspiciousActivity();
-    }
-    
     // ========================================
     // USERS COLLECTION
     // ========================================
     
     match /users/{userId} {
       // Users can read their own data
-      allow read: if isOwner(userId) && isNotSuspended();
+      allow read: if isOwner(userId);
+      
+      // Users can read other users' data if they are the referrer
+      allow read: if isAuthenticated() && 
+                    resource.data.referredBy == request.auth.uid;
+      
+      // Users can read other users' data for leaderboard purposes
+      allow read: if isAuthenticated();
       
       // Users can create their own document during registration
       allow create: if isOwner(userId) && 
@@ -99,244 +65,29 @@ service cloud.firestore {
       
       // Users can update their own data (with restrictions)
       allow update: if isOwner(userId) && 
-                       isNotSuspended() &&
                        resource.data.uid == request.auth.uid &&
                        request.resource.data.uid == request.auth.uid &&
                        request.resource.data.email == request.auth.token.email;
-      
-      // Only admins can delete users
-      allow delete: if isAdmin();
       
       // ========================================
       // USER SUBCOLLECTIONS
       // ========================================
       
-      // Mining sessions subcollection
-      match /miningSessions/{sessionId} {
+      // Activities subcollection - for activity logging
+      match /activities/{activityId} {
         allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && 
-                         canMine() &&
-                         isValidMiningSession(resource.data) &&
-                         resource.data.userId == request.auth.uid;
-        allow update: if isOwner(userId) && 
-                         resource.data.userId == request.auth.uid;
-        allow delete: if isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if false; // Activities cannot be modified once created
+        allow delete: if false; // Activities cannot be deleted
       }
       
-      // Notifications subcollection
+      // Notifications subcollection - for user notifications
       match /notifications/{notificationId} {
         allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && 
-                         resource.data.userId == request.auth.uid;
-        allow update: if isOwner(userId) && 
-                         resource.data.userId == request.auth.uid;
-        allow delete: if isOwner(userId) && 
-                         resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
       }
-      
-      // Security events subcollection
-      match /securityEvents/{eventId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && 
-                         resource.data.userId == request.auth.uid;
-        allow update: if false; // Security events cannot be modified
-        allow delete: if isAdmin();
-      }
-      
-      // Referrals subcollection
-      match /referrals/{referralId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && 
-                         resource.data.referrerId == request.auth.uid;
-        allow update: if isOwner(userId) && 
-                         resource.data.referrerId == request.auth.uid;
-        allow delete: if isAdmin();
-      }
-    }
-    
-    // ========================================
-    // ADMINS COLLECTION
-    // ========================================
-    
-    match /admins/{adminId} {
-      // Only super admins can manage admin accounts
-      allow read: if isSuperAdmin() || isOwner(adminId);
-      allow create: if isSuperAdmin();
-      allow update: if isSuperAdmin() || isOwner(adminId);
-      allow delete: if isSuperAdmin() && adminId != request.auth.uid; // Cannot delete self
-    }
-    
-    // ========================================
-    // MINING SESSIONS COLLECTION
-    // ========================================
-    
-    match /miningSessions/{sessionId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if canMine() && 
-                      resource.data.userId == request.auth.uid &&
-                      isValidMiningSession(resource.data);
-      allow update: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow delete: if isAdmin();
-    }
-    
-    // ========================================
-    // NOTIFICATIONS COLLECTION
-    // ========================================
-    
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-    }
-    
-    // ========================================
-    // SYSTEM SETTINGS COLLECTION
-    // ========================================
-    
-    match /systemSettings/{settingId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    
-    // ========================================
-    // MINING STATS COLLECTION
-    // ========================================
-    
-    match /miningStats/{statId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow delete: if isAdmin();
-    }
-    
-    // ========================================
-    // REFERRAL CODES COLLECTION
-    // ========================================
-    
-    match /referralCodes/{codeId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow delete: if isAdmin();
-    }
-    
-    // ========================================
-    // SECURITY LOGS COLLECTION
-    // ========================================
-    
-    match /securityLogs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if false; // Security logs cannot be modified
-      allow delete: if isSuperAdmin();
-    }
-    
-    // ========================================
-    // APP VERSIONS COLLECTION
-    // ========================================
-    
-    match /appVersions/{versionId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    
-    // ========================================
-    // MAINTENANCE MODE COLLECTION
-    // ========================================
-    
-    match /maintenance/{modeId} {
-      allow read: if isAuthenticated();
-      allow write: if isSuperAdmin();
-    }
-    
-    // ========================================
-    // USER ACTIVITY LOGS COLLECTION
-    // ========================================
-    
-    match /userActivityLogs/{logId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if false; // Activity logs cannot be modified
-      allow delete: if isAdmin();
-    }
-    
-    // ========================================
-    // PAYMENT TRANSACTIONS COLLECTION
-    // ========================================
-    
-    match /transactions/{transactionId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if isAdmin(); // Only admins can update transactions
-      allow delete: if isSuperAdmin();
-    }
-    
-    // ========================================
-    // SUPPORT TICKETS COLLECTION
-    // ========================================
-    
-    match /supportTickets/{ticketId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid || isAdmin();
-      allow delete: if isAdmin();
-    }
-    
-    // ========================================
-    // ANNOUNCEMENTS COLLECTION
-    // ========================================
-    
-    match /announcements/{announcementId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    
-    // ========================================
-    // REWARDS COLLECTION
-    // ========================================
-    
-    match /rewards/{rewardId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid || isAdmin();
-      allow delete: if isAdmin();
-    }
-    
-    // ========================================
-    // ACHIEVEMENTS COLLECTION
-    // ========================================
-    
-    match /achievements/{achievementId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && 
-                      resource.data.userId == request.auth.uid || isAdmin();
-      allow delete: if isAdmin();
     }
     
     // ========================================

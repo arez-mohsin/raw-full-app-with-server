@@ -8,6 +8,7 @@ import {
     Switch,
     Alert,
     RefreshControl,
+    Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +21,397 @@ import { auth, db } from '../firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import BiometricService from '../services/BiometricService';
+
+// Loading Skeleton Components
+const LoadingSkeleton = ({ theme }) => {
+    const animatedValue = new Animated.Value(0);
+
+    React.useEffect(() => {
+        const animation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+        animation.start();
+        return () => animation.stop();
+    }, []);
+
+    const opacity = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 0.7],
+    });
+
+    const insets = useSafeAreaInsets();
+    return (
+        <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary, theme.colors.primary]}
+            style={styles.container}
+        >
+            <ScrollView style={[styles.scrollView, {
+                paddingTop: insets.top + 10
+            }]} contentContainerStyle={[styles.scrollContent, {
+            }]}>
+                {/* Profile Header Skeleton */}
+                <View style={styles.profileHeader}>
+                    <View style={styles.avatarContainer}>
+                        <Animated.View
+                            style={[
+                                styles.avatar,
+                                {
+                                    backgroundColor: theme.colors.card,
+                                    borderColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                        <Animated.View
+                            style={[
+                                styles.editButton,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                    </View>
+
+                    <Animated.View
+                        style={[
+                            styles.skeletonText,
+                            {
+                                backgroundColor: theme.colors.card,
+                                opacity
+                            }
+                        ]}
+                    />
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextSmall,
+                            {
+                                backgroundColor: theme.colors.card,
+                                opacity
+                            }
+                        ]}
+                    />
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextSmall,
+                            {
+                                backgroundColor: theme.colors.card,
+                                opacity
+                            }
+                        ]}
+                    />
+                </View>
+
+                {/* Stats Cards Skeleton */}
+                <View style={styles.statsContainer}>
+                    {[1, 2, 3].map((index) => (
+                        <Animated.View
+                            key={index}
+                            style={[
+                                styles.statCard,
+                                {
+                                    backgroundColor: theme.colors.card,
+                                    opacity
+                                }
+                            ]}
+                        >
+                            <Animated.View
+                                style={[
+                                    styles.skeletonIcon,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextMedium,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextSmall,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                        </Animated.View>
+                    ))}
+                </View>
+
+                {/* Additional Stats Skeleton */}
+                <View style={styles.statsContainer}>
+                    {[1, 2, 3].map((index) => (
+                        <Animated.View
+                            key={index}
+                            style={[
+                                styles.statCard,
+                                {
+                                    backgroundColor: theme.colors.card,
+                                    opacity
+                                }
+                            ]}
+                        >
+                            <Animated.View
+                                style={[
+                                    styles.skeletonIcon,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextMedium,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <Animated.View
+                                style={[
+                                    styles.skeletonTextSmall,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                        </Animated.View>
+                    ))}
+                </View>
+
+                {/* Invite Card Skeleton */}
+                <View style={styles.inviteSection}>
+                    <Animated.View
+                        style={[
+                            styles.inviteCard,
+                            {
+                                backgroundColor: theme.colors.card,
+                                opacity
+                            }
+                        ]}
+                    >
+                        <View style={styles.inviteHeader}>
+                            <Animated.View
+                                style={[
+                                    styles.inviteIconContainer,
+                                    {
+                                        backgroundColor: theme.colors.accent,
+                                        opacity
+                                    }
+                                ]}
+                            />
+                            <View style={styles.inviteTextContainer}>
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonTextMedium,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonTextSmall,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                            </View>
+                        </View>
+                        <Animated.View
+                            style={[
+                                styles.inviteButton,
+                                {
+                                    backgroundColor: theme.colors.accent,
+                                    opacity
+                                }
+                            ]}
+                        />
+                    </Animated.View>
+                </View>
+
+                {/* Settings Section Skeleton */}
+                <View style={styles.settingsSection}>
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextMedium,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+                    <Animated.View
+                        style={[
+                            styles.settingsList,
+                            {
+                                backgroundColor: theme.colors.card,
+                                opacity
+                            }
+                        ]}
+                    >
+                        {[1, 2].map((index) => (
+                            <Animated.View
+                                key={index}
+                                style={[
+                                    styles.settingItem,
+                                    {
+                                        borderBottomColor: theme.colors.border,
+                                        opacity
+                                    }
+                                ]}
+                            >
+                                <View style={styles.settingLeft}>
+                                    <Animated.View
+                                        style={[
+                                            styles.skeletonIcon,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                opacity
+                                            }
+                                        ]}
+                                    />
+                                    <Animated.View
+                                        style={[
+                                            styles.skeletonTextMedium,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                opacity
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonSwitch,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                            </Animated.View>
+                        ))}
+                    </Animated.View>
+                </View>
+
+                {/* Menu Section Skeleton */}
+                <View style={styles.menuSection}>
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextMedium,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+                    <Animated.View
+                        style={[
+                            styles.menuList,
+                            {
+                                backgroundColor: theme.colors.card,
+                                opacity
+                            }
+                        ]}
+                    >
+                        {[1, 2, 3, 4].map((index) => (
+                            <Animated.View
+                                key={index}
+                                style={[
+                                    styles.menuItem,
+                                    {
+                                        borderBottomColor: theme.colors.border,
+                                        opacity
+                                    }
+                                ]}
+                            >
+                                <View style={styles.menuLeft}>
+                                    <Animated.View
+                                        style={[
+                                            styles.skeletonIcon,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                opacity
+                                            }
+                                        ]}
+                                    />
+                                    <Animated.View
+                                        style={[
+                                            styles.skeletonTextMedium,
+                                            {
+                                                backgroundColor: theme.colors.accent,
+                                                opacity
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                                <Animated.View
+                                    style={[
+                                        styles.skeletonIcon,
+                                        {
+                                            backgroundColor: theme.colors.accent,
+                                            opacity
+                                        }
+                                    ]}
+                                />
+                            </Animated.View>
+                        ))}
+                    </Animated.View>
+                </View>
+
+                {/* Logout Button Skeleton */}
+                <Animated.View
+                    style={[
+                        styles.logoutButton,
+                        {
+                            backgroundColor: theme.colors.card,
+                            opacity
+                        }
+                    ]}
+                />
+
+                {/* Version Skeleton */}
+                <View style={styles.versionContainer}>
+                    <Animated.View
+                        style={[
+                            styles.skeletonTextSmall,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity
+                            }
+                        ]}
+                    />
+                </View>
+            </ScrollView>
+        </LinearGradient>
+    );
+};
 
 const ProfileScreen = ({ navigation }) => {
     const { theme, isDark, toggleTheme } = useTheme();
@@ -130,7 +522,7 @@ const ProfileScreen = ({ navigation }) => {
     // Set up real-time user data listener
     const setupUserDataListener = (uid) => {
         const userRef = doc(db, "users", uid);
-        const unsubscribe = onSnapshot(userRef, (doc) => {
+        const unsubscribe = onSnapshot(userRef, async (doc) => {
             if (doc.exists()) {
                 const userData = doc.data();
 
@@ -147,6 +539,15 @@ const ProfileScreen = ({ navigation }) => {
                     firstName: userData.firstName || '',
                     lastName: userData.lastName || '',
                 });
+
+                // Add minimum 2-second loading delay
+                const startTime = Date.now();
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(0, 2000 - elapsedTime);
+
+                if (remainingTime > 0) {
+                    await new Promise(resolve => setTimeout(resolve, remainingTime));
+                }
 
                 setLoading(false);
             }
@@ -308,6 +709,11 @@ const ProfileScreen = ({ navigation }) => {
     };
 
     const insets = useSafeAreaInsets();
+
+    // Show loading skeleton while data is loading
+    if (loading) {
+        return <LoadingSkeleton theme={theme} />;
+    }
 
     return (
         <LinearGradient
@@ -564,6 +970,7 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+        paddingTop: 30,
     },
     scrollContent: {
         padding: 20,
@@ -765,6 +1172,36 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#fff',
         marginLeft: 8,
+    },
+    // Skeleton loading styles
+    skeletonText: {
+        height: 24,
+        width: 200,
+        borderRadius: 4,
+        marginBottom: 8,
+    },
+    skeletonTextMedium: {
+        height: 18,
+        width: 150,
+        borderRadius: 4,
+        marginBottom: 8,
+    },
+    skeletonTextSmall: {
+        height: 14,
+        width: 100,
+        borderRadius: 4,
+        marginBottom: 4,
+    },
+    skeletonIcon: {
+        width: 20,
+        height: 20,
+        borderRadius: 4,
+        marginRight: 12,
+    },
+    skeletonSwitch: {
+        width: 50,
+        height: 30,
+        borderRadius: 15,
     },
 });
 
