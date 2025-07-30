@@ -1,0 +1,36 @@
+{
+  "name": "mine-server-app",
+  "version": "1.0.0",
+  "description": "Enhanced production server for Mine App with security and anti-cheat",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:clustered": "node server-clustered.js",
+    "dev": "nodemon server.js",
+    "dev:clustered": "nodemon server-clustered.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "firebase-admin": "^12.0.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  },
+  "keywords": [
+    "mining",
+    "game",
+    "server",
+    "security",
+    "anti-cheat",
+    "firebase"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
