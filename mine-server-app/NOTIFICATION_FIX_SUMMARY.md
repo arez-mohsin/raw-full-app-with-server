@@ -1,14 +1,49 @@
-# Mining Completion Notification Fix
+# Mining Notifications Fix (Start & Complete)
 
 ## Problem Identified
-The server was not sending push notifications when mining sessions completed. The issue was in the scheduled task that runs every 10 minutes to check for expired mining sessions.
+The server was not sending push notifications for mining events:
+1. **Mining Start:** No notification when user clicks "Start Mine"
+2. **Mining Complete:** No notification when mining sessions completed
 
-## Root Cause
-The scheduled task in `server.js` (lines 1380-1520) was updating the database when mining sessions expired but was **missing the push notification logic**. The task was only updating user data but not calling `sendPushNotification()`.
+The issues were:
+- Missing notification logic in the start mining endpoint
+- Missing notification logic in the scheduled task that checks for expired sessions
 
 ## Fix Applied
 
-### 1. Added Notification Logic to Scheduled Task
+### 1. Added Mining Start Notification
+**File:** `mine-server-app/server.js`
+**Location:** Lines 1015-1035 (after successful session start)
+
+```javascript
+// Send push notification for mining start
+if (userData.pushToken) {
+  try {
+    await sendPushNotification(userData.pushToken, {
+      title: '⛏️ Mining Started!',
+      body: 'Your 2-hour mining session has begun! You\'ll receive a notification when it completes.',
+      data: {
+        type: 'mining_start',
+        action: 'navigate_to_home',
+        sessionDuration: 7200 // 2 hours in seconds
+      }
+    });
+    logger.mining('Push notification sent for mining start', {
+      userId,
+      pushToken: userData.pushToken,
+      sessionStartTime: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Failed to send push notification for mining start', {
+      userId,
+      error: error.message,
+      pushToken: userData.pushToken
+    });
+  }
+}
+```
+
+### 2. Added Mining Complete Notification to Scheduled Task
 **File:** `mine-server-app/server.js`
 **Location:** Lines 1508-1530 (after session completion logging)
 
@@ -40,7 +75,7 @@ if (user.pushToken) {
 }
 ```
 
-### 2. Fixed Async/Await Issue
+### 3. Fixed Async/Await Issue
 **Problem:** The original code used `forEach()` which doesn't support `await`
 **Solution:** Changed to `for...of` loop to properly handle async operations
 
@@ -56,7 +91,7 @@ for (const doc of snapshot.docs) {
 }
 ```
 
-### 3. Added Test Endpoint
+### 4. Added Test Endpoint
 **File:** `mine-server-app/server.js`
 **Endpoint:** `POST /test-notification`
 
@@ -67,11 +102,20 @@ This endpoint allows manual testing of the notification system:
 
 ## How It Works Now
 
+### Mining Start Flow:
+1. **User clicks "Start Mine"** in the app
+2. **Server validates** all anti-cheat checks
+3. **Session starts** with server timestamp
+4. **Database updated** with mining session data
+5. **Notification sent** to user's device: "⛏️ Mining Started!"
+6. **Logging** records the notification success/failure
+
+### Mining Complete Flow:
 1. **Scheduled Task:** Runs every 10 minutes (600,000ms)
 2. **Session Detection:** Finds all users with `isMining: true`
 3. **Duration Check:** Calculates if session has exceeded 2 hours
 4. **Database Update:** Updates user data with earnings and session end
-5. **Notification Send:** Sends push notification to user's device
+5. **Notification Send:** Sends push notification to user's device: "Mining Complete! 🎉"
 6. **Logging:** Logs success/failure for monitoring
 
 ## Testing Instructions
@@ -84,14 +128,17 @@ This endpoint allows manual testing of the notification system:
 
 ### Method 2: Real Session Test
 1. Start a mining session in the app
-2. Wait for 2 hours (or modify server code temporarily to test with shorter duration)
-3. Check if you receive a push notification
-4. Verify in server logs: `"Push notification sent for mining completion (scheduled task)"`
+2. Check if you receive a "Mining Started!" notification immediately
+3. Wait for 2 hours (or modify server code temporarily to test with shorter duration)
+4. Check if you receive a "Mining Complete!" notification
+5. Verify in server logs: `"Push notification sent for mining start"` and `"Push notification sent for mining completion (scheduled task)"`
 
 ### Method 3: Server Log Monitoring
 Check server logs for these messages:
-- ✅ Success: `"Push notification sent for mining completion (scheduled task)"`
-- ❌ Failure: `"Failed to send push notification (scheduled task)"`
+- ✅ Mining Start Success: `"Push notification sent for mining start"`
+- ✅ Mining Complete Success: `"Push notification sent for mining completion (scheduled task)"`
+- ❌ Mining Start Failure: `"Failed to send push notification for mining start"`
+- ❌ Mining Complete Failure: `"Failed to send push notification (scheduled task)"`
 - 📊 Info: `"Session completion check started"` and `"Session completion check finished"`
 
 ## Verification Commands

@@ -1021,6 +1021,32 @@ app.post('/start-mining', authenticateToken, validateUserId, miningLimiter, asyn
       balance: userData.balance || 0
     });
 
+    // Send push notification for mining start
+    if (userData.pushToken) {
+      try {
+        await sendPushNotification(userData.pushToken, {
+          title: '⛏️ Mining Started!',
+          body: 'Your 2-hour mining session has begun! You\'ll receive a notification when it completes.',
+          data: {
+            type: 'mining_start',
+            action: 'navigate_to_home',
+            sessionDuration: 7200 // 2 hours in seconds
+          }
+        });
+        logger.mining('Push notification sent for mining start', {
+          userId,
+          pushToken: userData.pushToken,
+          sessionStartTime: new Date().toISOString()
+        });
+      } catch (error) {
+        logger.error('Failed to send push notification for mining start', {
+          userId,
+          error: error.message,
+          pushToken: userData.pushToken
+        });
+      }
+    }
+
     res.status(200).json({
       message: 'Mining started successfully!',
       startTime: new Date().toISOString()

@@ -1313,23 +1313,23 @@ const HomeScreen = ({ navigation }) => {
                 // Log mining start activity
                 await ActivityLogger.logMiningStart(userId, MAX_SESSION_SECONDS);
 
-                // Request notification permissions and schedule completion notification
-                const hasPermission = await requestNotificationPermissions();
-                if (hasPermission) {
-                    await scheduleMiningCompleteNotification();
-                }
+                // // Request notification permissions and schedule completion notification
+                await requestNotificationPermissions();
+                // if (hasPermission) {
+                //     await scheduleMiningCompleteNotification();
+                // }
 
-                // Send mining start notification
-                await NotificationService.sendMiningStartNotification(userId);
+                // // Send mining start notification
+                // // await NotificationService.sendMiningStartNotification(userId);
 
-                // Send push notification for mining start
-                if (pushToken) {
-                    await sendPushNotification(pushToken, {
-                        title: 'Mining Started! ⛏️',
-                        body: 'Your 2-hour mining session has begun! You\'ll earn coins automatically.',
-                        data: { type: 'mining_start', action: 'navigate_to_home' }
-                    });
-                }
+                // // Send push notification for mining start
+                // if (pushToken) {
+                //     await sendPushNotification(pushToken, {
+                //         title: 'Mining Started! ⛏️',
+                //         body: 'Your 2-hour mining session has begun! You\'ll earn coins automatically.',
+                //         data: { type: 'mining_start', action: 'navigate_to_home' }
+                //     });
+                // }
 
                 console.log('Mining started successfully! Session will run for 2 hours.');
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

@@ -29,14 +29,17 @@ async function testNotification() {
 
         console.log('\n🔍 To verify notifications are working:');
         console.log('1. Start a mining session in the app');
-        console.log('2. Wait for 2 hours or manually trigger session completion');
-        console.log('3. Check if you receive a push notification');
-        console.log('4. Check server logs for notification success/failure');
+        console.log('2. Check if you receive a "Mining Started!" notification');
+        console.log('3. Wait for 2 hours or manually trigger session completion');
+        console.log('4. Check if you receive a "Mining Complete!" notification');
+        console.log('5. Check server logs for notification success/failure');
 
         console.log('\n📊 Server monitoring:');
         console.log('- Check server logs for "Push notification sent" messages');
         console.log('- Look for "mining" level log entries');
         console.log('- Monitor for any "Failed to send push notification" errors');
+        console.log('- Mining start: "Push notification sent for mining start"');
+        console.log('- Mining complete: "Push notification sent for mining completion (scheduled task)"');
 
     } catch (error) {
         console.error('❌ Test failed:', error.message);
