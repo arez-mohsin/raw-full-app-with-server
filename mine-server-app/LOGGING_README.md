@@ -117,7 +117,7 @@ The logs are in JSON format, making them easy to parse and analyze:
     "deviceFingerprint": "abc123",
     "deviceId": "device456",
     "ip": "192.168.1.100",
-    "miningSpeed": 0.001,
+    "miningSpeed": 0.000116,
     "efficiency": 1,
     "level": 5,
     "balance": 100

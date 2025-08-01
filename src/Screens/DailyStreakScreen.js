@@ -28,12 +28,12 @@ const DailyStreakScreen = ({ navigation }) => {
     const [claiming, setClaiming] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
 
-    // Progressive coin rewards (day 1: 5 coins, day 2: 8 coins, etc.)
+    // Linear coin rewards (day 1: 1 coin, day 2: 2 coins, etc.)
     const getRewardForDay = (day) => {
         if (day <= 0) return 0;
         if (day <= 30) {
-            // Progressive rewards: 5, 8, 12, 17, 23, 30, 38, 47, 57, 68, 80, 93, 107, 122, 138, 155, 173, 192, 212, 233, 255, 278, 302, 327, 353, 380, 408, 437, 467, 498
-            return Math.floor(5 + (day - 1) * 3 + (day - 1) * (day - 2) / 2);
+            // Simple linear progression: day 1 = 1 coin, day 2 = 2 coins, ..., day 30 = 30 coins
+            return day;
         }
         return 0; // Reset after 30 days
     };
@@ -298,7 +298,7 @@ const DailyStreakScreen = ({ navigation }) => {
                             Reward Schedule
                         </Text>
                         <Text style={[styles.scheduleSubtitle, { color: theme.colors.textSecondary }]}>
-                            Progressive rewards up to 30 days
+                            Linear rewards: 1 coin on day 1, 2 coins on day 2, up to 30 coins on day 30
                         </Text>
 
                         <View style={styles.scheduleGrid}>
@@ -370,7 +370,7 @@ const DailyStreakScreen = ({ navigation }) => {
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color={theme.colors.accent} />
                                 <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-                                    Rewards increase each day up to 30 days
+                                    Rewards increase by 1 coin each day: 1, 2, 3... up to 30 coins
                                 </Text>
                             </View>
                             <View style={styles.infoItem}>

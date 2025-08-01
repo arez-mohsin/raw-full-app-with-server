@@ -28,6 +28,7 @@ import * as Application from 'expo-application';
 import * as Crypto from 'expo-crypto';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 const MAX_SESSION_SECONDS = 7200; // 2 hours
 const SESSION_UPDATE_INTERVAL = 300000; // 5 minutes
@@ -356,7 +357,7 @@ const HomeScreen = ({ navigation }) => {
     const [isMining, setIsMining] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
     const [lastMiningStart, setLastMiningStart] = useState(null);
-    const [miningSpeed, setMiningSpeed] = useState(0.001);
+    const [miningSpeed, setMiningSpeed] = useState(0.000116);
     const [upgrades, setUpgrades] = useState({
         speed: 0,
         efficiency: 0,
@@ -403,6 +404,86 @@ const HomeScreen = ({ navigation }) => {
     const [unreadNotifications, setUnreadNotifications] = useState(0);
     const [notificationsListener, setNotificationsListener] = useState(null);
     const [scheduledNotificationId, setScheduledNotificationId] = useState(null);
+    const [pushToken, setPushToken] = useState(null);
+
+    // Push notification functions
+    const registerForPushNotificationsAsync = async () => {
+        try {
+            if (!Device.isDevice) {
+                console.log('Push notifications are only available on physical devices');
+                return null;
+            }
+
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
+            }
+
+            if (finalStatus !== 'granted') {
+                console.log('Failed to get push token for push notification!');
+                return null;
+            }
+
+            const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+
+            const token = await Notifications.getExpoPushTokenAsync({
+                projectId,
+            });
+
+
+            console.log('Push token:', token.data);
+            return token.data;
+        } catch (error) {
+            console.error('Error getting push token:', error);
+            return null;
+        }
+    };
+
+    const updatePushTokenInDatabase = async (token) => {
+        if (!userId || !token) return;
+
+        try {
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, {
+                pushToken: token,
+                updatedAt: new Date()
+            });
+            console.log('Push token updated in database');
+        } catch (error) {
+            console.error('Error updating push token:', error);
+        }
+    };
+
+    const sendPushNotification = async (token, notification) => {
+        try {
+            const message = {
+                to: token,
+                sound: 'default',
+                title: notification.title,
+                body: notification.body,
+                data: notification.data || {},
+            };
+
+            const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Accept-encoding': 'gzip, deflate',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message),
+            });
+
+            const result = await response.json();
+            console.log('Push notification sent:', result);
+            return result;
+        } catch (error) {
+            console.error('Error sending push notification:', error);
+        }
+    };
 
     // Notification scheduling functions
     const scheduleMiningCompleteNotification = async () => {
@@ -485,6 +566,13 @@ const HomeScreen = ({ navigation }) => {
                 await checkMiningSession();
                 // Check for existing scheduled notifications
                 await checkScheduledNotifications();
+
+                // Register for push notifications
+                const token = await registerForPushNotificationsAsync();
+                if (token) {
+                    setPushToken(token);
+                    await updatePushTokenInDatabase(token);
+                }
             } else {
                 setUserId(null);
                 // Clean up listeners
@@ -504,6 +592,20 @@ const HomeScreen = ({ navigation }) => {
     useEffect(() => {
         const notificationListener = Notifications.addNotificationResponseReceivedListener(response => {
             const data = response.notification.request.content.data;
+
+            // Handle mining completion notification
+            if (data.type === 'mining_complete') {
+                console.log('Mining completion notification received:', data);
+                // Refresh user data to show updated balance
+                if (userId) {
+                    checkMiningSession();
+                }
+            }
+
+            // Handle mining start notification
+            if (data.type === 'mining_start') {
+                console.log('Mining start notification received:', data);
+            }
 
             if (data.type === 'mining_complete' && data.action === 'start_new_session') {
                 // User tapped the notification to start a new mining session
@@ -529,6 +631,31 @@ const HomeScreen = ({ navigation }) => {
             Notifications.removeNotificationSubscription(notificationListener);
         };
     }, [isMining]);
+
+    // Handle notifications received while app is in foreground
+    useEffect(() => {
+        const notificationReceivedListener = Notifications.addNotificationReceivedListener(notification => {
+            const data = notification.request.content.data;
+
+            // Handle mining completion notification
+            if (data.type === 'mining_complete') {
+                console.log('Mining completion notification received (foreground):', data);
+                // Refresh user data to show updated balance
+                if (userId) {
+                    checkMiningSession();
+                }
+            }
+
+            // Handle mining start notification
+            if (data.type === 'mining_start') {
+                console.log('Mining start notification received (foreground):', data);
+            }
+        });
+
+        return () => {
+            Notifications.removeNotificationSubscription(notificationReceivedListener);
+        };
+    }, [userId]);
 
     // Clean up listeners on unmount
     useEffect(() => {
@@ -560,7 +687,7 @@ const HomeScreen = ({ navigation }) => {
     // Calculate mining speed based on upgrades and boosts
     const calculateMiningSpeed = (upgradeLevels, activeBoosts = {}) => {
         try {
-            const baseSpeed = 0.001;
+            const baseSpeed = 0.000116;
             const speedLevel = parseInt(upgradeLevels?.speed) || 0;
             const speedBonus = speedLevel * 0.0005; // 0.0005 per level
             let totalSpeed = baseSpeed + speedBonus;
@@ -581,11 +708,11 @@ const HomeScreen = ({ navigation }) => {
             }
 
             // Ensure minimum speed and prevent NaN
-            const finalSpeed = Math.max(totalSpeed, 0.001);
-            return isNaN(finalSpeed) ? 0.001 : finalSpeed;
+            const finalSpeed = Math.max(totalSpeed, 0.000116);
+            return isNaN(finalSpeed) ? 0.000116 : finalSpeed;
         } catch (error) {
             console.error('Error calculating mining speed:', error);
-            return 0.001; // Fallback to base speed
+            return 0.000116; // Fallback to base speed
         }
     };
 
@@ -934,7 +1061,7 @@ const HomeScreen = ({ navigation }) => {
                         (new Date() - startTime) / 1000,
                         MAX_SESSION_SECONDS
                     );
-                    const earned = elapsedSeconds * (data.miningSpeed || 0.001);
+                    const earned = elapsedSeconds * (data.miningSpeed || 0.000116);
                     setLocalEarned(earned);
                 }
             } else {
@@ -946,7 +1073,7 @@ const HomeScreen = ({ navigation }) => {
                     totalMined: 0,
                     miningLevel: 1,
                     experience: 0,
-                    miningSpeed: 0.001,
+                    miningSpeed: 0.000116,
                     upgrades: { speed: 0, efficiency: 0, capacity: 0 },
                     earnedCoins: 0,
                 };
@@ -960,7 +1087,7 @@ const HomeScreen = ({ navigation }) => {
                 setTotalMined(0);
                 setMiningLevel(1);
                 setExperience(0);
-                setMiningSpeed(0.001);
+                setMiningSpeed(0.000116);
                 setUpgrades({ speed: 0, efficiency: 0, capacity: 0 });
                 setLocalEarned(0);
             }
@@ -1108,11 +1235,11 @@ const HomeScreen = ({ navigation }) => {
                 await cancelScheduledNotification();
 
                 // Send mining finish notification
-                await NotificationService.sendMiningCompleteNotification(userId, response.earnings || 0);
+                // await NotificationService.sendMiningCompleteNotification(userId, response.earnings || 0);
 
                 Alert.alert(
                     'Mining Session Complete! ⛏️',
-                    `Your 2-hour mining session has finished!\n\nEarned: ${response.earnings?.toFixed(3) || 0} coins\n\nTap "Start Mining" to begin a new session!`,
+                    `Your 2-hour mining session has finished!\n\nEarned: ${formatCoinBalance(response.earnings || 0)} coins\n\nTap "Start Mining" to begin a new session!`,
                     [
                         { text: 'OK' },
                         {
@@ -1195,6 +1322,15 @@ const HomeScreen = ({ navigation }) => {
                 // Send mining start notification
                 await NotificationService.sendMiningStartNotification(userId);
 
+                // Send push notification for mining start
+                if (pushToken) {
+                    await sendPushNotification(pushToken, {
+                        title: 'Mining Started! ⛏️',
+                        body: 'Your 2-hour mining session has begun! You\'ll earn coins automatically.',
+                        data: { type: 'mining_start', action: 'navigate_to_home' }
+                    });
+                }
+
                 console.log('Mining started successfully! Session will run for 2 hours.');
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert(
@@ -1221,6 +1357,22 @@ const HomeScreen = ({ navigation }) => {
         return `${h.toString().padStart(2, "0")}:${m
             .toString()
             .padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    };
+
+    // Format coin balance with appropriate precision
+    const formatCoinBalance = (balance) => {
+        if (balance < 1) {
+            return balance.toFixed(6); // e.g., 0.000928
+        } else if (balance < 1000) {
+            return balance.toFixed(3); // e.g., 42.385
+        } else if (balance < 1_000_000) {
+            return balance.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }); // e.g., 1,254.67
+        } else {
+            return (balance / 1_000_000).toFixed(2) + 'M'; // e.g., 1.23M
+        }
     };
 
     const getActivityIcon = (type) => {
@@ -1385,7 +1537,7 @@ const HomeScreen = ({ navigation }) => {
                         {formatTime(timeLeft)}
                     </Text>
                     <Text style={[styles.progressSpeed, { color: theme.colors.textSecondary }]}>
-                        +{miningSpeed.toFixed(3)} coins/sec
+                        +{miningSpeed.toFixed(6)} coins/sec
                     </Text>
                 </View>
             </View>
@@ -1446,11 +1598,11 @@ const HomeScreen = ({ navigation }) => {
                         Current Balance
                     </Text>
                     <Text style={[styles.balanceAmount, { color: theme.colors.accent }]}>
-                        {(userData.balance + localEarned).toFixed(3)} coins
+                        {formatCoinBalance(userData.balance + localEarned)} coins
                     </Text>
                     {isMining && localEarned > 0 && (
                         <Text style={[styles.earningText, { color: theme.colors.success }]}>
-                            +{localEarned.toFixed(3)} this session
+                            +{formatCoinBalance(localEarned)} this session
                         </Text>
                     )}
                 </View>
@@ -1467,15 +1619,15 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.statsGrid}>
                         <View style={styles.statItem}>
                             <Text style={[styles.statNumber, { color: theme.colors.textPrimary }]}>
-                                {(userData.balance + localEarned).toFixed(3)}
+                                {userData.todayMined.toFixed(3)}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Balance
+                                Today Mined
                             </Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statNumber, { color: theme.colors.textPrimary }]}>
-                                {userData.totalMined.toFixed(3)}
+                            <Text style={[styles.statNumber, { color: theme.colors.textPrimary, fontSize: 16 }]}>
+                                {formatCoinBalance(userData.totalMined)}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                                 Total Mined
@@ -1533,7 +1685,7 @@ const HomeScreen = ({ navigation }) => {
                                     Current Speed
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    {miningSpeed.toFixed(3)} coins/sec
+                                    {miningSpeed.toFixed(6)} coins/sec
                                 </Text>
                             </View>
                         </View>
@@ -1870,7 +2022,7 @@ const HomeScreen = ({ navigation }) => {
                                     Earnings Calculation
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    {miningSpeed.toFixed(3)} coins/sec × session time
+                                    {miningSpeed.toFixed(6)} coins/sec × session time
                                 </Text>
                             </View>
                         </View>
@@ -1885,7 +2037,7 @@ const HomeScreen = ({ navigation }) => {
                                     Mining Speed
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    Base: 0.001 coins/sec, Current: {miningSpeed.toFixed(3)} coins/sec
+                                    Base: 0.000116 coins/sec, Current: {miningSpeed.toFixed(6)} coins/sec
                                 </Text>
                             </View>
                         </View>
@@ -1946,7 +2098,7 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.statsGrid}>
                         <View style={styles.statCard}>
                             <Text style={[styles.statNumber, { color: theme.colors.textPrimary }]}>
-                                {totalMined.toFixed(3)}
+                                {formatCoinBalance(totalMined)}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
                                 Total Mined
@@ -2035,7 +2187,7 @@ const HomeScreen = ({ navigation }) => {
                                         styles.activityAmount,
                                         { color: activity.amount > 0 ? theme.colors.success : theme.colors.error }
                                     ]}>
-                                        {activity.amount > 0 ? '+' : ''}{activity.amount.toFixed(3)}
+                                        {activity.amount > 0 ? '+' : ''}{formatCoinBalance(activity.amount)}
                                     </Text>
                                 </View>
                             ))

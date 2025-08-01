@@ -28,8 +28,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (user) {
-                // User is already logged in, redirect to main app
-                navigation.replace('Main');
+                // Check if email is verified before redirecting to main app
+                if (user.emailVerified) {
+                    navigation.replace('Main');
+                } else {
+                    // User is authenticated but email is not verified
+                    navigation.replace('EmailVerification');
+                }
             }
         });
 

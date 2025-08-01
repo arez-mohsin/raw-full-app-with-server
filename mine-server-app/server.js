@@ -95,6 +95,36 @@ class Logger {
 // Initialize logger
 const logger = new Logger();
 
+// Push notification function
+const sendPushNotification = async (token, notification) => {
+  try {
+    const message = {
+      to: token,
+      sound: 'default',
+      title: notification.title,
+      body: notification.body,
+      data: notification.data || {},
+    };
+
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message),
+    });
+
+    const result = await response.json();
+    logger.debug('Push notification sent', { token, result });
+    return result;
+  } catch (error) {
+    logger.error('Error sending push notification', { error: error.message, token });
+    throw error;
+  }
+};
+
 // Log server startup
 logger.info('Server starting up', {
   port: process.env.PORT || 5000,
@@ -569,7 +599,7 @@ const getUserDoc = async (userId) => {
       totalMined: 0,
       miningLevel: 1,
       experience: 0,
-      miningSpeed: 0.001,
+      miningSpeed: 0.000116,
       upgrades: {
         speed: 0,
         efficiency: 0,
@@ -587,7 +617,8 @@ const getUserDoc = async (userId) => {
         lastActivity: now,
         suspiciousActivity: 0,
         deviceFingerprint: null
-      }
+      },
+      pushToken: null
     });
   }
 
@@ -686,7 +717,7 @@ app.post('/check-mining-session', authenticateToken, validateUserId, async (req,
         logger.mining('Ending expired mining session', {
           userId,
           sessionDuration,
-          miningSpeed: userData.miningSpeed || 0.001,
+          miningSpeed: userData.miningSpeed || 0.000116,
           efficiency: userData.efficiency || 1,
           deviceId: req.deviceId,
           ip: req.ip
@@ -694,7 +725,7 @@ app.post('/check-mining-session', authenticateToken, validateUserId, async (req,
         console.log(`Ending expired mining session for user ${userId}: ${sessionDuration}h`);
 
         // Calculate earnings for the 2-hour session
-        const miningSpeed = userData.miningSpeed || 0.001;
+        const miningSpeed = userData.miningSpeed || 0.000116;
         const efficiency = userData.efficiency || 1;
         const sessionEarnings = Math.min(
           miningSpeed * efficiency * 2, // 2 hours
@@ -720,6 +751,32 @@ app.post('/check-mining-session', authenticateToken, validateUserId, async (req,
           deviceId: req.deviceId,
           ip: req.ip
         });
+
+        // Send push notification for mining completion
+        if (userData.pushToken) {
+          try {
+            await sendPushNotification(userData.pushToken, {
+              title: 'Mining Complete! 🎉',
+              body: `Congratulations! You've earned ${sessionEarnings.toFixed(6)} coins from your mining session.`,
+              data: {
+                type: 'mining_complete',
+                action: 'navigate_to_home',
+                earnings: sessionEarnings
+              }
+            });
+            logger.mining('Push notification sent for mining completion', {
+              userId,
+              pushToken: userData.pushToken,
+              earnings: sessionEarnings
+            });
+          } catch (error) {
+            logger.error('Failed to send push notification', {
+              userId,
+              error: error.message,
+              pushToken: userData.pushToken
+            });
+          }
+        }
 
         return res.status(200).json({
           message: 'Mining session ended',
@@ -795,7 +852,7 @@ app.post('/start-mining', authenticateToken, validateUserId, miningLimiter, asyn
         console.log(`Ending expired mining session for user ${userId}: ${sessionDuration}h`);
 
         // Calculate earnings for the 2-hour session
-        const miningSpeed = userData.miningSpeed || 0.001;
+        const miningSpeed = userData.miningSpeed || 0.000116;
         const efficiency = userData.efficiency || 1;
         const sessionEarnings = Math.min(
           miningSpeed * efficiency * 2, // 2 hours
@@ -822,7 +879,7 @@ app.post('/start-mining', authenticateToken, validateUserId, miningLimiter, asyn
         deviceId: req.deviceId,
         ip: req.ip,
         currentBalance: userData.balance || 0,
-        miningSpeed: userData.miningSpeed || 0.001
+        miningSpeed: userData.miningSpeed || 0.000116
       });
       console.warn(`Multiple session attempt detected for user ${userId}`);
       return res.status(400).json({ error: 'Mining session already active' });
@@ -958,7 +1015,7 @@ app.post('/start-mining', authenticateToken, validateUserId, miningLimiter, asyn
       deviceFingerprint,
       deviceId: req.deviceId,
       ip: req.ip,
-      miningSpeed: userData.miningSpeed || 0.001,
+      miningSpeed: userData.miningSpeed || 0.000116,
       efficiency: userData.efficiency || 1,
       level: userData.miningLevel || 1,
       balance: userData.balance || 0
@@ -1094,7 +1151,7 @@ app.post('/upgrade', authenticateToken, validateUserId, upgradeLimiter, async (r
 
     // Apply effect
     if (upgrade.effect === 'miningSpeed') {
-      updates.miningSpeed = 0.001 + newLevel * upgrade.effectValue;
+      updates.miningSpeed = 0.000116 + newLevel * upgrade.effectValue;
     }
 
     await userRef.update(updates);
@@ -1377,7 +1434,7 @@ setInterval(async () => {
         }
 
         // Anti-cheat: Calculate legitimate earnings with server-side validation
-        const baseSpeed = user.miningSpeed || 0.001;
+        const baseSpeed = user.miningSpeed || 0.000116;
         const efficiencyBonus = 1 + (user.upgrades?.efficiency || 0) * 0.1;
         const sessionDuration = elapsedHours * 3600; // Convert to seconds
 

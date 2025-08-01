@@ -14,6 +14,7 @@ import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import * as Network from 'expo-network';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -141,10 +142,14 @@ const SplashScreen = ({ navigation }) => {
         }
     };
 
+    const insets = useSafeAreaInsets();
     return (
         <LinearGradient
             colors={[theme.colors.primary, theme.colors.secondary, theme.colors.primary]}
-            style={styles.container}
+            style={[styles.container, {
+                paddingTop: insets.top,
+                paddingBottom: insets.bottom,
+            }]}
         >
             <View style={styles.content}>
                 {/* Logo */}

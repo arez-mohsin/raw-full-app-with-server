@@ -140,6 +140,36 @@ if (cluster.isMaster) {
         pid: process.pid
     });
 
+    // Push notification function
+    const sendPushNotification = async (token, notification) => {
+        try {
+            const message = {
+                to: token,
+                sound: 'default',
+                title: notification.title,
+                body: notification.body,
+                data: notification.data || {},
+            };
+
+            const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Accept-encoding': 'gzip, deflate',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message),
+            });
+
+            const result = await response.json();
+            logger.debug('Push notification sent', { token, result, workerId });
+            return result;
+        } catch (error) {
+            logger.error('Error sending push notification', { error: error.message, token, workerId });
+            throw error;
+        }
+    };
+
     // Load Firebase service account from environment variable or file
     let serviceAccount;
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -564,7 +594,7 @@ if (cluster.isMaster) {
                 totalMined: 0,
                 miningLevel: 1,
                 experience: 0,
-                miningSpeed: 0.001,
+                miningSpeed: 0.000116,
                 upgrades: {
                     speed: 0,
                     efficiency: 0,
@@ -582,7 +612,8 @@ if (cluster.isMaster) {
                     lastActivity: now,
                     suspiciousActivity: 0,
                     deviceFingerprint: null
-                }
+                },
+                pushToken: null
             });
         }
 

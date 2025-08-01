@@ -580,7 +580,11 @@ const RegisterScreen = ({ navigation }) => {
 
             if (result.success) {
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                navigation.replace('Main');
+
+                // Check if email is verified before navigating to main app
+
+                // Navigate to email verification screen
+                navigation.replace('EmailVerification');
             }
 
         } catch (error) {

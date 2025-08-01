@@ -300,15 +300,10 @@ const EmailVerificationScreen = ({ navigation, route }) => {
     const handleBackPress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         Alert.alert(
-            'Leave Verification?',
-            'You can always verify your email later from your profile settings.',
+            'Email Verification Required',
+            'You must verify your email address to continue using the app. Please check your email and click the verification link.',
             [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Continue Later',
-                    onPress: () => navigation.replace('Main'),
-                    style: 'destructive'
-                }
+                { text: 'OK', style: 'default' }
             ]
         );
     };
@@ -395,29 +390,6 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                                     </Text>
                                 </>
                             )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.continueLaterButton}
-                            onPress={() => {
-                                Alert.alert(
-                                    'Continue Later',
-                                    'You can verify your email later from your profile settings. Continue to the app now?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Continue',
-                                            onPress: () => navigation.reset({
-                                                index: 0,
-                                                routes: [{ name: 'Main' }]
-                                            })
-                                        }
-                                    ]
-                                );
-                            }}
-                        >
-                            <Ionicons name="arrow-forward" size={18} color="#888" />
-                            <Text style={styles.continueLaterButtonText}>Continue Later</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -618,24 +590,6 @@ const styles = StyleSheet.create({
     resendButtonText: {
         color: '#FFD700',
         fontSize: 16,
-        fontWeight: '500',
-        marginLeft: 8,
-    },
-    continueLaterButton: {
-        backgroundColor: 'transparent',
-        borderRadius: 12,
-        paddingVertical: 14,
-        paddingHorizontal: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: '#555',
-        marginTop: 8,
-    },
-    continueLaterButtonText: {
-        color: '#888',
-        fontSize: 14,
         fontWeight: '500',
         marginLeft: 8,
     },

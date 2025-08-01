@@ -283,8 +283,13 @@ const LoginScreen = ({ navigation }) => {
             // Success haptic feedback
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-            // Navigate to main app
-            navigation.replace('Main');
+            // Check if email is verified before navigating to main app
+            if (user.emailVerified) {
+                navigation.replace('Main');
+            } else {
+                // Navigate to email verification screen
+                navigation.replace('EmailVerification');
+            }
 
         } catch (error) {
             console.error('Login error:', error);
@@ -375,7 +380,14 @@ const LoginScreen = ({ navigation }) => {
             }
 
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            navigation.replace('Main');
+
+            // Check if email is verified before navigating to main app
+            if (user.emailVerified) {
+                navigation.replace('Main');
+            } else {
+                // Navigate to email verification screen
+                navigation.replace('EmailVerification');
+            }
 
         } catch (error) {
             console.error('Biometric login error:', error);
