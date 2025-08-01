@@ -177,20 +177,21 @@ const LeaderboardScreen = ({ navigation }) => {
                             : theme.colors.border
                     }
                 ]}
-                onPress={() => {
-                    if (isCurrentUser) {
-                        navigation.navigate('Profile');
-                    } else {
-                        Alert.alert(
-                            'User Profile',
-                            `View ${displayName}'s profile?`,
-                            [
-                                { text: 'Cancel', style: 'cancel' },
-                                { text: 'View', onPress: () => navigation.navigate('Profile') }
-                            ]
-                        );
-                    }
-                }}
+                // onPress={() => {
+                //     if (isCurrentUser) {
+                //         navigation.navigate('Profile');
+                //     } else {
+                //         Alert.alert(
+                //             'User Profile',
+                //             `View ${displayName}'s profile?`,
+                //             [
+                //                 { text: 'Cancel', style: 'cancel' },
+                //                 { text: 'View', onPress: () => navigation.navigate('Profile') }
+                //             ]
+                //         );
+                //     }
+                // }}
+                activeOpacity={0.8}
             >
                 {/* Rank Badge */}
                 <View style={styles.rankContainer}>

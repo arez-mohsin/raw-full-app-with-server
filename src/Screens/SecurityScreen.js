@@ -44,7 +44,7 @@ const SecurityScreen = ({ navigation }) => {
     const passwordBottomSheetRef = useRef(null);
 
     // Bottom sheet snap points
-    const passwordSnapPoints = useMemo(() => ['75%', '90%'], []);
+    const passwordSnapPoints = useMemo(() => ['90%'], []);
 
     const userId = auth.currentUser?.uid;
 
@@ -271,11 +271,15 @@ const SecurityScreen = ({ navigation }) => {
         <BottomSheetModal
             ref={passwordBottomSheetRef}
             index={0}
+            enableDynamicSizing={false}
             snapPoints={passwordSnapPoints}
             backgroundStyle={styles.bottomSheetBackground}
             handleIndicatorStyle={styles.bottomSheetIndicator}
+            keyboardBehavior="interactive"
+            keyboardBlurBehavior="restore"
         >
-            <BottomSheetView style={styles.bottomSheetContent}>
+
+            <BottomSheetView style={[styles.bottomSheetContent, styles.bottomSheetKeyboardPadding]}>
                 <View style={styles.bottomSheetHeader}>
                     <Text style={styles.bottomSheetTitle}>Change Password</Text>
                     <TouchableOpacity onPress={handleBottomSheetDismiss}>
@@ -292,6 +296,10 @@ const SecurityScreen = ({ navigation }) => {
                         placeholder="Enter current password"
                         placeholderTextColor="#666"
                         secureTextEntry
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        textContentType="password"
+                        returnKeyType="next"
                     />
                 </View>
 
@@ -304,6 +312,10 @@ const SecurityScreen = ({ navigation }) => {
                         placeholder="Enter new password"
                         placeholderTextColor="#666"
                         secureTextEntry
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        textContentType="newPassword"
+                        returnKeyType="next"
                     />
                     {newPassword.length > 0 && (
                         <View style={styles.passwordStrengthContainer}>
@@ -434,42 +446,6 @@ const SecurityScreen = ({ navigation }) => {
                         </View>
                     </View>
 
-                    {/* Notifications */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Security Notifications</Text>
-
-                        <View style={styles.securityItem}>
-                            <View style={styles.securityLeft}>
-                                <Ionicons name="mail" size={20} color="#FFD700" />
-                                <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>Email Notifications</Text>
-                                    <Text style={styles.securitySubtitle}>Get notified of security events</Text>
-                                </View>
-                            </View>
-                            <Switch
-                                value={securitySettings.emailNotifications}
-                                onValueChange={(value) => handleNotificationToggle('emailNotifications', value)}
-                                trackColor={{ false: '#444', true: '#FFD700' }}
-                                thumbColor={securitySettings.emailNotifications ? '#fff' : '#f4f3f4'}
-                            />
-                        </View>
-
-                        <View style={styles.securityItem}>
-                            <View style={styles.securityLeft}>
-                                <Ionicons name="warning" size={20} color="#FFD700" />
-                                <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>Login Alerts</Text>
-                                    <Text style={styles.securitySubtitle}>Alert on new device login</Text>
-                                </View>
-                            </View>
-                            <Switch
-                                value={securitySettings.loginAlerts}
-                                onValueChange={(value) => handleNotificationToggle('loginAlerts', value)}
-                                trackColor={{ false: '#444', true: '#FFD700' }}
-                                thumbColor={securitySettings.loginAlerts ? '#fff' : '#f4f3f4'}
-                            />
-                        </View>
-                    </View>
 
                     {/* Account Security */}
                     <View style={styles.section}>
@@ -723,7 +699,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#fff',
     },
-
+    bottomSheetKeyboardPadding: {
+        paddingBottom: 40, // Extra space at bottom for keyboard
+    },
 });
 
 export default SecurityScreen;

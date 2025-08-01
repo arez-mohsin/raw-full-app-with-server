@@ -1391,9 +1391,9 @@ setInterval(async () => {
 
     const batch = db.batch();
 
-    snapshot.forEach(doc => {
+    for (const doc of snapshot.docs) {
       const user = doc.data();
-      if (!user.lastMiningStart) return;
+      if (!user.lastMiningStart) continue;
 
       const startTime = user.lastMiningStart.toDate();
       const elapsedHours = (now - startTime) / (1000 * 60 * 60);
@@ -1501,8 +1501,34 @@ setInterval(async () => {
           oldExperience: user.experience || 0,
           newExperience: newExp
         });
+
+        // Send push notification for mining completion
+        if (user.pushToken) {
+          try {
+            await sendPushNotification(user.pushToken, {
+              title: 'Mining Complete! 🎉',
+              body: `Congratulations! You've earned ${finalEarnings.toFixed(6)} coins from your mining session.`,
+              data: {
+                type: 'mining_complete',
+                action: 'navigate_to_home',
+                earnings: finalEarnings
+              }
+            });
+            logger.mining('Push notification sent for mining completion (scheduled task)', {
+              userId: doc.id,
+              pushToken: user.pushToken,
+              earnings: finalEarnings
+            });
+          } catch (error) {
+            logger.error('Failed to send push notification (scheduled task)', {
+              userId: doc.id,
+              error: error.message,
+              pushToken: user.pushToken
+            });
+          }
+        }
       }
-    });
+    }
 
     await batch.commit();
 
@@ -1528,6 +1554,55 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     version: '1.0.0'
   });
+});
+
+// Test notification endpoint (for debugging)
+app.post('/test-notification', authenticateToken, validateUserId, async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const userRef = await getUserDoc(userId);
+    const userDoc = await userRef.get();
+    const userData = userDoc.data();
+
+    if (!userData || !userData.pushToken) {
+      return res.status(400).json({
+        error: 'User not found or no push token available',
+        hasPushToken: !!userData?.pushToken
+      });
+    }
+
+    // Send test notification
+    await sendPushNotification(userData.pushToken, {
+      title: 'Test Notification 🔔',
+      body: 'This is a test notification to verify the notification system is working.',
+      data: {
+        type: 'test_notification',
+        action: 'test',
+        timestamp: Date.now()
+      }
+    });
+
+    logger.info('Test notification sent successfully', {
+      userId,
+      pushToken: userData.pushToken
+    });
+
+    res.status(200).json({
+      message: 'Test notification sent successfully',
+      pushToken: userData.pushToken
+    });
+  } catch (error) {
+    logger.error('Test notification failed', {
+      userId,
+      error: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({
+      error: 'Failed to send test notification',
+      details: error.message
+    });
+  }
 });
 
 // Username availability check endpoint

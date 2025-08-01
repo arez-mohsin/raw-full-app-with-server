@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import * as Haptics from 'expo-haptics';
 const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen = ({ navigation, route }) => {
@@ -97,6 +97,7 @@ const OnboardingScreen = ({ navigation, route }) => {
     };
 
     const handleNext = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (currentIndex < onboardingData.length - 1) {
             flatListRef.current?.scrollToIndex({
                 index: currentIndex + 1,
@@ -108,12 +109,14 @@ const OnboardingScreen = ({ navigation, route }) => {
     };
 
     const handleSkip = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         AsyncStorage.setItem('hasLaunched', 'true');
         handleGetStarted();
     };
 
     const handleGetStarted = async () => {
         try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
             AsyncStorage.setItem('hasLaunched', 'true');
             // Call the completion callback from route params
             if (route.params?.onComplete) {
