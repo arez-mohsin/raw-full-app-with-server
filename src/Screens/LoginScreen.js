@@ -20,6 +20,7 @@ import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import ErrorHandler from '../utils/ErrorHandler';
 import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
+import SocialAuthService from '../services/SocialAuthService';
 import * as Haptics from 'expo-haptics';
 import * as Device from 'expo-device';
 import * as Network from 'expo-network';
@@ -422,10 +423,55 @@ const LoginScreen = ({ navigation }) => {
         }
     };
 
-    // Handle social login (placeholder)
+    // Handle social login
     const handleSocialLogin = async (provider) => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setGeneralError(`${provider} login will be available soon!`);
+        if (buttonDisabled) return;
+
+        try {
+            setButtonDisabled(true);
+            setButtonCooldown(5);
+            setIsLoading(true);
+            setGeneralError('');
+
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+            let result;
+            if (provider === 'Google') {
+                result = await SocialAuthService.signInWithGoogle();
+            } else if (provider === 'Apple') {
+                result = await SocialAuthService.signInWithApple();
+            } else {
+                throw new Error('Unsupported provider');
+            }
+
+            if (result.success) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                navigation.replace('Main');
+            }
+
+        } catch (error) {
+            console.error(`${provider} login error:`, error);
+            let errorMessage = `${provider} login failed`;
+
+            if (error.message.includes('cancelled')) {
+                errorMessage = `${provider} login was cancelled`;
+            } else if (error.message.includes('not available')) {
+                errorMessage = `${provider} login is not available on this device`;
+            } else if (error.message.includes('network')) {
+                errorMessage = 'Network error. Please check your connection';
+            } else {
+                errorMessage = error.message || `${provider} login failed. Please try again.`;
+            }
+
+            setGeneralError(errorMessage);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } finally {
+            setIsLoading(false);
+            setTimeout(() => {
+                setButtonDisabled(false);
+                setButtonCooldown(0);
+            }, 5000);
+        }
     };
 
     return (

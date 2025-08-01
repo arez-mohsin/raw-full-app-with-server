@@ -24,6 +24,7 @@ import { doc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp
 import { useTheme } from '../context/ThemeContext';
 import ErrorHandler from '../utils/ErrorHandler';
 import ActivityLogger from '../utils/ActivityLogger';
+import SocialAuthService from '../services/SocialAuthService';
 
 const RegisterScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -557,10 +558,53 @@ const RegisterScreen = ({ navigation }) => {
         }
     };
 
-    // Handle social registration (placeholder)
+    // Handle social registration
     const handleSocialRegister = async (provider) => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setGeneralError(`${provider} registration will be available soon!`);
+        if (isButtonDisabled || isBlocked) return;
+
+        try {
+            setIsButtonDisabled(true);
+            setIsLoading(true);
+            setGeneralError('');
+
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+            let result;
+            if (provider === 'Google') {
+                result = await SocialAuthService.signInWithGoogle();
+            } else if (provider === 'Apple') {
+                result = await SocialAuthService.signInWithApple();
+            } else {
+                throw new Error('Unsupported provider');
+            }
+
+            if (result.success) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                navigation.replace('Main');
+            }
+
+        } catch (error) {
+            console.error(`${provider} registration error:`, error);
+            let errorMessage = `${provider} registration failed`;
+
+            if (error.message.includes('cancelled')) {
+                errorMessage = `${provider} registration was cancelled`;
+            } else if (error.message.includes('not available')) {
+                errorMessage = `${provider} registration is not available on this device`;
+            } else if (error.message.includes('network')) {
+                errorMessage = 'Network error. Please check your connection';
+            } else {
+                errorMessage = error.message || `${provider} registration failed. Please try again.`;
+            }
+
+            setGeneralError(errorMessage);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } finally {
+            setIsLoading(false);
+            setTimeout(() => {
+                setIsButtonDisabled(false);
+            }, 5000);
+        }
     };
 
     return (

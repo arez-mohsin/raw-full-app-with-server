@@ -57,6 +57,12 @@ service cloud.firestore {
       // Users can read other users' data for leaderboard purposes
       allow read: if isAuthenticated();
       
+      // Allow querying for username/email availability checking
+      // This allows authenticated users to check if a username or email is already taken
+      allow list: if isAuthenticated() && 
+                     (request.query.where.fieldPath in ['username', 'email', 'inviteCode']) &&
+                     (request.query.where.op == '==');
+      
       // Users can create their own document during registration
       allow create: if isOwner(userId) && 
                        isValidUserData(resource.data) &&

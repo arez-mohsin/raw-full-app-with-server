@@ -108,11 +108,13 @@ const OnboardingScreen = ({ navigation, route }) => {
     };
 
     const handleSkip = () => {
+        AsyncStorage.setItem('hasLaunched', 'true');
         handleGetStarted();
     };
 
     const handleGetStarted = async () => {
         try {
+            AsyncStorage.setItem('hasLaunched', 'true');
             // Call the completion callback from route params
             if (route.params?.onComplete) {
                 await route.params.onComplete();

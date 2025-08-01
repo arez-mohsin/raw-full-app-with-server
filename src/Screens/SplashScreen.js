@@ -108,7 +108,7 @@ const SplashScreen = ({ navigation }) => {
                         } else {
                             // No user authenticated, check if app has been launched before
                             const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-                            if (!hasLaunched) {
+                            if (!hasLaunched || hasLaunched === 'false') {
                                 resolve('Onboarding');
                             } else {
                                 resolve('Login');

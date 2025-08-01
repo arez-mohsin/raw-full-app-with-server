@@ -1473,6 +1473,115 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Username availability check endpoint
+app.post('/check-username-availability', async (req, res) => {
+  const { username } = req.body;
+
+  logger.info('Username availability check requested', {
+    username,
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+
+  try {
+    if (!username || typeof username !== 'string' || username.length < 3) {
+      return res.status(400).json({
+        error: 'Invalid username',
+        available: false
+      });
+    }
+
+    // Check if username exists in Firestore
+    const usersRef = db.collection('users');
+    const query = usersRef.where('username', '==', username.toLowerCase());
+    const snapshot = await query.limit(1).get();
+
+    const isAvailable = snapshot.empty;
+
+    logger.info('Username availability check completed', {
+      username,
+      isAvailable,
+      ip: req.ip
+    });
+
+    res.status(200).json({
+      available: isAvailable,
+      username: username
+    });
+  } catch (error) {
+    logger.error('Username availability check error', {
+      username,
+      error: error.message,
+      stack: error.stack,
+      ip: req.ip
+    });
+    console.error('Username availability check error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      available: false
+    });
+  }
+});
+
+// Email availability check endpoint
+app.post('/check-email-availability', async (req, res) => {
+  const { email } = req.body;
+
+  logger.info('Email availability check requested', {
+    email: email ? email.toLowerCase() : null,
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+
+  try {
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({
+        error: 'Invalid email',
+        available: false
+      });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format',
+        available: false
+      });
+    }
+
+    // Check if email exists in Firestore
+    const usersRef = db.collection('users');
+    const query = usersRef.where('email', '==', email.toLowerCase());
+    const snapshot = await query.limit(1).get();
+
+    const isAvailable = snapshot.empty;
+
+    logger.info('Email availability check completed', {
+      email: email.toLowerCase(),
+      isAvailable,
+      ip: req.ip
+    });
+
+    res.status(200).json({
+      available: isAvailable,
+      email: email.toLowerCase()
+    });
+  } catch (error) {
+    logger.error('Email availability check error', {
+      email: email ? email.toLowerCase() : null,
+      error: error.message,
+      stack: error.stack,
+      ip: req.ip
+    });
+    console.error('Email availability check error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      available: false
+    });
+  }
+});
+
 // Test endpoint
 app.get('/test', (req, res) => {
   res.status(200).json({
