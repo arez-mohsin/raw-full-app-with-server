@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Alert } from 'react-native';
+import ToastService from './ToastService';
 
 class ErrorHandler {
     static firebaseAuthErrorKeys = {
@@ -81,6 +81,12 @@ class ErrorHandler {
         ACCOUNT_TEMPORARILY_LOCKED: 'errors.security.accountLocked',
     };
 
+    // Static utility for quick email validation where i18n is not needed
+    static validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(String(email || '').trim());
+    }
+
     constructor(t) {
         this.t = t || (key => key);
     }
@@ -133,32 +139,26 @@ class ErrorHandler {
         const translatedTitle = this.t(title);
 
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert(translatedTitle, message, [{ text: this.t('common.ok') }]);
+        ToastService.error(message);
         return message;
     }
 
     async showSuccess(messageKey, titleKey = 'common.success', params = {}) {
         const message = this.t(messageKey, params);
-        const title = this.t(titleKey);
-
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert(title, message, [{ text: this.t('common.ok') }]);
+        ToastService.success(message);
     }
 
     async showWarning(messageKey, titleKey = 'common.warning', params = {}) {
         const message = this.t(messageKey, params);
-        const title = this.t(titleKey);
-
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert(title, message, [{ text: this.t('common.ok') }]);
+        ToastService.warning(message);
     }
 
     async showInfo(messageKey, titleKey = 'common.information', params = {}) {
         const message = this.t(messageKey, params);
-        const title = this.t(titleKey);
-
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert(title, message, [{ text: this.t('common.ok') }]);
+        ToastService.info(message);
     }
 
     async handleAsync(operation, errorTitle = 'common.error') {

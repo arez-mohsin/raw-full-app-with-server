@@ -5,7 +5,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import * as Network from 'expo-network';
 import * as Haptics from 'expo-haptics';
+import ToastService from '../utils/ToastService';
 
 const NetworkErrorScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -174,14 +174,9 @@ const NetworkErrorScreen = ({ navigation }) => {
                         style={styles.secondaryButton}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            Alert.alert(
-                                t('errors.exitApp'),
-                                t('errors.exitAppConfirmation'),
-                                [
-                                    { text: t('common.cancel'), style: 'cancel' },
-                                    { text: t('common.exit'), style: 'destructive', onPress: () => { } }
-                                ]
-                            );
+                            ToastService.warning(t('errors.exitAppConfirmation'));
+                            // For now, we'll just show a warning. In a real app, you might want to add a modal
+                            // or use a different approach for multiple options
                         }}
                     >
                         <Ionicons name="close-circle" size={20} color="#ff4444" />

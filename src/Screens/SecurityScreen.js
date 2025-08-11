@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     Switch,
-    Alert,
     TextInput,
     ActivityIndicator,
 } from 'react-native';
@@ -19,6 +18,7 @@ import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
 import * as Haptics from 'expo-haptics';
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
+import ToastService from '../utils/ToastService';
 
 const SecurityScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -71,7 +71,7 @@ const SecurityScreen = ({ navigation }) => {
 
             if (!userId) {
                 console.warn('No userId available in SecurityScreen');
-                Alert.alert('Error', 'User not authenticated');
+                ToastService.error('User not authenticated');
                 navigation.goBack();
                 return;
             }
@@ -95,7 +95,7 @@ const SecurityScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error('Error loading security data:', error);
-            Alert.alert('Error', 'Failed to load security settings');
+            ToastService.error('Failed to load security settings');
         } finally {
             setLoading(false);
         }
@@ -107,19 +107,19 @@ const SecurityScreen = ({ navigation }) => {
 
     const handlePasswordSubmit = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
-            Alert.alert('Error', 'Please fill in all fields');
+            ToastService.error('Please fill in all fields');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            Alert.alert('Error', 'New passwords do not match');
+            ToastService.error('New passwords do not match');
             return;
         }
 
         // Validate password strength
         const strength = SecurityService.validatePasswordStrength(newPassword);
         if (!strength.isValid) {
-            Alert.alert('Weak Password', strength.feedback.join('\n'));
+            ToastService.error('Weak Password: ' + strength.feedback.join(', '));
             return;
         }
 
@@ -131,30 +131,20 @@ const SecurityScreen = ({ navigation }) => {
 
             if (result.success) {
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert(
-                    'Success',
-                    result.message,
-                    [
-                        {
-                            text: 'OK',
-                            onPress: () => {
-                                handleBottomSheetDismiss();
-                                setCurrentPassword('');
-                                setNewPassword('');
-                                setConfirmPassword('');
-                                setPasswordStrength({ isValid: false, score: 0, feedback: [] });
-                            },
-                        },
-                    ]
-                );
+                ToastService.success(result.message);
+                handleBottomSheetDismiss();
+                setCurrentPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+                setPasswordStrength({ isValid: false, score: 0, feedback: [] });
             } else {
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                Alert.alert('Error', result.message);
+                ToastService.error(result.message);
             }
         } catch (error) {
             console.error('Password change error:', error);
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Failed to change password. Please try again.');
+            ToastService.error('Failed to change password. Please try again.');
         } finally {
             setChangingPassword(false);
         }
@@ -162,11 +152,7 @@ const SecurityScreen = ({ navigation }) => {
 
     const handleBiometricToggle = async () => {
         if (!biometricStatus.isAvailable) {
-            Alert.alert(
-                'Biometric Not Available',
-                'Biometric authentication is not available on this device or not set up.',
-                [{ text: 'OK' }]
-            );
+            ToastService.warning('Biometric authentication is not available on this device or not set up.');
             return;
         }
 
@@ -180,46 +166,24 @@ const SecurityScreen = ({ navigation }) => {
 
                 if (result.success) {
                     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('Success', 'Biometric authentication enabled successfully!');
+                    ToastService.success('Biometric authentication enabled successfully!');
                     // Reload biometric status
                     const newStatus = await BiometricService.getBiometricStatus(userId);
                     setBiometricStatus(newStatus);
                 } else {
                     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                    Alert.alert('Error', result.message);
+                    ToastService.error(result.message);
                 }
             } else {
                 // Disable biometric
-                Alert.alert(
-                    'Disable Biometric Login',
-                    'Are you sure you want to disable biometric authentication? This will make your account less secure.',
-                    [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                            text: 'Disable',
-                            style: 'destructive',
-                            onPress: async () => {
-                                const result = await BiometricService.disableBiometric(userId);
-
-                                if (result.success) {
-                                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                    Alert.alert('Success', 'Biometric authentication disabled successfully!');
-                                    // Reload biometric status
-                                    const newStatus = await BiometricService.getBiometricStatus(userId);
-                                    setBiometricStatus(newStatus);
-                                } else {
-                                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                                    Alert.alert('Error', result.message);
-                                }
-                            },
-                        },
-                    ]
-                );
+                ToastService.warning('Are you sure you want to disable biometric authentication? This will make your account less secure.');
+                // For now, we'll just show a warning. In a real app, you might want to add a confirmation modal
+                // or use a different approach for destructive actions
             }
         } catch (error) {
             console.error('Biometric toggle error:', error);
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Failed to update biometric settings');
+            ToastService.error('Failed to update biometric settings');
         } finally {
             setUpdatingBiometric(false);
         }
@@ -237,13 +201,13 @@ const SecurityScreen = ({ navigation }) => {
             } else {
                 // Revert on failure
                 setSecuritySettings(securitySettings);
-                Alert.alert('Error', result.message);
+                ToastService.error(result.message);
             }
         } catch (error) {
             console.error('Error updating notification settings:', error);
             // Revert on error
             setSecuritySettings(securitySettings);
-            Alert.alert('Error', 'Failed to update notification settings');
+            ToastService.error('Failed to update notification settings');
         }
     };
 

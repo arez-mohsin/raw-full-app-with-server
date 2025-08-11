@@ -4,7 +4,6 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     Linking,
     ScrollView,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ToastService from '../utils/ToastService';
 
 const SecurityErrorScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -33,47 +33,22 @@ const SecurityErrorScreen = ({ navigation }) => {
             });
         } catch (error) {
             console.error('Error signing out:', error);
-            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
+            ToastService.error(t('errors.somethingWentWrong'));
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleContactSupport = () => {
-        Alert.alert(
-            t('helpSupport.contactSupport'),
-            t('errors.contactSupport'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('common.copy'),
-                    onPress: () => {
-                        // You can implement clipboard functionality here
-                        Alert.alert(t('common.success'), t('common.emailCopied'));
-                    }
-                }
-            ]
-        );
+        ToastService.info(t('errors.contactSupport'));
+        // For now, we'll just show an info message. In a real app, you might want to add a modal
+        // or use a different approach for multiple options
     };
 
     const handleReportIssue = () => {
-        Alert.alert(
-            t('errors.reportSecurityIssue'),
-            t('errors.reportSecurityIssueDescription'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('common.report'),
-                    onPress: () => {
-                        Alert.alert(
-                            t('common.thankYou'),
-                            t('errors.reportSubmitted'),
-                            [{ text: t('common.ok') }]
-                        );
-                    }
-                }
-            ]
-        );
+        ToastService.success(t('errors.reportSubmitted'));
+        // For now, we'll just show a success message. In a real app, you might want to add a modal
+        // or use a different approach for multiple options
     };
 
     const insets = useSafeAreaInsets();

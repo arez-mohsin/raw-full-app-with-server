@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
-    Alert,
     Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +16,7 @@ import { auth, db } from '../firebase';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { LinearGradient } from 'expo-linear-gradient';
+import ToastService from '../utils/ToastService';
 
 const ActivityListScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -63,7 +63,7 @@ const ActivityListScreen = ({ navigation }) => {
             setActivities(activitiesList);
         } catch (error) {
             console.error("Error loading activities:", error);
-            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
+            ToastService.error(t('errors.somethingWentWrong'));
         } finally {
             setLoading(false);
         }

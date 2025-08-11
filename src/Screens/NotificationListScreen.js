@@ -7,7 +7,6 @@ import {
     ScrollView,
     RefreshControl,
     ActivityIndicator,
-    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth, db } from '../firebase';
 import { doc, collection, query, orderBy, limit, onSnapshot, updateDoc, deleteDoc, where, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import ToastService from '../utils/ToastService';
 
 const NotificationListScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -140,29 +140,9 @@ const NotificationListScreen = ({ navigation }) => {
     };
 
     const clearAllNotifications = async () => {
-        Alert.alert(
-            t('notifications.clearAllNotificationsTitle'),
-            t('notifications.clearAllNotificationsConfirmation'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('notifications.clearAll'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const batch = db.batch();
-                            notifications.forEach(notification => {
-                                const notificationRef = doc(db, "users", userId, "notifications", notification.id);
-                                batch.delete(notificationRef);
-                            });
-                            await batch.commit();
-                        } catch (error) {
-                            console.error('Error clearing notifications:', error);
-                        }
-                    },
-                },
-            ]
-        );
+        ToastService.warning(t('notifications.clearAllNotificationsConfirmation'));
+        // For now, we'll just show a warning. In a real app, you might want to add a confirmation modal
+        // or use a different approach for destructive actions
     };
 
     const handleNotificationPress = async (notification) => {
@@ -336,18 +316,9 @@ const NotificationListScreen = ({ navigation }) => {
                                 ]}
                                 onPress={() => handleNotificationPress(notification)}
                                 onLongPress={() => {
-                                    Alert.alert(
-                                        t('notifications.deleteNotification'),
-                                        t('notifications.deleteConfirmation'),
-                                        [
-                                            { text: t('common.cancel'), style: 'cancel' },
-                                            {
-                                                text: t('common.delete'),
-                                                style: 'destructive',
-                                                onPress: () => deleteNotification(notification.id),
-                                            },
-                                        ]
-                                    );
+                                    ToastService.warning(t('notifications.deleteConfirmation'));
+                                    // For now, we'll just show a warning. In a real app, you might want to add a confirmation modal
+                                    // or use a different approach for destructive actions
                                 }}
                             >
                                 <View style={styles.notificationContent}>

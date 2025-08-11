@@ -5,7 +5,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    Alert,
     Linking,
     ScrollView,
     AppState,
@@ -19,6 +18,7 @@ import { sendEmailVerification, onAuthStateChanged } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import * as Haptics from 'expo-haptics';
 import ErrorHandler from '../utils/ErrorHandler';
+import ToastService from '../utils/ToastService';
 
 const EmailVerificationScreen = ({ navigation, route }) => {
     const { theme } = useTheme();
@@ -107,17 +107,9 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                     // Update user document in Firestore
                     await updateUserEmailVerified(currentUser.uid);
 
-                    // Show success message but let user choose to continue
-                    Alert.alert(
-                        'Email Verified!',
-                        'Your email has been successfully verified. You can continue to the app now.',
-                        [
-                            {
-                                text: 'Continue',
-                                onPress: () => navigation.replace('Main')
-                            }
-                        ]
-                    );
+                    // Show success message and navigate after a delay
+                    ToastService.success('Your email has been successfully verified. You can continue to the app now.');
+                    setTimeout(() => navigation.replace('Main'), 2000);
                 } else {
                     // Send verification email automatically when screen loads
                     try {
@@ -130,29 +122,13 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                         // Handle specific Firebase errors
                         if (error.code === 'auth/too-many-requests') {
                             setCountdown(60); // Set cooldown even on error
-                            Alert.alert(
-                                'Too Many Requests',
-                                'Please wait a moment before requesting another verification email.',
-                                [{ text: 'OK' }]
-                            );
+                            ToastService.warning('Please wait a moment before requesting another verification email.');
                         } else if (error.code === 'auth/user-not-found') {
-                            Alert.alert(
-                                'User Not Found',
-                                'Please log in again to verify your account.',
-                                [{ text: 'OK' }]
-                            );
+                            ToastService.error('Please log in again to verify your account.');
                         } else if (error.code === 'auth/network-request-failed') {
-                            Alert.alert(
-                                'Network Error',
-                                'Please check your internet connection and try again.',
-                                [{ text: 'OK' }]
-                            );
+                            ToastService.error('Please check your internet connection and try again.');
                         } else {
-                            Alert.alert(
-                                'Error',
-                                'Failed to send verification email. Please try again later.',
-                                [{ text: 'OK' }]
-                            );
+                            ToastService.error('Failed to send verification email. Please try again later.');
                         }
                     }
                 }
@@ -176,62 +152,38 @@ const EmailVerificationScreen = ({ navigation, route }) => {
             setCountdown(60); // 60 second cooldown
             setRetryCount(0); // Reset retry count on success
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert(
-                'Verification Email Sent',
-                'Please check your email and click the verification link.',
-                [{ text: 'OK' }]
-            );
+            ToastService.success('Please check your email and click the verification link.');
         } catch (error) {
             console.error('Error sending verification email:', error);
 
             // Handle specific Firebase errors
             if (error.code === 'auth/too-many-requests') {
                 setCountdown(60); // Set cooldown even on error
-                Alert.alert(
-                    'Too Many Requests',
-                    'Please wait a moment before requesting another verification email. You can try again in 60 seconds.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.warning('Please wait a moment before requesting another verification email. You can try again in 60 seconds.');
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             } else if (error.code === 'auth/user-not-found') {
-                Alert.alert(
-                    'User Not Found',
-                    'Please log in again to verify your account.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.error('Please log in again to verify your account.');
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             } else if (error.code === 'auth/network-request-failed') {
                 setLastError(error.code);
                 setRetryCount(prev => prev + 1);
 
                 if (retryCount < 3) {
-                    Alert.alert(
-                        'Network Error',
-                        `Connection failed. Retrying... (${retryCount + 1}/3)`,
-                        [{ text: 'OK' }]
-                    );
+                    ToastService.warning(`Connection failed. Retrying... (${retryCount + 1}/3)`);
                     // Auto-retry after 2 seconds
                     setTimeout(() => {
                         sendVerificationEmail();
                     }, 2000);
                 } else {
-                    Alert.alert(
-                        'Network Error',
-                        'Please check your internet connection and try again.',
-                        [{ text: 'OK' }]
-                    );
+                    ToastService.error('Please check your internet connection and try again.');
                 }
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             } else if (error.code === 'auth/invalid-user') {
-                Alert.alert(
-                    'Invalid User',
-                    'Please log in again to verify your account.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.error('Please log in again to verify your account.');
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             } else {
                 const errorMessage = ErrorHandler.getErrorMessage(error);
-                Alert.alert('Error', errorMessage);
+                ToastService.error(errorMessage);
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             }
         } finally {
@@ -254,11 +206,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
             // If not verified after check, show alert
             if (!isVerified) {
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                Alert.alert(
-                    'Not Verified Yet',
-                    'Please check your email and click the verification link, then try again.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.warning('Please check your email and click the verification link, then try again.');
             } else {
                 // If verified, update Firestore (this will be handled in checkVerificationStatus)
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -268,29 +216,13 @@ const EmailVerificationScreen = ({ navigation, route }) => {
 
             // Handle specific errors
             if (error.code === 'auth/network-request-failed') {
-                Alert.alert(
-                    'Network Error',
-                    'Please check your internet connection and try again.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.error('Please check your internet connection and try again.');
             } else if (error.code === 'auth/user-not-found') {
-                Alert.alert(
-                    'User Not Found',
-                    'Please log in again to verify your account.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.error('Please log in again to verify your account.');
             } else if (error.code === 'auth/too-many-requests') {
-                Alert.alert(
-                    'Too Many Requests',
-                    'Please wait a moment before checking again.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.warning('Please wait a moment before checking again.');
             } else {
-                Alert.alert(
-                    'Error',
-                    'Failed to check verification status. Please try again.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.error('Failed to check verification status. Please try again.');
             }
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
@@ -301,13 +233,9 @@ const EmailVerificationScreen = ({ navigation, route }) => {
     // Handle back navigation
     const handleBackPress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Alert.alert(
-            t('emailVerification.emailVerificationRequired'),
-            t('emailVerification.mustVerifyEmail'),
-            [
-                { text: t('common.ok'), style: 'default' }
-            ]
-        );
+        ToastService.warning(t('emailVerification.mustVerifyEmail'));
+        // For now, we'll just show a warning. In a real app, you might want to add a confirmation modal
+        // or use a different approach for destructive actions
     };
 
     return (

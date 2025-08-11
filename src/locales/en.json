@@ -686,7 +686,7 @@
     "instagram": "Instagram",
     "linkedin": "LinkedIn"
   },
-   "errors": {
+  "errors": {
     "firebase": {
       "userNotFound": "No account found with this email address",
       "wrongPassword": "Incorrect password. Please try again",

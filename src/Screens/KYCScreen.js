@@ -8,12 +8,12 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
-    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import ToastService from '../utils/ToastService';
 
 const KYCScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -49,15 +49,9 @@ const KYCScreen = ({ navigation }) => {
     };
 
     const handleImageUpload = (type) => {
-        Alert.alert(
-            t('kyc.uploadDocument'),
-            t('kyc.chooseUploadMethod'),
-            [
-                { text: t('kyc.camera'), onPress: () => console.log('Camera pressed') },
-                { text: t('kyc.gallery'), onPress: () => console.log('Gallery pressed') },
-                { text: t('kyc.cancel'), style: 'cancel' },
-            ]
-        );
+        ToastService.info(t('kyc.uploadDocument'));
+        // For now, we'll just show an info message. In a real app, you might want to add a modal
+        // or use a different approach for multiple options
     };
 
     const nextStep = () => {
@@ -71,11 +65,10 @@ const KYCScreen = ({ navigation }) => {
     const submitKYC = async () => {
         try {
             await new Promise(resolve => setTimeout(resolve, 2000));
-            Alert.alert(t('kyc.kycSubmitted'), t('kyc.verificationRequestSubmitted'), [
-                { text: t('kyc.ok'), onPress: () => navigation.replace('Main') },
-            ]);
+            ToastService.success(t('kyc.verificationRequestSubmitted'));
+            setTimeout(() => navigation.replace('Main'), 1500);
         } catch (error) {
-            Alert.alert(t('kyc.error'), t('kyc.failedToSubmitKyc'));
+            ToastService.error(t('kyc.failedToSubmitKyc'));
         }
     };
 

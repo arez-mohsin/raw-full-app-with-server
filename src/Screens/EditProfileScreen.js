@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
-    Alert,
     ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import ToastService from '../utils/ToastService';
 
 const EditProfileScreen = ({ navigation }) => {
     const { t } = useTranslation();
@@ -64,7 +64,7 @@ const EditProfileScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Error loading profile:', error);
-            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
+            ToastService.error(t('errors.somethingWentWrong'));
         } finally {
             setIsLoading(false);
         }
@@ -75,24 +75,20 @@ const EditProfileScreen = ({ navigation }) => {
     };
 
     const handleAvatarChange = () => {
-        Alert.alert(
-            t('profile.profilePicture'),
-            t('profile.profilePicture'),
-            [{ text: t('common.ok') }]
-        );
+        ToastService.info(t('profile.profilePicture'));
     };
 
     const validateProfile = () => {
         if (!profile.username.trim()) {
-            Alert.alert(t('common.error'), t('validation.required'));
+            ToastService.error(t('validation.required'));
             return false;
         }
         if (!profile.firstName.trim()) {
-            Alert.alert(t('common.error'), t('validation.required'));
+            ToastService.error(t('validation.required'));
             return false;
         }
         if (!profile.lastName.trim()) {
-            Alert.alert(t('common.error'), t('validation.required'));
+            ToastService.error(t('validation.required'));
             return false;
         }
         return true;
@@ -104,7 +100,7 @@ const EditProfileScreen = ({ navigation }) => {
         setIsSaving(true);
         try {
             if (!userId) {
-                Alert.alert(t('common.error'), t('errors.authenticationError'));
+                ToastService.error(t('errors.authenticationError'));
                 return;
             }
 
@@ -119,14 +115,11 @@ const EditProfileScreen = ({ navigation }) => {
                 updatedAt: new Date(),
             });
 
-            Alert.alert(
-                t('common.success'),
-                t('profile.profileUpdated'),
-                [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
-            );
+            ToastService.success(t('profile.profileUpdated'));
+            setTimeout(() => navigation.goBack(), 1500);
         } catch (error) {
             console.error('Error updating profile:', error);
-            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
+            ToastService.error(t('errors.somethingWentWrong'));
         } finally {
             setIsSaving(false);
         }

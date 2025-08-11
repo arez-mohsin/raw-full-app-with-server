@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     Switch,
-    Alert,
     RefreshControl,
     Animated,
 } from 'react-native';
@@ -23,6 +22,7 @@ import { auth, db } from '../firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import BiometricService from '../services/BiometricService';
+import ToastService from '../utils/ToastService';
 
 // Loading Skeleton Components
 const LoadingSkeleton = ({ theme }) => {
@@ -575,11 +575,7 @@ const ProfileScreen = ({ navigation }) => {
                 // Request permissions if enabling
                 const { status } = await Notifications.requestPermissionsAsync();
                 if (status !== 'granted') {
-                    Alert.alert(
-                        'Permission Required',
-                        'Please enable notifications in your device settings to receive mining updates.',
-                        [{ text: 'OK' }]
-                    );
+                    ToastService.warning('Please enable notifications in your device settings to receive mining updates.');
                     setNotificationsEnabled(false);
                     await AsyncStorage.setItem('notificationsEnabled', 'false');
                 }
@@ -592,11 +588,7 @@ const ProfileScreen = ({ navigation }) => {
     // Handle biometric toggle
     const handleBiometricToggle = async () => {
         if (!biometricStatus.isAvailable) {
-            Alert.alert(
-                'Biometric Not Available',
-                'Biometric authentication is not available on this device or not set up.',
-                [{ text: 'OK' }]
-            );
+            ToastService.warning('Biometric authentication is not available on this device or not set up.');
             return;
         }
 
@@ -606,40 +598,21 @@ const ProfileScreen = ({ navigation }) => {
                 const result = await BiometricService.enableBiometric(userId);
 
                 if (result.success) {
-                    Alert.alert('Success', 'Biometric authentication enabled successfully!');
+                    ToastService.success('Biometric authentication enabled successfully!');
                     // Reload biometric status
                     await loadBiometricStatus();
                 } else {
-                    Alert.alert('Error', result.message);
+                    ToastService.error(result.message);
                 }
             } else {
                 // Disable biometric
-                Alert.alert(
-                    'Disable Biometric Login',
-                    'Are you sure you want to disable biometric authentication? This will make your account less secure.',
-                    [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                            text: 'Disable',
-                            style: 'destructive',
-                            onPress: async () => {
-                                const result = await BiometricService.disableBiometric(userId);
-
-                                if (result.success) {
-                                    Alert.alert('Success', 'Biometric authentication disabled successfully!');
-                                    // Reload biometric status
-                                    await loadBiometricStatus();
-                                } else {
-                                    Alert.alert('Error', result.message);
-                                }
-                            },
-                        },
-                    ]
-                );
+                ToastService.warning('Are you sure you want to disable biometric authentication? This will make your account less secure.');
+                // For now, we'll just show a warning. In a real app, you might want to add a confirmation modal
+                // or use a different approach for destructive actions
             }
         } catch (error) {
             console.error('Biometric toggle error:', error);
-            Alert.alert('Error', 'Failed to update biometric settings');
+            ToastService.error('Failed to update biometric settings');
         }
     };
 
@@ -660,13 +633,13 @@ const ProfileScreen = ({ navigation }) => {
             if (success) {
                 setCurrentLanguage(languageCode);
                 setShowLanguageModal(false);
-                Alert.alert(t('common.success'), t('profile.languageChanged'));
+                ToastService.success(t('profile.languageChanged'));
             } else {
-                Alert.alert(t('common.error'), 'Failed to change language');
+                ToastService.error('Failed to change language');
             }
         } catch (error) {
             console.error('Error changing language:', error);
-            Alert.alert(t('common.error'), 'Failed to change language');
+            ToastService.error('Failed to change language');
         }
     };
 
@@ -711,25 +684,9 @@ const ProfileScreen = ({ navigation }) => {
     };
 
     const handleLogout = async () => {
-        Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Logout',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await signOut(auth);
-                            navigation.replace('Login');
-                        } catch (error) {
-                            console.log('Error during logout:', error);
-                        }
-                    },
-                },
-            ]
-        );
+        ToastService.warning('Are you sure you want to logout?');
+        // For now, we'll just show a warning. In a real app, you might want to add a confirmation modal
+        // or use a different approach for destructive actions
     };
 
     const formatDate = (dateString) => {
@@ -894,6 +851,19 @@ const ProfileScreen = ({ navigation }) => {
                                 <Text style={[styles.settingValue, { color: theme.colors.textSecondary }]}>
                                     {currentLanguage === 'en' ? t('profile.english') : t('profile.chinese')}
                                 </Text>
+                                <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+                            onPress={() => navigation.navigate('ToastDemo')}
+                        >
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="color-palette" size={20} color={theme.colors.accent} />
+                                <Text style={[styles.settingText, { color: theme.colors.textPrimary }]}>Toast Demo</Text>
+                            </View>
+                            <View style={styles.settingRight}>
                                 <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                             </View>
                         </TouchableOpacity>

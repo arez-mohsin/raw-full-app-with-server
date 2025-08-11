@@ -5,6 +5,7 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import zh from './locales/zh.json';
 import hi from './locales/hi.json';
+import es from './locales/es.json';
 
 // Safe import of ExpoLocalization with fallback
 let deviceLocale = 'en';
@@ -25,6 +26,9 @@ const resources = {
     },
     hi: {
         translation: hi,
+    },
+    es: {
+        translation: es,
     }
 };
 
@@ -66,7 +70,8 @@ export const getAvailableLanguages = () => {
     return [
         { code: 'en', name: 'English', nativeName: 'English' },
         { code: 'zh', name: 'Chinese', nativeName: '中文' },
-        { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' }
+        { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
+        { code: 'es', name: 'Spanish', nativeName: 'Español' }
     ];
 };
 

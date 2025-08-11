@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     RefreshControl,
-    Alert,
     Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { auth, db } from '../firebase';
 import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import ActivityLogger from '../utils/ActivityLogger.js';
+import ToastService from '../utils/ToastService';
 
 const TasksScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -193,7 +193,7 @@ const TasksScreen = ({ navigation }) => {
     const handleTaskComplete = async (task) => {
         try {
             if (completedTasks[task.id]) {
-                Alert.alert('Task Already Completed', 'You have already completed this task today.');
+                ToastService.warning('You have already completed this task today.');
                 return;
             }
 
@@ -203,34 +203,18 @@ const TasksScreen = ({ navigation }) => {
                 if (supported) {
                     await Linking.openURL(task.url);
 
-                    Alert.alert(
-                        'Task Started',
-                        `Please complete the action on ${task.title} and then tap "Mark as Complete"`,
-                        [
-                            { text: 'Cancel', style: 'cancel' },
-                            {
-                                text: 'Mark as Complete',
-                                onPress: () => completeTask(task)
-                            }
-                        ]
-                    );
+                    ToastService.info(`Please complete the action on ${task.title} and then tap "Mark as Complete"`);
+                    // For now, we'll just show an info message. In a real app, you might want to add a modal
+                    // or use a different approach for multiple options
                 } else {
-                    Alert.alert('Error', 'Cannot open this link. Please try again.');
+                    ToastService.error('Cannot open this link. Please try again.');
                 }
             } else if (task.type === 'action') {
                 // For action tasks like share
                 if (task.id === 'share_app') {
-                    Alert.alert(
-                        'Share App',
-                        'Please share the app with your friends and then tap "Mark as Complete"',
-                        [
-                            { text: 'Cancel', style: 'cancel' },
-                            {
-                                text: 'Mark as Complete',
-                                onPress: () => completeTask(task)
-                            }
-                        ]
-                    );
+                    ToastService.info('Please share the app with your friends and then tap "Mark as Complete"');
+                    // For now, we'll just show an info message. In a real app, you might want to add a modal
+                    // or use a different approach for multiple options
                 }
             } else {
                 // For daily tasks
@@ -238,7 +222,7 @@ const TasksScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Error handling task:', error);
-            Alert.alert('Error', 'Failed to process task. Please try again.');
+            ToastService.error('Failed to process task. Please try again.');
         }
     };
 
@@ -287,15 +271,11 @@ const TasksScreen = ({ navigation }) => {
             const leveledUp = newLevel > userLevel;
             const levelUpMessage = leveledUp ? `\n🎉 LEVEL UP! You reached Level ${newLevel}!` : '';
 
-            Alert.alert(
-                'Task Completed! 🎉',
-                `${t('common.taskCompletedReward')}${task.reward}${t('common.taskCompletedXp')}${task.xp}${levelUpMessage}\n${t('common.newBalance')}${newBalance.toFixed(3)}${t('common.totalExperience')}${newExperience}`,
-                [{ text: 'OK' }]
-            );
+            ToastService.success(`${t('common.taskCompletedReward')}${task.reward}${t('common.taskCompletedXp')}${task.xp}${levelUpMessage}\n${t('common.newBalance')}${newBalance.toFixed(3)}${t('common.totalExperience')}${newExperience}`);
 
         } catch (error) {
             console.error('Error completing task:', error);
-            Alert.alert('Error', 'Failed to complete task. Please try again.');
+            ToastService.error('Failed to complete task. Please try again.');
         }
     };
 

@@ -8,7 +8,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +27,7 @@ import * as Network from 'expo-network';
 import * as Location from 'expo-location';
 import * as Constants from 'expo-constants';
 import * as Application from 'expo-application';
+import ToastService from '../utils/ToastService';
 
 const LoginScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -313,7 +313,7 @@ const LoginScreen = ({ navigation }) => {
     // Handle biometric login
     const handleBiometricLogin = async () => {
         if (!biometricAvailable || !lastLoginEmail) {
-            Alert.alert('Biometric Login', 'Biometric login is not available. Please log in with your password first.');
+            ToastService.warning('Biometric login is not available. Please log in with your password first.');
             return;
         }
 

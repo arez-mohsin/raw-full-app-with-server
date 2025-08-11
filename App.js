@@ -18,6 +18,8 @@ import { AppState } from 'react-native';
 import adMobService from './src/services/AdMobService';
 import BannerAd from './src/components/BannerAd';
 import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from './src/config/toastConfig';
 
 // Import i18n configuration
 import './src/i18n';
@@ -48,6 +50,7 @@ import TasksScreen from "./src/Screens/TasksScreen";
 import LeaderboardScreen from "./src/Screens/LeaderboardScreen";
 import NetworkErrorScreen from "./src/Screens/NetworkErrorScreen";
 import SecurityErrorScreen from "./src/Screens/SecurityErrorScreen";
+import ToastDemo from "./src/components/ToastDemo";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -316,7 +319,9 @@ function AppContent() {
         <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
         <Stack.Screen name="NetworkError" component={NetworkErrorScreen} />
         <Stack.Screen name="SecurityError" component={SecurityErrorScreen} />
+        <Stack.Screen name="ToastDemo" component={ToastDemo} />
       </Stack.Navigator>
+      <Toast />
     </NavigationContainer>
   );
 }

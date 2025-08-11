@@ -240,7 +240,7 @@ class NotificationService {
     static getNotificationTemplates() {
         return {
             welcome: {
-                title: 'Welcome to CryptoMiner! 🎉',
+                title: 'Welcome to RAW CHAIN! 🎉',
                 message: 'Start mining and earn coins! Complete the tutorial to get started.',
                 type: 'welcome',
             },

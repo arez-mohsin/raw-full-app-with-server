@@ -5,7 +5,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Alert,
     Animated,
     Dimensions,
 } from 'react-native';
@@ -19,6 +18,7 @@ import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import ActivityLogger from '../utils/ActivityLogger';
+import ToastService from '../utils/ToastService';
 
 const { width } = Dimensions.get('window');
 
@@ -154,7 +154,7 @@ const UpgradeScreen = () => {
             const cost = upgradeCosts[type];
 
             if (balance < cost) {
-                Alert.alert('Insufficient Balance', `You need ${cost} coins to purchase this upgrade.`);
+                ToastService.error(`You need ${cost} coins to purchase this upgrade.`);
                 return;
             }
 
@@ -171,13 +171,13 @@ const UpgradeScreen = () => {
                 [type]: prev[type] + 1,
             }));
 
-            Alert.alert('Upgrade Successful!', `${type.charAt(0).toUpperCase() + type.slice(1)} upgrade purchased!`);
+            ToastService.success(`${type.charAt(0).toUpperCase() + type.slice(1)} upgrade purchased!`);
 
             // Log upgrade purchase activity
             await ActivityLogger.logUpgradePurchase(userId, type, cost, upgrades[type] + 1);
         } catch (error) {
             console.error('Purchase error:', error);
-            Alert.alert('Error', 'Failed to purchase upgrade. Please try again.');
+            ToastService.error('Failed to purchase upgrade. Please try again.');
         } finally {
             setPurchaseLoading(prev => ({ ...prev, [type]: false }));
         }
@@ -193,12 +193,12 @@ const UpgradeScreen = () => {
             const cost = boost.cost;
 
             if (balance < cost) {
-                Alert.alert('Insufficient Balance', `You need ${cost} coins to purchase this lifetime boost.`);
+                ToastService.error(`You need ${cost} coins to purchase this lifetime boost.`);
                 return;
             }
 
             if (boost.purchased) {
-                Alert.alert('Already Purchased', 'You already own this lifetime boost!');
+                ToastService.warning('You already own this lifetime boost!');
                 return;
             }
 
@@ -218,13 +218,13 @@ const UpgradeScreen = () => {
                 },
             }));
 
-            Alert.alert('Lifetime Boost Purchased!', `${boostType.toUpperCase()} boost is now yours forever!`);
+            ToastService.success(`${boostType.toUpperCase()} boost is now yours forever!`);
 
             // Log boost purchase activity
             await ActivityLogger.logBoostActivation(userId, boostType, cost, `Lifetime ${boostType.toUpperCase()}`);
         } catch (error) {
             console.error('Boost purchase error:', error);
-            Alert.alert('Error', 'Failed to purchase boost. Please try again.');
+            ToastService.error('Failed to purchase boost. Please try again.');
         } finally {
             setPurchaseLoading(prev => ({ ...prev, [boostType]: false }));
         }

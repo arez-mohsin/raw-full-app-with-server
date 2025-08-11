@@ -5,7 +5,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Alert,
     Share,
     Clipboard,
     ActivityIndicator,
@@ -22,6 +21,7 @@ import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSn
 import { onAuthStateChanged } from 'firebase/auth';
 import ActivityLogger from '../utils/ActivityLogger';
 import NotificationService from '../utils/NotificationService';
+import ToastService from '../utils/ToastService';
 
 // Loading Skeleton Components
 const LoadingSkeleton = ({ theme }) => {
@@ -641,11 +641,7 @@ const InviteScreen = ({ navigation }) => {
             await Clipboard.setString(inviteCode);
             setCopied(true);
 
-            Alert.alert(
-                'Copied!',
-                'Invite code copied to clipboard',
-                [{ text: 'OK' }]
-            );
+            ToastService.success('Invite code copied to clipboard');
 
             setTimeout(() => setCopied(false), 2000);
         } catch (error) {

@@ -209,14 +209,14 @@ const AboutScreen = ({ navigation }) => {
                 <View style={styles.section}>
                     <View style={styles.legalNotice}>
                         <Text style={styles.legalNoticeText}>
-                            CryptoMiner is a simulation app for educational purposes only. No real cryptocurrency mining or financial transactions occur within this application. Always do your own research before investing in cryptocurrency.
+                            RAW is a simulation app for educational purposes only. No real cryptocurrency mining or financial transactions occur within this application. Always do your own research before investing in cryptocurrency.
                         </Text>
                     </View>
                 </View>
 
                 <View style={styles.copyrightSection}>
                     <Text style={styles.copyrightText}>
-                        © 2024 CryptoMiner. All rights reserved.
+                        © 2024 RAW. All rights reserved.
                     </Text>
                 </View>
             </ScrollView>

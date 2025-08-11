@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     RefreshControl,
-    Alert,
     AppState,
     Platform,
     Animated,
@@ -31,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import adMobService from '../services/AdMobService';
+import ToastService from '../utils/ToastService';
 
 const MAX_SESSION_SECONDS = 7200; // 2 hours
 const SESSION_UPDATE_INTERVAL = 300000; // 5 minutes
@@ -622,21 +622,9 @@ const HomeScreen = ({ navigation }) => {
 
             if (data.type === 'mining_complete' && data.action === 'start_new_session') {
                 // User tapped the notification to start a new mining session
-                Alert.alert(
-                    'Start New Mining Session?',
-                    'Would you like to start a new 2-hour mining session?',
-                    [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                            text: 'Start Mining',
-                            onPress: () => {
-                                if (!isMining) {
-                                    startMining();
-                                }
-                            }
-                        },
-                    ]
-                );
+                ToastService.info('Would you like to start a new 2-hour mining session?');
+                // For now, we'll just show an info message. In a real app, you might want to add a modal
+                // or use a different approach for multiple options
             }
         });
 
@@ -1106,7 +1094,7 @@ const HomeScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error("Error initializing user:", error);
-            Alert.alert("Error", "Failed to initialize user data. Please try again.");
+            ToastService.error("Failed to initialize user data. Please try again.");
         }
     };
 
@@ -1250,21 +1238,7 @@ const HomeScreen = ({ navigation }) => {
                 // Send mining finish notification
                 // await NotificationService.sendMiningCompleteNotification(userId, response.earnings || 0);
 
-                Alert.alert(
-                    'Mining Session Complete! ⛏️',
-                    `Your 2-hour mining session has finished!\n\nEarned: ${formatCoinBalance(response.earnings || 0)} coins\n\nTap "Start Mining" to begin a new session!`,
-                    [
-                        { text: 'OK' },
-                        {
-                            text: 'Start New Session',
-                            onPress: () => {
-                                if (!isMining) {
-                                    startMining();
-                                }
-                            }
-                        }
-                    ]
-                );
+                ToastService.success(`Your 2-hour mining session has finished! Earned: ${formatCoinBalance(response.earnings || 0)} coins. Tap "Start Mining" to begin a new session!`);
             }
         } catch (error) {
             console.error('Check mining session error:', error);
@@ -1314,19 +1288,19 @@ const HomeScreen = ({ navigation }) => {
 
             // Anti-cheat: Validate session integrity
             if (!validateSessionIntegrity()) {
-                Alert.alert('Security Error', 'Session integrity check failed. Please restart the app.');
+                ToastService.error('Session integrity check failed. Please restart the app.');
                 return;
             }
 
             // Anti-cheat: Validate device fingerprint
             if (!(await validateDeviceFingerprint())) {
-                Alert.alert('Security Error', 'Device validation failed. Please restart the app.');
+                ToastService.error('Device validation failed. Please restart the app.');
                 return;
             }
 
             // Anti-cheat: Check for suspicious activity
             if (suspiciousActivityCount >= ANTI_CHEAT_CONFIG.SUSPICIOUS_ACTIVITY_THRESHOLD) {
-                Alert.alert('Security Error', 'Suspicious activity detected. Account temporarily suspended.');
+                ToastService.error('Suspicious activity detected. Account temporarily suspended.');
                 return;
             }
 
@@ -1371,16 +1345,12 @@ const HomeScreen = ({ navigation }) => {
 
                 console.log('Mining started successfully! Session will run for 2 hours.');
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert(
-                    'Mining Started! ⛏️',
-                    'Your 2-hour mining session has begun! You\'ll receive a notification when it completes.',
-                    [{ text: 'OK' }]
-                );
+                ToastService.success('Your 2-hour mining session has begun! You\'ll receive a notification when it completes.');
             }
         } catch (error) {
             console.error('Start mining error:', error);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', error.message || 'Failed to start mining');
+            ToastService.error(error.message || 'Failed to start mining');
         } finally {
             setLoading(false);
         }

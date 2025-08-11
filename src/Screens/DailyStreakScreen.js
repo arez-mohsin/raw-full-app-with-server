@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Alert,
     ActivityIndicator,
     ScrollView,
 } from 'react-native';
@@ -19,6 +18,7 @@ import ActivityLogger from '../utils/ActivityLogger';
 import NotificationService from '../utils/NotificationService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import adMobService from '../services/AdMobService';
+import ToastService from '../utils/ToastService';
 
 const DailyStreakScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -183,7 +183,7 @@ const DailyStreakScreen = ({ navigation }) => {
                     reward = getRewardForDay(1);
                 } else if (daysDifference === 0) {
                     // Already claimed today
-                    Alert.alert('Already Claimed', 'You have already claimed your daily reward today!');
+                    ToastService.warning('You have already claimed your daily reward today!');
                     return;
                 }
             }
@@ -220,15 +220,11 @@ const DailyStreakScreen = ({ navigation }) => {
             // Send streak claim notification
             await NotificationService.sendStreakClaimedNotification(user.uid, newStreak, reward);
 
-            Alert.alert(
-                t('streak.dailyRewardClaimed'),
-                t('streak.youEarnedCoins', { reward, bonusCoins, newStreak, totalEarned }),
-                [{ text: t('common.awesome') }]
-            );
+            ToastService.success(t('streak.youEarnedCoins', { reward, bonusCoins, newStreak, totalEarned }));
 
         } catch (error) {
             console.error('Error claiming daily reward:', error);
-            Alert.alert(t('common.error'), t('streak.failedToClaimDailyReward'));
+            ToastService.error(t('streak.failedToClaimDailyReward'));
         } finally {
             setClaiming(false);
         }

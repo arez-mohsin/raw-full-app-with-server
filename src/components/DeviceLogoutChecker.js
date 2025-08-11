@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Alert } from 'react-native';
+import ToastService from '../utils/ToastService';
 import { useTranslation } from 'react-i18next';
 import SecurityService from '../services/SecurityService';
 
@@ -12,20 +12,12 @@ const DeviceLogoutChecker = ({ navigation }) => {
                 const shouldLogout = await SecurityService.shouldLogoutCurrentDevice();
 
                 if (shouldLogout) {
-                    Alert.alert(
-                        t('errors.securityError'),
-                        t('errors.passwordChangedFromAnotherDevice'),
-                        [
-                            {
-                                text: t('common.ok'),
-                                onPress: async () => {
-                                    await SecurityService.logoutCurrentDevice();
-                                    // Navigation will be handled by the auth state change
-                                },
-                            },
-                        ],
-                        { cancelable: false }
-                    );
+                    ToastService.error(t('errors.passwordChangedFromAnotherDevice'));
+                    // Auto-logout after showing error
+                    setTimeout(async () => {
+                        await SecurityService.logoutCurrentDevice();
+                        // Navigation will be handled by the auth state change
+                    }, 2000);
                 }
             } catch (error) {
                 console.error('Error checking device logout:', error);
