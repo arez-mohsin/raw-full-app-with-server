@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
@@ -30,6 +31,7 @@ import * as Application from 'expo-application';
 
 const LoginScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -501,9 +503,9 @@ const LoginScreen = ({ navigation }) => {
                         <View style={[styles.logoContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.accent }]}>
                             <Ionicons name="diamond" size={48} color={theme.colors.accent} />
                         </View>
-                        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Welcome Back</Text>
+                        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{t('login.welcomeBack')}</Text>
                         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                            Sign in to continue mining cryptocurrency
+                            {t('login.signInToContinue')}
                         </Text>
                     </View>
 
@@ -524,7 +526,7 @@ const LoginScreen = ({ navigation }) => {
                             <Ionicons name="mail" size={20} color={emailError ? '#ff4444' : theme.colors.textTertiary} />
                             <TextInput
                                 style={[styles.input, { color: theme.colors.textPrimary }]}
-                                placeholder="Email"
+                                placeholder={t('login.emailPlaceholder')}
                                 placeholderTextColor={theme.colors.textTertiary}
                                 value={email}
                                 onChangeText={handleEmailChange}
@@ -545,7 +547,7 @@ const LoginScreen = ({ navigation }) => {
                             <Ionicons name="lock-closed" size={20} color={passwordError ? '#ff4444' : theme.colors.textTertiary} />
                             <TextInput
                                 style={[styles.input, { color: theme.colors.textPrimary }]}
-                                placeholder="Password"
+                                placeholder={t('login.passwordPlaceholder')}
                                 placeholderTextColor={theme.colors.textTertiary}
                                 value={password}
                                 onChangeText={handlePasswordChange}
@@ -581,7 +583,7 @@ const LoginScreen = ({ navigation }) => {
                             disabled={isLoading}
                         >
                             <Text style={[styles.forgotPasswordText, { color: theme.colors.accent }]}>
-                                Forgot Password?
+                                {t('login.forgotPassword')}
                             </Text>
                         </TouchableOpacity>
 
@@ -598,11 +600,11 @@ const LoginScreen = ({ navigation }) => {
                                 <ActivityIndicator color={theme.colors.primary} size="small" />
                             ) : buttonCooldown > 0 ? (
                                 <Text style={[styles.loginButtonText, { color: theme.colors.primary }]}>
-                                    Wait {buttonCooldown}s...
+                                    {t('login.waitSeconds', { seconds: buttonCooldown })}
                                 </Text>
                             ) : (
                                 <Text style={[styles.loginButtonText, { color: theme.colors.primary }]}>
-                                    Sign In
+                                    {t('login.signIn')}
                                 </Text>
                             )}
                         </TouchableOpacity>
@@ -624,7 +626,7 @@ const LoginScreen = ({ navigation }) => {
                                     <>
                                         <Ionicons name="finger-print" size={20} color={theme.colors.accent} />
                                         <Text style={[styles.biometricButtonText, { color: theme.colors.accent }]}>
-                                            Sign in with {BiometricService.getAvailableBiometricTypes().join(' or ')}
+                                            {t('login.signInWithBiometric', { types: BiometricService.getAvailableBiometricTypes().join(' or ') })}
                                         </Text>
                                     </>
                                 )}
@@ -635,7 +637,7 @@ const LoginScreen = ({ navigation }) => {
                     {/* Divider */}
                     <View style={styles.dividerContainer}>
                         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-                        <Text style={[styles.dividerText, { color: theme.colors.textTertiary }]}>OR</Text>
+                        <Text style={[styles.dividerText, { color: theme.colors.textTertiary }]}>{t('login.or')}</Text>
                         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
                     </View>
 
@@ -647,7 +649,7 @@ const LoginScreen = ({ navigation }) => {
                             disabled={isLoading}
                         >
                             <Ionicons name="logo-google" size={24} color={theme.colors.textPrimary} />
-                            <Text style={[styles.socialButtonText, { color: theme.colors.textPrimary }]}>Google</Text>
+                            <Text style={[styles.socialButtonText, { color: theme.colors.textPrimary }]}>{t('login.google')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -656,14 +658,14 @@ const LoginScreen = ({ navigation }) => {
                             disabled={isLoading}
                         >
                             <Ionicons name="logo-apple" size={24} color={theme.colors.textPrimary} />
-                            <Text style={[styles.socialButtonText, { color: theme.colors.textPrimary }]}>Apple</Text>
+                            <Text style={[styles.socialButtonText, { color: theme.colors.textPrimary }]}>{t('login.apple')}</Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Sign Up Link */}
                     <View style={styles.signUpContainer}>
                         <Text style={[styles.signUpText, { color: theme.colors.textSecondary }]}>
-                            Don't have an account?{' '}
+                            {t('login.dontHaveAccount')}{' '}
                         </Text>
                         <TouchableOpacity
                             onPress={() => {
@@ -672,7 +674,7 @@ const LoginScreen = ({ navigation }) => {
                             }}
                             disabled={isLoading}
                         >
-                            <Text style={[styles.signUpLink, { color: theme.colors.accent }]}>Sign Up</Text>
+                            <Text style={[styles.signUpLink, { color: theme.colors.accent }]}>{t('login.signUp')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

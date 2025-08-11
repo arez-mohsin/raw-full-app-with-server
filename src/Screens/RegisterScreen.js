@@ -22,12 +22,14 @@ import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp, increment, arrayUnion, updateDoc } from 'firebase/firestore';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import ErrorHandler from '../utils/ErrorHandler';
 import ActivityLogger from '../utils/ActivityLogger';
 import SocialAuthService from '../services/SocialAuthService';
 
 const RegisterScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [username, setUsername] = useState('');
@@ -643,8 +645,8 @@ const RegisterScreen = ({ navigation }) => {
                             <View style={styles.logoContainer}>
                                 <Ionicons name="diamond" size={50} color="#FFD700" />
                             </View>
-                            <Text style={styles.title}>Create Account</Text>
-                            <Text style={styles.subtitle}>Join the crypto mining revolution</Text>
+                            <Text style={styles.title}>{t('register.createAccount')}</Text>
+                            <Text style={styles.subtitle}>{t('register.joinRevolution')}</Text>
                         </View>
 
                         {/* General Error Message */}
@@ -671,7 +673,7 @@ const RegisterScreen = ({ navigation }) => {
                                         />
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="First Name"
+                                            placeholder={t('register.firstNamePlaceholder')}
                                             placeholderTextColor="#888"
                                             value={firstName}
                                             onChangeText={handleFirstNameChange}
@@ -697,7 +699,7 @@ const RegisterScreen = ({ navigation }) => {
                                         />
                                         <TextInput
                                             style={styles.input}
-                                            placeholder="Last Name"
+                                            placeholder={t('register.lastNamePlaceholder')}
                                             placeholderTextColor="#888"
                                             value={lastName}
                                             onChangeText={handleLastNameChange}
@@ -730,7 +732,7 @@ const RegisterScreen = ({ navigation }) => {
                                 />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Username"
+                                    placeholder={t('register.usernamePlaceholder')}
                                     placeholderTextColor="#888"
                                     value={username}
                                     onChangeText={handleUsernameChange}
@@ -744,9 +746,9 @@ const RegisterScreen = ({ navigation }) => {
                             {errors.username ? (
                                 <Text style={styles.errorText}>{errors.username}</Text>
                             ) : usernameAvailable === true ? (
-                                <Text style={styles.successText}>Username is available</Text>
+                                <Text style={styles.successText}>{t('register.usernameAvailable')}</Text>
                             ) : usernameAvailable === false ? (
-                                <Text style={styles.errorText}>Username is already taken</Text>
+                                <Text style={styles.errorText}>{t('register.usernameTaken')}</Text>
                             ) : null}
 
                             {/* Email Field */}
@@ -768,7 +770,7 @@ const RegisterScreen = ({ navigation }) => {
                                 />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Email"
+                                    placeholder={t('register.emailPlaceholder')}
                                     placeholderTextColor="#888"
                                     value={email}
                                     onChangeText={handleEmailChange}
@@ -783,9 +785,9 @@ const RegisterScreen = ({ navigation }) => {
                             {errors.email ? (
                                 <Text style={styles.errorText}>{errors.email}</Text>
                             ) : emailAvailable === true ? (
-                                <Text style={styles.successText}>Email is available</Text>
+                                <Text style={styles.successText}>{t('register.emailAvailable')}</Text>
                             ) : emailAvailable === false ? (
-                                <Text style={styles.errorText}>Email is already registered</Text>
+                                <Text style={styles.errorText}>{t('register.emailRegistered')}</Text>
                             ) : null}
 
 
@@ -803,7 +805,7 @@ const RegisterScreen = ({ navigation }) => {
                                 />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Password"
+                                    placeholder={t('register.passwordPlaceholder')}
                                     placeholderTextColor="#888"
                                     value={password}
                                     onChangeText={handlePasswordChange}
@@ -838,7 +840,7 @@ const RegisterScreen = ({ navigation }) => {
                                 />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Confirm Password"
+                                    placeholder={t('register.confirmPasswordPlaceholder')}
                                     placeholderTextColor="#888"
                                     value={confirmPassword}
                                     onChangeText={handleConfirmPasswordChange}
@@ -883,7 +885,7 @@ const RegisterScreen = ({ navigation }) => {
                                 />
                                 <TextInput
                                     style={[styles.input, { color: theme.colors.textSecondary }]}
-                                    placeholder="Invite Code (Optional)"
+                                    placeholder={t('register.inviteCodePlaceholder')}
                                     placeholderTextColor={theme.colors.textSecondary}
                                     value={inviteCode}
                                     onChangeText={(text) => {
@@ -905,12 +907,12 @@ const RegisterScreen = ({ navigation }) => {
                             </View>
                             {inviteCodeValid === true && (
                                 <Text style={[styles.fieldSuccess, { color: theme.colors.success }]}>
-                                    ✓ Valid invite code! You'll get 10 bonus coins
+                                    {t('register.validInviteCode')}
                                 </Text>
                             )}
                             {inviteCodeValid === false && inviteCode.length === 8 && (
                                 <Text style={[styles.fieldError, { color: theme.colors.error }]}>
-                                    Invalid invite code
+                                    {t('register.invalidInviteCode')}
                                 </Text>
                             )}
 
@@ -919,7 +921,7 @@ const RegisterScreen = ({ navigation }) => {
                                 <View style={[styles.warningContainer, { backgroundColor: theme.colors.warning + '20' }]}>
                                     <Ionicons name="warning" size={20} color={theme.colors.warning} />
                                     <Text style={[styles.warningText, { color: theme.colors.warning }]}>
-                                        Failed attempts: {registrationAttempts}/5. Account will be temporarily blocked after 5 failed attempts.
+                                        {t('register.failedAttemptsWarning', { attempts: registrationAttempts })}
                                     </Text>
                                 </View>
                             )}
@@ -929,7 +931,7 @@ const RegisterScreen = ({ navigation }) => {
                                 <View style={[styles.blockedContainer, { backgroundColor: theme.colors.error + '20' }]}>
                                     <Ionicons name="lock-closed" size={20} color={theme.colors.error} />
                                     <Text style={[styles.blockedText, { color: theme.colors.error }]}>
-                                        Registration temporarily blocked due to too many failed attempts. Please wait 5 minutes.
+                                        {t('register.registrationBlocked')}
                                     </Text>
                                 </View>
                             )}
@@ -946,24 +948,24 @@ const RegisterScreen = ({ navigation }) => {
                                     <ActivityIndicator color="#000" size="small" />
                                 ) : isButtonDisabled ? (
                                     <Text style={styles.registerButtonText}>
-                                        Wait {5 - Math.floor(registrationAttempts / 5)}s...
+                                        {t('register.waitSeconds', { seconds: 5 - Math.floor(registrationAttempts / 5) })}
                                     </Text>
                                 ) : (
-                                    <Text style={styles.registerButtonText}>Create Account</Text>
+                                    <Text style={styles.registerButtonText}>{t('register.createAccount')}</Text>
                                 )}
                             </TouchableOpacity>
 
                             <View style={styles.termsContainer}>
                                 <Text style={styles.termsText}>
-                                    By creating an account, you agree to our{' '}
-                                    <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-                                    <Text style={styles.termsLink}>Privacy Policy</Text>
+                                    {t('register.termsAgreement')}{' '}
+                                    <Text style={styles.termsLink}>{t('common.termsOfService')}</Text> {t('common.and')}{' '}
+                                    <Text style={styles.termsLink}>{t('common.privacyPolicy')}</Text>
                                 </Text>
                             </View>
 
                             <View style={styles.divider}>
                                 <View style={styles.dividerLine} />
-                                <Text style={styles.dividerText}>OR</Text>
+                                <Text style={styles.dividerText}>{t('common.or')}</Text>
                                 <View style={styles.dividerLine} />
                             </View>
 
@@ -974,7 +976,7 @@ const RegisterScreen = ({ navigation }) => {
                                     disabled={isLoading}
                                 >
                                     <Ionicons name="logo-google" size={24} color="#fff" />
-                                    <Text style={styles.socialButtonText}>Google</Text>
+                                    <Text style={styles.socialButtonText}>{t('login.google')}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
@@ -983,7 +985,7 @@ const RegisterScreen = ({ navigation }) => {
                                     disabled={isLoading}
                                 >
                                     <Ionicons name="logo-apple" size={24} color="#fff" />
-                                    <Text style={styles.socialButtonText}>Apple</Text>
+                                    <Text style={styles.socialButtonText}>{t('login.apple')}</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -995,7 +997,7 @@ const RegisterScreen = ({ navigation }) => {
                                 }}
                                 disabled={isLoading}
                             >
-                                <Text style={styles.loginButtonText}>Already have an account? Login</Text>
+                                <Text style={styles.loginButtonText}>{t('register.alreadyHaveAccount')}</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>

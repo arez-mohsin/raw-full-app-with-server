@@ -44,7 +44,7 @@ const MiningButton = ({
     const getButtonText = () => {
         if (loading) return 'Starting...';
         if (isMining) return 'Mining in Progress';
-        return 'Start Mining';
+        return 'Start Mining (Watch Ad)';
     };
 
     const getButtonIcon = () => {

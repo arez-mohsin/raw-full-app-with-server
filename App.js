@@ -14,6 +14,13 @@ import { onAuthStateChanged } from "firebase/auth";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import PerformanceMonitor from "./src/utils/PerformanceMonitor";
 import DeviceLogoutChecker from "./src/components/DeviceLogoutChecker";
+import { AppState } from 'react-native';
+import adMobService from './src/services/AdMobService';
+import BannerAd from './src/components/BannerAd';
+import { useTranslation } from 'react-i18next';
+
+// Import i18n configuration
+import './src/i18n';
 
 // Import screens
 import SplashScreen from "./src/Screens/SplashScreen";
@@ -47,6 +54,7 @@ const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [canClaimStreak, setCanClaimStreak] = useState(false);
 
@@ -141,12 +149,43 @@ function TabNavigator() {
           headerShown: false,
         })}
       >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Streak" component={DailyStreakScreen} />
-        <Tab.Screen name="Upgrade" component={UpgradeScreen} />
-        <Tab.Screen name="Wallet" component={WalletScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            tabBarLabel: t('navigation.home'),
+          }}
+        />
+        <Tab.Screen
+          name="Streak"
+          component={DailyStreakScreen}
+          options={{
+            tabBarLabel: t('navigation.streak'),
+          }}
+        />
+        <Tab.Screen
+          name="Upgrade"
+          component={UpgradeScreen}
+          options={{
+            tabBarLabel: t('navigation.upgrade'),
+          }}
+        />
+        <Tab.Screen
+          name="Wallet"
+          component={WalletScreen}
+          options={{
+            tabBarLabel: t('navigation.wallet'),
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarLabel: t('navigation.profile'),
+          }}
+        />
       </Tab.Navigator>
+      <BannerAd containerStyle={{ paddingBottom: insets.bottom }} />
     </>
   );
 }
@@ -180,6 +219,34 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize ads and enable App Open on foreground
+    const initializeAds = async () => {
+      try {
+        console.log('Initializing AdMob service...');
+        await adMobService.initialize();
+
+        // Wait a bit then preload ads
+        setTimeout(async () => {
+          try {
+            await adMobService.preloadAds();
+            console.log('Ads preloaded successfully');
+          } catch (error) {
+            console.warn('Failed to preload ads, trying retry mechanism:', error);
+            try {
+              await adMobService.retryLoadAds(2);
+            } catch (retryError) {
+              console.warn('Retry mechanism also failed:', retryError);
+            }
+          }
+        }, 2000);
+      } catch (error) {
+        console.error('Failed to initialize AdMob:', error);
+      }
+    };
+
+    initializeAds();
+    const removeAppState = adMobService.enableAppOpenOnForeground(AppState);
+
     checkAppState();
 
     // Set up Firebase Auth state listener
@@ -187,9 +254,28 @@ function AppContent() {
       console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
       setIsAuthenticated(!!user);
       setIsLoading(false);
+
+      // Preload ads when user is authenticated
+      if (user) {
+        setTimeout(async () => {
+          try {
+            await adMobService.preloadAds();
+          } catch (error) {
+            console.warn('Failed to preload ads after auth, trying retry mechanism:', error);
+            try {
+              await adMobService.retryLoadAds(2);
+            } catch (retryError) {
+              console.warn('Retry mechanism also failed after auth:', retryError);
+            }
+          }
+        }, 1000);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      removeAppState && removeAppState();
+    };
   }, []);
 
   const checkAppState = async () => {

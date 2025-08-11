@@ -1,41 +1,60 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { AdMobBanner } from 'react-native-google-mobile-ads';
-import { useTheme } from '../context/ThemeContext';
+import React, { useState } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
+import { BannerAd as RNMBannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import adMobService from '../services/AdMobService';
 
-const BannerAd = ({ style, containerStyle }) => {
-    const { theme } = useTheme();
+const BannerAd = ({ containerStyle }) => {
+    const [adFailed, setAdFailed] = useState(false);
+    const bannerUnitId = adMobService.getBannerAdUnitId();
 
-    // Test Ad Unit ID - Replace with your actual Banner Ad Unit ID for production
-    const BANNER_AD_UNIT_ID = __DEV__
-        ? 'ca-app-pub-3940256099942544/6300978111' // Test Banner Ad Unit ID
-        : 'YOUR_ACTUAL_BANNER_AD_UNIT_ID'; // Replace with your actual Banner Ad Unit ID
+    console.log('BannerAd rendering with unit ID:', bannerUnitId);
+
+    if (adFailed) {
+        return (
+            <View style={[styles.bannerContainer, containerStyle, styles.fallbackContainer]}>
+                <Text style={styles.fallbackText}>Ad Space</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={[styles.container, containerStyle]}>
-            <AdMobBanner
-                unitId={BANNER_AD_UNIT_ID}
-                size="BANNER"
+        <View style={[styles.bannerContainer, containerStyle]}>
+            <RNMBannerAd
+                unitId={bannerUnitId}
+                size={BannerAdSize.BANNER}
                 requestOptions={{
                     requestNonPersonalizedAdsOnly: true,
-                    keywords: ['mining', 'game', 'rewards'],
                 }}
-                onAdLoaded={() => console.log('Banner ad loaded successfully')}
-                onAdFailedToLoad={(error) => console.error('Banner ad failed to load:', error)}
-                style={[styles.banner, style]}
+                onAdLoaded={() => {
+                    console.log('Banner ad loaded successfully');
+                    setAdFailed(false);
+                }}
+                onAdFailedToLoad={(error) => {
+                    console.warn('Banner ad failed to load:', error);
+                    setAdFailed(true);
+                }}
             />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    bannerContainer: {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'transparent',
+        height: 50,
     },
-    banner: {
-        alignSelf: 'center',
+    fallbackContainer: {
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    fallbackText: {
+        color: '#666',
+        fontSize: 12,
+        fontWeight: '500',
     },
 });
 

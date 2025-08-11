@@ -19,10 +19,12 @@ import { auth, db } from '../firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import ErrorHandler from '../utils/ErrorHandler';
 
 const ForgotPasswordScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
 
     // Check if user is already authenticated
     useEffect(() => {
@@ -242,8 +244,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             <View style={styles.logoContainer}>
                                 <Ionicons name="lock-open" size={50} color="#FFD700" />
                             </View>
-                            <Text style={styles.title}>Reset Password</Text>
-                            <Text style={styles.subtitle}>Enter your email to receive a reset link</Text>
+                            <Text style={styles.title}>{t('forgotPassword.resetPassword')}</Text>
+                            <Text style={styles.subtitle}>{t('forgotPassword.enterEmailToReset')}</Text>
                         </View>
 
                         {/* Success Message */}
@@ -282,7 +284,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                                 />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Enter your email"
+                                    placeholder={t('forgotPassword.emailPlaceholder')}
                                     placeholderTextColor="#888"
                                     value={email}
                                     onChangeText={handleEmailChange}
@@ -297,9 +299,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             {errors.email ? (
                                 <Text style={styles.errorText}>{errors.email}</Text>
                             ) : emailExists === true ? (
-                                <Text style={styles.successText}>Email found in our data</Text>
+                                <Text style={styles.successText}>{t('forgotPassword.emailFound')}</Text>
                             ) : emailExists === false ? (
-                                <Text style={styles.errorText}>No account found with this email</Text>
+                                <Text style={styles.errorText}>{t('forgotPassword.emailNotFound')}</Text>
                             ) : null}
 
                             <TouchableOpacity
@@ -313,13 +315,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
                                 {isLoading ? (
                                     <ActivityIndicator color="#000" size="small" />
                                 ) : (
-                                    <Text style={styles.resetButtonText}>Send Reset Link</Text>
+                                    <Text style={styles.resetButtonText}>{t('forgotPassword.sendResetLink')}</Text>
                                 )}
                             </TouchableOpacity>
 
                             <View style={styles.infoContainer}>
                                 <Text style={styles.infoText}>
-                                    We'll send you an email with a link to reset your password. Make sure to check your spam folder.
+                                    {t('forgotPassword.infoText')}
                                 </Text>
                             </View>
 
@@ -331,7 +333,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                                 }}
                                 disabled={isLoading}
                             >
-                                <Text style={styles.backToLoginButtonText}>Back to Login</Text>
+                                <Text style={styles.backToLoginButtonText}>{t('forgotPassword.backToLogin')}</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
@@ -346,41 +348,41 @@ const ForgotPasswordScreen = ({ navigation }) => {
                     handleIndicatorStyle={styles.bottomSheetIndicator}
                 >
                     <BottomSheetView style={styles.bottomSheetContent}>
-                        <Text style={styles.bottomSheetTitle}>Password Reset Guide</Text>
+                        <Text style={styles.bottomSheetTitle}>{t('forgotPassword.passwordResetGuide')}</Text>
 
                         <View style={styles.infoSection}>
-                            <Text style={styles.infoSectionTitle}>How it works</Text>
+                            <Text style={styles.infoSectionTitle}>{t('forgotPassword.howItWorks')}</Text>
                             <View style={styles.infoItem}>
                                 <Ionicons name="mail" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>Enter the email address associated with your account</Text>
+                                <Text style={styles.infoText}>{t('forgotPassword.enterEmailAssociated')}</Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="link" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>We'll send you a secure reset link via email</Text>
+                                <Text style={styles.infoText}>{t('forgotPassword.sendSecureResetLink')}</Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="lock-closed" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>Click the link to create a new password</Text>
+                                <Text style={styles.infoText}>{t('forgotPassword.clickLinkToCreatePassword')}</Text>
                             </View>
                         </View>
 
                         <View style={styles.infoSection}>
-                            <Text style={styles.infoSectionTitle}>Important Notes</Text>
+                            <Text style={styles.infoSectionTitle}>{t('forgotPassword.importantNotes')}</Text>
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>Check your spam/junk folder if you don't see the email</Text>
+                                <Text style={styles.infoText}>{t('forgotPassword.checkSpamFolder')}</Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>The reset link expires after 1 hour for security</Text>
+                                <Text style={styles.infoText}>{t('forgotPassword.resetLinkExpires')}</Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>You can request a new link if needed</Text>
+                                <Text style={styles.infoText}>{t('forgotPassword.requestNewLink')}</Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="shield-checkmark" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>We verify your email exists in our data before sending reset links</Text>
+                                <Text style={styles.infoText}>{t('forgotPassword.verifyEmailBeforeSending')}</Text>
                             </View>
                         </View>
 
@@ -388,7 +390,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             style={styles.closeButton}
                             onPress={handleDismiss}
                         >
-                            <Text style={styles.closeButtonText}>Got it!</Text>
+                            <Text style={styles.closeButtonText}>{t('forgotPassword.gotIt')}</Text>
                         </TouchableOpacity>
                     </BottomSheetView>
                 </BottomSheetModal>

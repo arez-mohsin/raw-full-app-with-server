@@ -132,6 +132,11 @@ class ActivityLogger {
         );
     }
 
+    // Rewarded ad bonus wrapper for clarity in call sites
+    static async logBonusAward(userId, source, amount) {
+        await this.logBonus(userId, source, amount);
+    }
+
     // Level up activities
     static async logLevelUp(userId, newLevel, bonus) {
         await this.logActivity(

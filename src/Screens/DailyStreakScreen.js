@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import ActivityLogger from '../utils/ActivityLogger';
 import NotificationService from '../utils/NotificationService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import adMobService from '../services/AdMobService';
 
 const DailyStreakScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -110,6 +111,16 @@ const DailyStreakScreen = ({ navigation }) => {
 
     useEffect(() => {
         loadStreakData();
+
+        // Check ad availability when component mounts
+        setTimeout(async () => {
+            try {
+                const adStatus = await adMobService.checkAdAvailability();
+                console.log('DailyStreakScreen - Ad availability check result:', adStatus);
+            } catch (error) {
+                console.warn('DailyStreakScreen - Failed to check ad availability:', error);
+            }
+        }, 2000);
     }, [loadStreakData]);
 
     const handleDailyClaim = async () => {
@@ -117,6 +128,30 @@ const DailyStreakScreen = ({ navigation }) => {
 
         setClaiming(true);
         try {
+            // Check if rewarded ad is ready before offering it
+            let rewardedEarned = false;
+            if (adMobService.isRewardedAdReady()) {
+                console.log('Rewarded ad is ready, showing ad before streak claim...');
+                // Offer rewarded ad before claim
+                rewardedEarned = await adMobService.showRewardedAdSafely('streak_claim');
+            } else if (adMobService.shouldSkipAds()) {
+                console.log('Skipping ads due to fallback mode, claiming streak directly...');
+                // Skip ads and claim streak directly
+            } else {
+                console.log('Rewarded ad not ready, claiming without ad');
+                // Debug ad status
+                adMobService.debugAdStatus();
+                // Try to preload ads for next time
+                setTimeout(() => {
+                    adMobService.preloadAds();
+                }, 1000);
+            }
+
+            let bonusCoins = 0;
+            if (rewardedEarned) {
+                bonusCoins = 2;
+            }
+
             const user = auth.currentUser;
             if (!user) throw new Error('User not authenticated');
 
@@ -158,8 +193,8 @@ const DailyStreakScreen = ({ navigation }) => {
             }
 
             // Update user document
-            const totalEarned = (userData.streak?.totalEarned || 0) + reward;
-            const currentBalance = (userData.balance || 0) + reward;
+            const totalEarned = (userData.streak?.totalEarned || 0) + reward + bonusCoins;
+            const currentBalance = (userData.balance || 0) + reward + bonusCoins;
 
             await updateDoc(userDocRef, {
                 'streak.currentStreak': newStreak,
@@ -176,13 +211,16 @@ const DailyStreakScreen = ({ navigation }) => {
 
             // Log streak claim activity
             await ActivityLogger.logStreakClaim(user.uid, newStreak, reward);
+            if (bonusCoins > 0) {
+                await ActivityLogger.logBonusAward(user.uid, 'rewarded_streak_claim', bonusCoins);
+            }
 
             // Send streak claim notification
             await NotificationService.sendStreakClaimedNotification(user.uid, newStreak, reward);
 
             Alert.alert(
                 'Daily Reward Claimed! 🎉',
-                `You earned ${reward} coins!\n\nStreak: ${newStreak} days\nTotal earned from streaks: ${totalEarned} coins`,
+                `You earned ${reward}${bonusCoins ? ` + ${bonusCoins} bonus` : ''} coins!\n\nStreak: ${newStreak} days\nTotal earned from streaks: ${totalEarned} coins`,
                 [{ text: 'Awesome!' }]
             );
 
@@ -286,7 +324,7 @@ const DailyStreakScreen = ({ navigation }) => {
                             <>
                                 <Ionicons name="gift" size={24} color="#FFFFFF" />
                                 <Text style={styles.claimButtonText}>
-                                    {canClaim ? `Claim ${getNextReward()} Coins` : 'Already Claimed Today'}
+                                    {canClaim ? `Claim ${getNextReward()} Coins (Watch Ad)` : 'Already Claimed Today'}
                                 </Text>
                             </>
                         )}

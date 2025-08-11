@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import MiningButton from '../components/MiningButton';
 import { auth, db } from '../firebase';
 import { doc, updateDoc, getDoc, collection, query, orderBy, limit, getDocs, onSnapshot, increment } from 'firebase/firestore';
@@ -29,6 +30,7 @@ import * as Crypto from 'expo-crypto';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import adMobService from '../services/AdMobService';
 
 const MAX_SESSION_SECONDS = 7200; // 2 hours
 const SESSION_UPDATE_INTERVAL = 300000; // 5 minutes
@@ -351,6 +353,7 @@ const validateRequestFrequency = () => {
 
 const HomeScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [user, setUser] = useState(null);
     const [userId, setUserId] = useState(null);
     const [balance, setBalance] = useState(0);
@@ -573,6 +576,16 @@ const HomeScreen = ({ navigation }) => {
                     setPushToken(token);
                     await updatePushTokenInDatabase(token);
                 }
+
+                // Check ad availability after user is authenticated
+                setTimeout(async () => {
+                    try {
+                        const adStatus = await adMobService.checkAdAvailability();
+                        console.log('Ad availability check result:', adStatus);
+                    } catch (error) {
+                        console.warn('Failed to check ad availability:', error);
+                    }
+                }, 3000);
             } else {
                 setUserId(null);
                 // Clean up listeners
@@ -1271,6 +1284,31 @@ const HomeScreen = ({ navigation }) => {
                 return;
             }
 
+            // Check if rewarded ad is ready before offering it
+            if (adMobService.isRewardedAdReady()) {
+                console.log('Rewarded ad is ready, showing ad before mining...');
+                // Offer rewarded ad before starting mining
+                const rewardedEarned = await adMobService.showRewardedAdSafely('start_mining');
+                if (rewardedEarned) {
+                    try {
+                        // Optional: grant small bonus for ad view
+                        await ActivityLogger.logBonusAward(userId, 'rewarded_mining_start', 3);
+                        setBalance(prev => prev + 3);
+                    } catch { }
+                }
+            } else if (adMobService.shouldSkipAds()) {
+                console.log('Skipping ads due to fallback mode, starting mining directly...');
+                // Skip ads and start mining directly
+            } else {
+                console.log('Rewarded ad not ready, starting mining without ad');
+                // Debug ad status
+                adMobService.debugAdStatus();
+                // Try to preload ads for next time
+                setTimeout(() => {
+                    adMobService.preloadAds();
+                }, 1000);
+            }
+
             // Check for expired sessions first
             await checkMiningSession();
 
@@ -1513,7 +1551,7 @@ const HomeScreen = ({ navigation }) => {
                 <View style={styles.progressHeader}>
                     <Ionicons name="time" size={16} color={theme.colors.accent} />
                     <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>
-                        Mining Progress
+                        {t('home.miningProgress')}
                     </Text>
                 </View>
 
@@ -1537,7 +1575,7 @@ const HomeScreen = ({ navigation }) => {
                         {formatTime(timeLeft)}
                     </Text>
                     <Text style={[styles.progressSpeed, { color: theme.colors.textSecondary }]}>
-                        +{miningSpeed.toFixed(6)} coins/sec
+                        +{miningSpeed.toFixed(6)} {t('common.coins')}/sec
                     </Text>
                 </View>
             </View>
@@ -1569,12 +1607,12 @@ const HomeScreen = ({ navigation }) => {
                 <View style={styles.header}>
                     <View style={styles.welcomeContainer}>
                         <Text style={[styles.welcomeText, { color: theme.colors.textSecondary }]}>
-                            Welcome back,
+                            {t('home.welcomeBack')}
                         </Text>
                         <Text style={[styles.username, { color: theme.colors.textPrimary }]}>
                             {userData.firstName && userData.lastName
                                 ? `${userData.firstName} ${userData.lastName}`
-                                : userData.username || 'Miner'}!
+                                : userData.username || t('home.miner')}!
                         </Text>
                     </View>
                     <TouchableOpacity
@@ -1595,14 +1633,14 @@ const HomeScreen = ({ navigation }) => {
                 {/* Balance Display */}
                 <View style={[styles.balanceCard, { backgroundColor: theme.colors.card }]}>
                     <Text style={[styles.balanceTitle, { color: theme.colors.textSecondary }]}>
-                        Current Balance
+                        {t('home.currentBalance')}
                     </Text>
                     <Text style={[styles.balanceAmount, { color: theme.colors.accent }]}>
-                        {formatCoinBalance(userData.balance + localEarned)} coins
+                        {formatCoinBalance(userData.balance + localEarned)} {t('common.coins')}
                     </Text>
                     {isMining && localEarned > 0 && (
                         <Text style={[styles.earningText, { color: theme.colors.success }]}>
-                            +{formatCoinBalance(localEarned)} this session
+                            +{formatCoinBalance(localEarned)} {t('home.thisSession')}
                         </Text>
                     )}
                 </View>
@@ -1612,7 +1650,7 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.statsHeader}>
                         <Ionicons name="trending-up" size={24} color={theme.colors.accent} />
                         <Text style={[styles.statsTitle, { color: theme.colors.textPrimary }]}>
-                            Mining Stats
+                            {t('home.miningStats')}
                         </Text>
                     </View>
 
@@ -1622,7 +1660,7 @@ const HomeScreen = ({ navigation }) => {
                                 {userData.todayMined.toFixed(3)}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Today Mined
+                                {t('home.todayMined')}
                             </Text>
                         </View>
                         <View style={styles.statItem}>
@@ -1630,7 +1668,7 @@ const HomeScreen = ({ navigation }) => {
                                 {formatCoinBalance(userData.totalMined)}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Total Mined
+                                {t('home.totalMined')}
                             </Text>
                         </View>
                         <View style={styles.statItem}>
@@ -1645,7 +1683,7 @@ const HomeScreen = ({ navigation }) => {
                                 )}
                             </View>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Daily Streak
+                                {t('home.dailyStreak')}
                             </Text>
                         </View>
                     </View>
@@ -1670,7 +1708,7 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.detailsHeader}>
                         <Ionicons name="information-circle" size={24} color={theme.colors.accent} />
                         <Text style={[styles.detailsTitle, { color: theme.colors.textPrimary }]}>
-                            Mining Details
+                            {t('home.miningDetails')}
                         </Text>
                     </View>
 
@@ -1682,10 +1720,10 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={styles.detailInfo}>
                                 <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
-                                    Current Speed
+                                    {t('home.currentSpeed')}
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    {miningSpeed.toFixed(6)} coins/sec
+                                    {miningSpeed.toFixed(6)} {t('common.coins')}/sec
                                 </Text>
                             </View>
                         </View>
@@ -1697,10 +1735,10 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={styles.detailInfo}>
                                 <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
-                                    Mining Level
+                                    {t('home.miningLevel')}
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    Level {miningLevel}
+                                    {t('common.level')} {miningLevel}
                                 </Text>
                             </View>
                         </View>
@@ -1712,10 +1750,10 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={styles.detailInfo}>
                                 <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
-                                    Experience
+                                    {t('common.experience')}
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    {experience} XP
+                                    {experience} {t('common.xp')}
                                 </Text>
                             </View>
                         </View>
@@ -1724,13 +1762,13 @@ const HomeScreen = ({ navigation }) => {
                         {Object.keys(upgrades).some(key => upgrades[key] > 0) && (
                             <View style={styles.upgradesSection}>
                                 <Text style={[styles.upgradesTitle, { color: theme.colors.textPrimary }]}>
-                                    Active Upgrades
+                                    {t('home.activeUpgrades')}
                                 </Text>
                                 {upgrades.speed > 0 && (
                                     <View style={styles.upgradeItem}>
                                         <Ionicons name="flash" size={16} color={theme.colors.success} />
                                         <Text style={[styles.upgradeText, { color: theme.colors.textSecondary }]}>
-                                            Speed +{upgrades.speed * 10}%
+                                            {t('home.speed')} +{upgrades.speed * 10}%
                                         </Text>
                                     </View>
                                 )}
@@ -1738,7 +1776,7 @@ const HomeScreen = ({ navigation }) => {
                                     <View style={styles.upgradeItem}>
                                         <Ionicons name="battery-charging" size={16} color={theme.colors.success} />
                                         <Text style={[styles.upgradeText, { color: theme.colors.textSecondary }]}>
-                                            Efficiency +{upgrades.efficiency * 15}%
+                                            {t('home.efficiency')} +{upgrades.efficiency * 15}%
                                         </Text>
                                     </View>
                                 )}
@@ -1746,7 +1784,7 @@ const HomeScreen = ({ navigation }) => {
                                     <View style={styles.upgradeItem}>
                                         <Ionicons name="hardware-chip" size={16} color={theme.colors.success} />
                                         <Text style={[styles.upgradeText, { color: theme.colors.textSecondary }]}>
-                                            Capacity +{upgrades.capacity * 20}%
+                                            {t('home.capacity')} +{upgrades.capacity * 20}%
                                         </Text>
                                     </View>
                                 )}
@@ -1757,26 +1795,26 @@ const HomeScreen = ({ navigation }) => {
                         {totalMined < 1 && (
                             <View style={styles.tipsSection}>
                                 <Text style={[styles.tipsTitle, { color: theme.colors.textPrimary }]}>
-                                    💡 Beginner Tips
+                                    {t('home.beginnerTips')}
                                 </Text>
                                 <View style={styles.tipItem}>
                                     <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                        • Each mining session lasts 2 hours
+                                        • {t('home.sessionDuration')}
                                     </Text>
                                 </View>
                                 <View style={styles.tipItem}>
                                     <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                        • Visit the Upgrade tab to boost your mining speed
+                                        • {t('home.upgradeTab')}
                                     </Text>
                                 </View>
                                 <View style={styles.tipItem}>
                                     <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                        • Complete daily streaks for bonus rewards
+                                        • {t('home.dailyStreaks')}
                                     </Text>
                                 </View>
                                 <View style={styles.tipItem}>
                                     <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                        • Invite friends to earn referral bonuses
+                                        • {t('home.inviteFriends')}
                                     </Text>
                                 </View>
                             </View>
@@ -1795,14 +1833,14 @@ const HomeScreen = ({ navigation }) => {
                             <View style={[styles.halfCardIcon, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
                                 <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
                             </View>
-                            <Text style={[styles.halfCardTitle, { color: theme.colors.textPrimary }]}>Tasks</Text>
+                            <Text style={[styles.halfCardTitle, { color: theme.colors.textPrimary }]}>{t('common.tasks')}</Text>
                         </View>
                         <Text style={[styles.halfCardSubtitle, { color: theme.colors.textSecondary }]}>
-                            Complete daily tasks
+                            {t('tasks.completeTasks')}
                         </Text>
                         <View style={styles.halfCardPreview}>
                             <Text style={[styles.halfCardPreviewText, { color: theme.colors.textSecondary }]}>
-                                +10 coins per task
+                                +10 {t('common.coins')} per task
                             </Text>
                         </View>
                     </TouchableOpacity>
@@ -1816,14 +1854,14 @@ const HomeScreen = ({ navigation }) => {
                             <View style={[styles.halfCardIcon, { backgroundColor: 'rgba(255, 215, 0, 0.1)' }]}>
                                 <Ionicons name="trophy" size={20} color="#FFD700" />
                             </View>
-                            <Text style={[styles.halfCardTitle, { color: theme.colors.textPrimary }]}>Leaderboard</Text>
+                            <Text style={[styles.halfCardTitle, { color: theme.colors.textPrimary }]}>{t('common.leaderboard')}</Text>
                         </View>
                         <Text style={[styles.halfCardSubtitle, { color: theme.colors.textSecondary }]}>
-                            Top miners ranking
+                            {t('leaderboard.topMiners')}
                         </Text>
                         <View style={styles.halfCardPreview}>
                             <Text style={[styles.halfCardPreviewText, { color: theme.colors.textSecondary }]}>
-                                See your rank
+                                {t('leaderboard.yourRank')}
                             </Text>
                         </View>
                     </TouchableOpacity>
@@ -1841,7 +1879,7 @@ const HomeScreen = ({ navigation }) => {
                     marginBottom: 16,
                     color: theme.colors.textPrimary
                 }]}>
-                    Quick Actions
+                    {t('home.quickActions')}
                 </Text>
 
                 <View style={styles.featureGrid}>
@@ -1853,10 +1891,10 @@ const HomeScreen = ({ navigation }) => {
                             <Ionicons name="trophy" size={24} color="#FFD700" />
                         </View>
                         <Text style={[styles.featureTitle, { color: theme.colors.textPrimary }]}>
-                            Leaderboard
+                            {t('common.leaderboard')}
                         </Text>
                         <Text style={[styles.featureSubtitle, { color: theme.colors.textSecondary }]}>
-                            See top miners
+                            {t('home.seeTopMiners')}
                         </Text>
                     </TouchableOpacity>
 
@@ -1868,10 +1906,10 @@ const HomeScreen = ({ navigation }) => {
                             <Ionicons name="wallet" size={24} color="#4CAF50" />
                         </View>
                         <Text style={[styles.featureTitle, { color: theme.colors.textPrimary }]}>
-                            Wallet
+                            {t('common.wallet')}
                         </Text>
                         <Text style={[styles.featureSubtitle, { color: theme.colors.textSecondary }]}>
-                            Manage coins
+                            {t('home.manageCoins')}
                         </Text>
                     </TouchableOpacity>
 
@@ -1883,10 +1921,10 @@ const HomeScreen = ({ navigation }) => {
                             <Ionicons name="checkmark-circle" size={24} color="#2196F3" />
                         </View>
                         <Text style={[styles.featureTitle, { color: theme.colors.textPrimary }]}>
-                            Tasks
+                            {t('common.tasks')}
                         </Text>
                         <Text style={[styles.featureSubtitle, { color: theme.colors.textSecondary }]}>
-                            Earn rewards
+                            {t('home.earnRewards')}
                         </Text>
                     </TouchableOpacity>
 
@@ -1898,10 +1936,10 @@ const HomeScreen = ({ navigation }) => {
                             <Ionicons name="people" size={24} color="#9C27B0" />
                         </View>
                         <Text style={[styles.featureTitle, { color: theme.colors.textPrimary }]}>
-                            Invite
+                            {t('common.invite')}
                         </Text>
                         <Text style={[styles.featureSubtitle, { color: theme.colors.textSecondary }]}>
-                            Get bonuses
+                            {t('home.getBonuses')}
                         </Text>
                     </TouchableOpacity>
 
@@ -1913,10 +1951,10 @@ const HomeScreen = ({ navigation }) => {
                             <Ionicons name="rocket" size={24} color="#FF9800" />
                         </View>
                         <Text style={[styles.featureTitle, { color: theme.colors.textPrimary }]}>
-                            Upgrade
+                            {t('common.upgrade')}
                         </Text>
                         <Text style={[styles.featureSubtitle, { color: theme.colors.textSecondary }]}>
-                            Boost mining
+                            {t('home.boostMining')}
                         </Text>
                     </TouchableOpacity>
 
@@ -1928,10 +1966,10 @@ const HomeScreen = ({ navigation }) => {
                             <Ionicons name="person" size={24} color="#F44336" />
                         </View>
                         <Text style={[styles.featureTitle, { color: theme.colors.textPrimary }]}>
-                            Profile
+                            {t('common.profile')}
                         </Text>
                         <Text style={[styles.featureSubtitle, { color: theme.colors.textSecondary }]}>
-                            View stats
+                            {t('home.viewStats')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -1992,7 +2030,7 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.detailsHeader}>
                         <Ionicons name="school" size={24} color={theme.colors.accent} />
                         <Text style={[styles.detailsTitle, { color: theme.colors.textPrimary }]}>
-                            How Mining Works
+                            {t('home.howMiningWorks')}
                         </Text>
                     </View>
 
@@ -2004,10 +2042,10 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={styles.detailInfo}>
                                 <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
-                                    Session Duration
+                                    {t('home.sessionDurationTitle')}
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    2 hours (7,200 seconds) per session
+                                    {t('home.sessionDurationValue')}
                                 </Text>
                             </View>
                         </View>
@@ -2019,10 +2057,10 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={styles.detailInfo}>
                                 <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
-                                    Earnings Calculation
+                                    {t('home.earningsCalculation')}
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    {miningSpeed.toFixed(6)} coins/sec × session time
+                                    {miningSpeed.toFixed(6)} {t('common.coins')}/sec × session time
                                 </Text>
                             </View>
                         </View>
@@ -2034,10 +2072,10 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={styles.detailInfo}>
                                 <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
-                                    Mining Speed
+                                    {t('home.miningSpeedTitle')}
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    Base: 0.000116 coins/sec, Current: {miningSpeed.toFixed(6)} coins/sec
+                                    {t('home.miningSpeedValue', { speed: miningSpeed.toFixed(6) })}
                                 </Text>
                             </View>
                         </View>
@@ -2049,10 +2087,10 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={styles.detailInfo}>
                                 <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
-                                    Session Management
+                                    {t('home.sessionManagement')}
                                 </Text>
                                 <Text style={[styles.detailValue, { color: theme.colors.textPrimary }]}>
-                                    One session at a time, auto-stops after 2 hours
+                                    {t('home.sessionManagementValue')}
                                 </Text>
                             </View>
                         </View>
@@ -2060,26 +2098,26 @@ const HomeScreen = ({ navigation }) => {
                         {/* Pro Tips */}
                         <View style={styles.tipsSection}>
                             <Text style={[styles.tipsTitle, { color: theme.colors.textPrimary }]}>
-                                🎯 Pro Tips
+                                {t('home.proTips')}
                             </Text>
                             <View style={styles.tipItem}>
                                 <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                    • Upgrade mining speed for better earnings
+                                    • {t('home.upgradeMiningSpeed')}
                                 </Text>
                             </View>
                             <View style={styles.tipItem}>
                                 <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                    • Use boosts for temporary multipliers
+                                    • {t('home.useBoosts')}
                                 </Text>
                             </View>
                             <View style={styles.tipItem}>
                                 <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                    • Claim daily streaks for bonus coins
+                                    • {t('home.claimDailyStreaks')}
                                 </Text>
                             </View>
                             <View style={styles.tipItem}>
                                 <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                                    • Check the Upgrade tab for improvements
+                                    • {t('home.checkUpgradeTab')}
                                 </Text>
                             </View>
                         </View>
@@ -2091,7 +2129,7 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.detailsHeader}>
                         <Ionicons name="stats-chart" size={24} color={theme.colors.accent} />
                         <Text style={[styles.detailsTitle, { color: theme.colors.textPrimary }]}>
-                            Quick Stats
+                            {t('home.quickStats')}
                         </Text>
                     </View>
 
@@ -2101,7 +2139,7 @@ const HomeScreen = ({ navigation }) => {
                                 {formatCoinBalance(totalMined)}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Total Mined
+                                {t('home.totalMined')}
                             </Text>
                         </View>
                         <View style={styles.statCard}>
@@ -2109,7 +2147,7 @@ const HomeScreen = ({ navigation }) => {
                                 {miningLevel}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Current Level
+                                {t('upgrade.currentLevel')}
                             </Text>
                         </View>
                         <View style={styles.statCard}>
@@ -2117,7 +2155,7 @@ const HomeScreen = ({ navigation }) => {
                                 {(upgrades?.speed || 0) + (upgrades?.efficiency || 0) + (upgrades?.capacity || 0)}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Total Upgrades
+                                {t('home.totalUpgrades')}
                             </Text>
                         </View>
                         <View style={styles.statCard}>
@@ -2125,7 +2163,7 @@ const HomeScreen = ({ navigation }) => {
                                 {experience}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                Experience
+                                {t('common.experience')}
                             </Text>
                         </View>
                     </View>
@@ -2136,14 +2174,14 @@ const HomeScreen = ({ navigation }) => {
                 <View style={styles.recentActivity}>
                     <View style={styles.activityHeader}>
                         <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                            Recent Activity (Latest 5)
+                            {t('home.recentActivity')}
                         </Text>
                         <TouchableOpacity
                             style={styles.seeAllButton}
                             onPress={() => navigation.navigate('ActivityList')}
                         >
                             <Text style={[styles.seeAllText, { color: theme.colors.accent }]}>
-                                See All
+                                {t('home.seeAll')}
                             </Text>
                             <Ionicons name="chevron-forward" size={16} color={theme.colors.accent} />
                         </TouchableOpacity>
@@ -2153,7 +2191,7 @@ const HomeScreen = ({ navigation }) => {
                             <View style={styles.emptyActivity}>
                                 <Ionicons name="refresh" size={24} color={theme.colors.textSecondary} />
                                 <Text style={[styles.emptyActivityText, { color: theme.colors.textSecondary }]}>
-                                    Loading activities...
+                                    {t('home.loadingActivities')}
                                 </Text>
                             </View>
                         ) : (() => {
@@ -2195,7 +2233,7 @@ const HomeScreen = ({ navigation }) => {
                             <View style={styles.emptyActivity}>
                                 <Ionicons name="time-outline" size={24} color={theme.colors.textSecondary} />
                                 <Text style={[styles.emptyActivityText, { color: theme.colors.textSecondary }]}>
-                                    No recent activity
+                                    {t('home.noRecentActivity')}
                                 </Text>
                             </View>
                         )}

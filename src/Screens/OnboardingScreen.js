@@ -12,9 +12,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen = ({ navigation, route }) => {
+    const { t } = useTranslation();
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollX = useRef(new Animated.Value(0)).current;
     const flatListRef = useRef(null);
@@ -22,37 +24,33 @@ const OnboardingScreen = ({ navigation, route }) => {
     const onboardingData = [
         {
             id: 1,
-            title: 'Welcome to Crypto Mining',
-            subtitle: 'Start earning cryptocurrency with just a tap',
-            description:
-                'Join millions of users worldwide who are earning crypto through our innovative mining platform.',
+            title: t('onboarding.welcomeToCryptoMining'),
+            subtitle: t('onboarding.startEarningCrypto'),
+            description: t('onboarding.joinMillionsUsers'),
             icon: 'diamond',
             color: '#FFD700',
         },
         {
             id: 2,
-            title: 'Mine Daily',
-            subtitle: 'Simple 24-hour mining cycles',
-            description:
-                'Tap the mining button once every 24 hours to earn crypto. No complex setup required.',
+            title: t('onboarding.mineDaily'),
+            subtitle: t('onboarding.simple24HourCycles'),
+            description: t('onboarding.tapMiningButton'),
             icon: 'flash',
             color: '#4CAF50',
         },
         {
             id: 3,
-            title: 'Invite Friends',
-            subtitle: 'Earn bonus rewards together',
-            description:
-                'Share your referral code with friends and earn extra crypto when they join and start mining.',
+            title: t('onboarding.inviteFriends'),
+            subtitle: t('onboarding.earnBonusRewards'),
+            description: t('onboarding.shareReferralCode'),
             icon: 'people',
             color: '#FF6B6B',
         },
         {
             id: 4,
-            title: 'Secure Wallet',
-            subtitle: 'Your crypto, your control',
-            description:
-                'Keep your earnings safe in your personal wallet. Track all your transactions and mining history.',
+            title: t('onboarding.secureWallet'),
+            subtitle: t('onboarding.yourCryptoYourControl'),
+            description: t('onboarding.keepEarningsSafe'),
             icon: 'wallet',
             color: '#9C27B0',
         },
@@ -173,7 +171,7 @@ const OnboardingScreen = ({ navigation, route }) => {
         <LinearGradient colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']} style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                    <Text style={styles.skipText}>Skip</Text>
+                    <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -201,7 +199,7 @@ const OnboardingScreen = ({ navigation, route }) => {
             <View style={styles.footer}>
                 <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
                     <Text style={styles.nextButtonText}>
-                        {currentIndex === onboardingData.length - 1 ? 'Get Started' : 'Next'}
+                        {currentIndex === onboardingData.length - 1 ? t('onboarding.getStarted') : t('common.next')}
                     </Text>
                     <Ionicons
                         name={currentIndex === onboardingData.length - 1 ? 'checkmark' : 'arrow-forward'}

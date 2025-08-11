@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { auth, db } from '../firebase';
 import { sendEmailVerification, onAuthStateChanged } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -21,6 +22,7 @@ import ErrorHandler from '../utils/ErrorHandler';
 
 const EmailVerificationScreen = ({ navigation, route }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
     const [countdown, setCountdown] = useState(0);
@@ -300,10 +302,10 @@ const EmailVerificationScreen = ({ navigation, route }) => {
     const handleBackPress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         Alert.alert(
-            'Email Verification Required',
-            'You must verify your email address to continue using the app. Please check your email and click the verification link.',
+            t('emailVerification.emailVerificationRequired'),
+            t('emailVerification.mustVerifyEmail'),
             [
-                { text: 'OK', style: 'default' }
+                { text: t('common.ok'), style: 'default' }
             ]
         );
     };
@@ -324,9 +326,9 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                         <Ionicons name="mail" size={50} color="#FFD700" />
                     </View>
 
-                    <Text style={styles.title}>Verify Your Email</Text>
+                    <Text style={styles.title}>{t('emailVerification.verifyEmail')}</Text>
                     <Text style={styles.subtitle}>
-                        We've sent a verification link to{'\n'}
+                        {t('emailVerification.verificationSent')}{'\n'}
                         <Text style={styles.emailText}>{user?.email}</Text>
                     </Text>
                 </View>
@@ -338,9 +340,9 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                             <Ionicons name="mail-unread" size={40} color="#FFD700" />
                         </View>
 
-                        <Text style={styles.cardTitle}>Check Your Email</Text>
+                        <Text style={styles.cardTitle}>{t('emailVerification.checkEmail')}</Text>
                         <Text style={styles.cardDescription}>
-                            We've sent a verification link to your email. Click the link to verify your account.
+                            {t('emailVerification.checkEmailDescription')}
                         </Text>
                     </View>
 
@@ -356,7 +358,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                             ) : (
                                 <>
                                     <Ionicons name="refresh" size={18} color="#000" />
-                                    <Text style={styles.primaryButtonText}>I've Verified My Email</Text>
+                                    <Text style={styles.primaryButtonText}>{t('emailVerification.iveVerifiedEmail')}</Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -366,7 +368,7 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                             onPress={openEmailApp}
                         >
                             <Ionicons name="mail-open" size={18} color="#FFD700" />
-                            <Text style={styles.secondaryButtonText}>Open Email App</Text>
+                            <Text style={styles.secondaryButtonText}>{t('emailVerification.openEmailApp')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -384,8 +386,8 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                                     <Ionicons name="send" size={18} color="#FFD700" />
                                     <Text style={styles.resendButtonText}>
                                         {countdown > 0
-                                            ? `Resend in ${countdown}s`
-                                            : 'Resend Email'
+                                            ? t('emailVerification.resendInSeconds', { seconds: countdown })
+                                            : t('emailVerification.resendEmail')
                                         }
                                     </Text>
                                 </>
@@ -398,16 +400,16 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                         <View style={styles.errorInfo}>
                             <Ionicons name="warning" size={16} color="#ff4444" />
                             <Text style={styles.errorInfoText}>
-                                {lastError === 'auth/too-many-requests' ? 'Too many requests' :
-                                    lastError === 'auth/network-request-failed' ? 'Network error' :
-                                        lastError === 'auth/user-not-found' ? 'User not found' : 'Unknown error'}
+                                {lastError === 'auth/too-many-requests' ? t('emailVerification.tooManyRequests') :
+                                    lastError === 'auth/network-request-failed' ? t('emailVerification.networkError') :
+                                        lastError === 'auth/user-not-found' ? t('emailVerification.userNotFound') : t('emailVerification.unknownError')}
                             </Text>
                         </View>
                     )}
 
                     <View style={styles.helpSection}>
                         <Text style={styles.helpText}>
-                            💡 Check your spam folder • Wait a few minutes for the email
+                            {t('emailVerification.helpText')}
                         </Text>
                     </View>
                 </View>
