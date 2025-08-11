@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { auth } from '../firebase';
 import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
@@ -19,6 +21,8 @@ import * as Haptics from 'expo-haptics';
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
 
 const SecurityScreen = ({ navigation }) => {
+    const { theme } = useTheme();
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [biometricStatus, setBiometricStatus] = useState({
         isAvailable: false,
@@ -293,7 +297,7 @@ const SecurityScreen = ({ navigation }) => {
                         style={styles.textInput}
                         value={currentPassword}
                         onChangeText={(text) => handlePasswordInputChange(text, 'currentPassword')}
-                        placeholder="Enter current password"
+                        placeholder={t('security.currentPasswordPlaceholder')}
                         placeholderTextColor="#666"
                         secureTextEntry
                         autoCapitalize="none"
@@ -309,7 +313,7 @@ const SecurityScreen = ({ navigation }) => {
                         style={styles.textInput}
                         value={newPassword}
                         onChangeText={(text) => handlePasswordInputChange(text, 'newPassword')}
-                        placeholder="Enter new password"
+                        placeholder={t('security.newPasswordPlaceholder')}
                         placeholderTextColor="#666"
                         secureTextEntry
                         autoCapitalize="none"
@@ -343,7 +347,7 @@ const SecurityScreen = ({ navigation }) => {
                         style={styles.textInput}
                         value={confirmPassword}
                         onChangeText={(text) => handlePasswordInputChange(text, 'confirmPassword')}
-                        placeholder="Confirm new password"
+                        placeholder={t('security.confirmNewPasswordPlaceholder')}
                         placeholderTextColor="#666"
                         secureTextEntry
                     />
@@ -359,7 +363,7 @@ const SecurityScreen = ({ navigation }) => {
                     {changingPassword ? (
                         <ActivityIndicator color="#1a1a1a" />
                     ) : (
-                        <Text style={styles.modalButtonText}>Change Password</Text>
+                        <Text style={styles.modalButtonText}>{t('security.changePasswordButton')}</Text>
                     )}
                 </TouchableOpacity>
             </BottomSheetView>
@@ -381,7 +385,7 @@ const SecurityScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#FFD700" />
-                    <Text style={styles.loadingText}>Loading security settings...</Text>
+                    <Text style={styles.loadingText}>{t('security.loadingSecuritySettings')}</Text>
                 </View>
             </LinearGradient>
         );
@@ -404,14 +408,14 @@ const SecurityScreen = ({ navigation }) => {
                 <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
                     {/* Authentication */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Authentication</Text>
+                        <Text style={styles.sectionTitle}>{t('security.authentication')}</Text>
 
                         <TouchableOpacity style={styles.securityItem} onPress={handlePasswordChange}>
                             <View style={styles.securityLeft}>
                                 <Ionicons name="key" size={20} color="#FFD700" />
                                 <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>Change Password</Text>
-                                    <Text style={styles.securitySubtitle}>Update your account password</Text>
+                                    <Text style={styles.securityTitle}>{t('security.changePassword')}</Text>
+                                    <Text style={styles.securitySubtitle}>{t('security.updateAccountPassword')}</Text>
                                 </View>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color="#888" />
@@ -421,13 +425,13 @@ const SecurityScreen = ({ navigation }) => {
                             <View style={styles.securityLeft}>
                                 <Ionicons name="finger-print" size={20} color="#FFD700" />
                                 <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>Biometric Login</Text>
+                                    <Text style={styles.securityTitle}>{t('security.biometricLogin')}</Text>
                                     <Text style={styles.securitySubtitle}>
                                         {biometricStatus.isEnabled
-                                            ? `Enabled (${biometricStatus.supportedTypes.join(', ')})`
+                                            ? `${t('security.biometricEnabled')}${biometricStatus.supportedTypes.join(', ')}`
                                             : biometricStatus.isAvailable
-                                                ? `Use ${biometricStatus.supportedTypes.join(' or ')}`
-                                                : 'Not available on this device'
+                                                ? `${t('security.biometricUse')}${biometricStatus.supportedTypes.join(' or ')}`
+                                                : t('security.biometricNotAvailable')
                                         }
                                     </Text>
                                 </View>
@@ -449,14 +453,14 @@ const SecurityScreen = ({ navigation }) => {
 
                     {/* Account Security */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Account Security</Text>
+                        <Text style={styles.sectionTitle}>{t('security.accountSecurity')}</Text>
 
                         <TouchableOpacity style={styles.securityItem}>
                             <View style={styles.securityLeft}>
                                 <Ionicons name="phone-portrait" size={20} color="#FFD700" />
                                 <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>Active Sessions</Text>
-                                    <Text style={styles.securitySubtitle}>Manage your logged-in devices</Text>
+                                    <Text style={styles.securityTitle}>{t('security.activeSessions')}</Text>
+                                    <Text style={styles.securitySubtitle}>{t('security.manageLoggedInDevices')}</Text>
                                 </View>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color="#888" />
@@ -466,8 +470,8 @@ const SecurityScreen = ({ navigation }) => {
                             <View style={styles.securityLeft}>
                                 <Ionicons name="shield" size={20} color="#FFD700" />
                                 <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>Security Log</Text>
-                                    <Text style={styles.securitySubtitle}>View recent security activities</Text>
+                                    <Text style={styles.securityTitle}>{t('security.securityLog')}</Text>
+                                    <Text style={styles.securitySubtitle}>{t('security.viewRecentSecurityActivities')}</Text>
                                 </View>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color="#888" />

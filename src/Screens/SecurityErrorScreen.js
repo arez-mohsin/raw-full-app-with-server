@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import * as Haptics from 'expo-haptics';
@@ -18,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SecurityErrorScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSignOut = async () => {
@@ -31,7 +33,7 @@ const SecurityErrorScreen = ({ navigation }) => {
             });
         } catch (error) {
             console.error('Error signing out:', error);
-            Alert.alert('Error', 'Failed to sign out. Please try again.');
+            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
         } finally {
             setIsLoading(false);
         }
@@ -39,15 +41,15 @@ const SecurityErrorScreen = ({ navigation }) => {
 
     const handleContactSupport = () => {
         Alert.alert(
-            'Contact Support',
-            'Please contact our support team with the following information:\n\n• Your email address\n• When this error occurred\n• Any recent account changes\n\nEmail: support@cryptominer.com',
+            t('helpSupport.contactSupport'),
+            t('errors.contactSupport'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Copy Email',
+                    text: t('common.copy'),
                     onPress: () => {
                         // You can implement clipboard functionality here
-                        Alert.alert('Email Copied', 'support@cryptominer.com has been copied to clipboard');
+                        Alert.alert(t('common.success'), t('common.emailCopied'));
                     }
                 }
             ]
@@ -56,17 +58,17 @@ const SecurityErrorScreen = ({ navigation }) => {
 
     const handleReportIssue = () => {
         Alert.alert(
-            'Report Security Issue',
-            'This will help us improve our security measures. Your report will be anonymous.',
+            t('errors.reportSecurityIssue'),
+            t('errors.reportSecurityIssueDescription'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Report',
+                    text: t('common.report'),
                     onPress: () => {
                         Alert.alert(
-                            'Thank You',
-                            'Your security report has been submitted. We will investigate this issue.',
-                            [{ text: 'OK' }]
+                            t('common.thankYou'),
+                            t('errors.reportSubmitted'),
+                            [{ text: t('common.ok') }]
                         );
                     }
                 }
@@ -86,9 +88,9 @@ const SecurityErrorScreen = ({ navigation }) => {
                         <Ionicons name="shield-checkmark" size={60} color="#ff4444" />
                     </View>
 
-                    <Text style={styles.title}>Security Alert</Text>
+                    <Text style={styles.title}>{t('errors.securityError')}</Text>
                     <Text style={styles.subtitle}>
-                        We detected a security issue with your account
+                        {t('errors.suspiciousActivity')}
                     </Text>
                 </View>
 
@@ -99,28 +101,28 @@ const SecurityErrorScreen = ({ navigation }) => {
                             <Ionicons name="warning" size={50} color="#ff4444" />
                         </View>
 
-                        <Text style={styles.cardTitle}>Account Security Issue</Text>
+                        <Text style={styles.cardTitle}>{t('errors.accountSecurityIssue')}</Text>
                         <Text style={styles.cardDescription}>
-                            Your account has been flagged for a security review. This may be due to:
+                            {t('errors.accountFlaggedForReview')}
                         </Text>
 
                         <View style={styles.issueList}>
                             <View style={styles.issueItem}>
                                 <Ionicons name="alert-circle" size={16} color="#ff4444" />
-                                <Text style={styles.issueText}>Incomplete account setup</Text>
+                                <Text style={styles.issueText}>{t('errors.incompleteAccountSetup')}</Text>
                             </View>
                             <View style={styles.issueItem}>
                                 <Ionicons name="alert-circle" size={16} color="#ff4444" />
-                                <Text style={styles.issueText}>Data synchronization error</Text>
+                                <Text style={styles.issueText}>{t('errors.dataSynchronizationError')}</Text>
                             </View>
                             <View style={styles.issueItem}>
                                 <Ionicons name="alert-circle" size={16} color="#ff4444" />
-                                <Text style={styles.issueText}>Account verification required</Text>
+                                <Text style={styles.issueText}>{t('errors.accountVerificationRequired')}</Text>
                             </View>
                         </View>
 
                         <Text style={styles.securityNote}>
-                            For your security, please sign out and contact our support team for assistance.
+                            {t('errors.securityNote')}
                         </Text>
                     </View>
 
@@ -132,11 +134,11 @@ const SecurityErrorScreen = ({ navigation }) => {
                             disabled={isLoading}
                         >
                             {isLoading ? (
-                                <Text style={styles.buttonText}>Signing Out...</Text>
+                                <Text style={styles.buttonText}>{t('common.signingOut')}</Text>
                             ) : (
                                 <>
                                     <Ionicons name="log-out" size={20} color="#fff" />
-                                    <Text style={styles.buttonText}>Sign Out</Text>
+                                    <Text style={styles.buttonText}>{t('common.logout')}</Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -146,7 +148,7 @@ const SecurityErrorScreen = ({ navigation }) => {
                             onPress={handleContactSupport}
                         >
                             <Ionicons name="help-circle" size={20} color="#FFD700" />
-                            <Text style={styles.secondaryButtonText}>Contact Support</Text>
+                            <Text style={styles.secondaryButtonText}>{t('helpSupport.contactSupport')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -154,18 +156,15 @@ const SecurityErrorScreen = ({ navigation }) => {
                             onPress={handleReportIssue}
                         >
                             <Ionicons name="flag" size={20} color="#888" />
-                            <Text style={styles.reportButtonText}>Report Issue</Text>
+                            <Text style={styles.reportButtonText}>{t('common.report')}</Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Security Information */}
                     <View style={styles.securityInfo}>
-                        <Text style={styles.securityInfoTitle}>Security Measures</Text>
+                        <Text style={styles.securityInfoTitle}>{t('errors.securityMeasures')}</Text>
                         <Text style={styles.securityInfoText}>
-                            • Your account data is encrypted{'\n'}
-                            • We monitor for suspicious activity{'\n'}
-                            • This alert helps prevent unauthorized access{'\n'}
-                            • Support team will assist you promptly
+                            {t('errors.securityMeasuresText')}
                         </Text>
                     </View>
                 </View>

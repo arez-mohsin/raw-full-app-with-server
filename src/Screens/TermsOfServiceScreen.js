@@ -8,8 +8,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const TermsOfServiceScreen = ({ navigation }) => {
+    const { theme } = useTheme();
+    const { t } = useTranslation();
+
     return (
         <LinearGradient
             colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']}
@@ -19,25 +24,25 @@ const TermsOfServiceScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Terms of Service</Text>
+                <Text style={styles.headerTitle}>{t('terms.termsOfService')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.content}>
-                    <Text style={styles.lastUpdated}>Last Updated: January 1, 2024</Text>
+                    <Text style={styles.lastUpdated}>{t('terms.lastUpdated')}: January 1, 2024</Text>
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>1. Acceptance of Terms</Text>
+                        <Text style={styles.sectionTitle}>1. {t('terms.acceptanceOfTerms')}</Text>
                         <Text style={styles.paragraph}>
-                            By accessing and using the CryptoMiner mobile application ("App"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+                            {t('terms.acceptanceOfTermsText')}
                         </Text>
                     </View>
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>2. Description of Service</Text>
+                        <Text style={styles.sectionTitle}>2. {t('terms.descriptionOfService')}</Text>
                         <Text style={styles.paragraph}>
-                            CryptoMiner is a cryptocurrency mining simulation application that allows users to learn about blockchain technology and cryptocurrency mining through educational content and simulated mining activities. This is not a real cryptocurrency mining application and does not provide actual mining rewards.
+                            {t('terms.descriptionOfServiceText')}
                         </Text>
                     </View>
 

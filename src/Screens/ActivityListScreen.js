@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth, db } from '../firebase';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
@@ -19,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const ActivityListScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [userId, setUserId] = useState(null);
     const [activities, setActivities] = useState([]);
@@ -61,7 +63,7 @@ const ActivityListScreen = ({ navigation }) => {
             setActivities(activitiesList);
         } catch (error) {
             console.error("Error loading activities:", error);
-            Alert.alert("Error", "Failed to load activities. Please try again.");
+            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
         } finally {
             setLoading(false);
         }
@@ -98,23 +100,23 @@ const ActivityListScreen = ({ navigation }) => {
     };
 
     const formatActivityTime = (timestamp) => {
-        if (!timestamp) return 'Unknown time';
+        if (!timestamp) return t('activity.unknownTime');
 
         const now = new Date();
         const activityTime = new Date(timestamp);
         const diffInSeconds = Math.floor((now - activityTime) / 1000);
 
         if (diffInSeconds < 60) {
-            return 'Just now';
+            return t('activity.justNow');
         } else if (diffInSeconds < 3600) {
             const minutes = Math.floor(diffInSeconds / 60);
-            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            return t('activity.minutesAgo', { minutes });
         } else if (diffInSeconds < 86400) {
             const hours = Math.floor(diffInSeconds / 3600);
-            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            return t('activity.hoursAgo', { hours });
         } else {
             const days = Math.floor(diffInSeconds / 86400);
-            return `${days} day${days > 1 ? 's' : ''} ago`;
+            return t('activity.daysAgo', { days });
         }
     };
 
@@ -139,7 +141,7 @@ const ActivityListScreen = ({ navigation }) => {
     const getFilterOptions = () => {
         const types = [...new Set(activities.map(activity => activity.type))];
         return [
-            { key: 'all', label: 'All Activities' },
+            { key: 'all', label: t('activity.allActivities') },
             ...types.map(type => ({
                 key: type,
                 label: type.charAt(0).toUpperCase() + type.slice(1)
@@ -159,7 +161,7 @@ const ActivityListScreen = ({ navigation }) => {
                 <View style={styles.loadingContainer}>
                     <Ionicons name="sync" size={40} color={theme.colors.accent} />
                     <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                        Loading activities...
+                        {t('activity.loadingActivities')}
                     </Text>
                 </View>
             </LinearGradient>
@@ -183,7 +185,7 @@ const ActivityListScreen = ({ navigation }) => {
                     <Ionicons name="arrow-back" size={24} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: theme.colors.textSecondary }]}>
-                    Activity History
+                    {t('activity.activityHistory')}
                 </Text>
                 <View style={styles.headerSpacer} />
             </View>
@@ -193,7 +195,7 @@ const ActivityListScreen = ({ navigation }) => {
                 <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
                 <TextInput
                     style={[styles.searchInput, { color: theme.colors.textSecondary }]}
-                    placeholder="Search activities..."
+                    placeholder={t('activity.searchActivities')}
                     placeholderTextColor={theme.colors.textSecondary}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -280,12 +282,12 @@ const ActivityListScreen = ({ navigation }) => {
                     <View style={styles.emptyContainer}>
                         <Ionicons name="time-outline" size={64} color={theme.colors.textSecondary} />
                         <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-                            No activities found
+                            {t('activity.noActivitiesFound')}
                         </Text>
                         <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
                             {searchQuery || selectedFilter !== 'all'
-                                ? 'Try adjusting your search or filters'
-                                : 'Start mining to see your activity history'
+                                ? t('activity.tryAdjustingSearch')
+                                : t('activity.startMiningToSeeHistory')
                             }
                         </Text>
                         {!searchQuery && selectedFilter === 'all' && (
@@ -295,7 +297,7 @@ const ActivityListScreen = ({ navigation }) => {
                             >
                                 <Ionicons name="flash" size={20} color={theme.colors.primary} />
                                 <Text style={[styles.startMiningText, { color: theme.colors.primary }]}>
-                                    Start Mining
+                                    {t('activity.startMining')}
                                 </Text>
                             </TouchableOpacity>
                         )}

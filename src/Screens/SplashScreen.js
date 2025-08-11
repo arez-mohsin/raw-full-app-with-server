@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -20,6 +21,7 @@ const { width, height } = Dimensions.get('window');
 
 const SplashScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const logoScale = useRef(new Animated.Value(0)).current;
     const logoOpacity = useRef(new Animated.Value(0)).current;
     const textOpacity = useRef(new Animated.Value(0)).current;
@@ -169,8 +171,8 @@ const SplashScreen = ({ navigation }) => {
 
                 {/* App Name */}
                 <Animated.View style={[styles.textContainer, { opacity: textOpacity }]}>
-                    <Text style={[styles.appName, { color: theme.colors.accent }]}>CryptoMiner</Text>
-                    <Text style={[styles.appTagline, { color: theme.colors.textSecondary }]}>Mine Crypto, Earn Rewards</Text>
+                    <Text style={[styles.appName, { color: theme.colors.accent }]}>{t('appName')}</Text>
+                    <Text style={[styles.appTagline, { color: theme.colors.textSecondary }]}>{t('appTagline')}</Text>
                 </Animated.View>
 
                 {/* Progress Bar */}
@@ -186,12 +188,12 @@ const SplashScreen = ({ navigation }) => {
                             ]}
                         />
                     </View>
-                    <Text style={[styles.loadingText, { color: theme.colors.textTertiary }]}>Loading...</Text>
+                    <Text style={[styles.loadingText, { color: theme.colors.textTertiary }]}>{t('loadingText')}</Text>
                 </View>
 
                 {/* Version */}
                 <View style={styles.versionContainer}>
-                    <Text style={[styles.versionText, { color: theme.colors.textTertiary }]}>Version 1.0.0</Text>
+                    <Text style={[styles.versionText, { color: theme.colors.textTertiary }]}>{t('versionText')}</Text>
                 </View>
             </View>
         </LinearGradient>

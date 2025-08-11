@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const MiningButton = ({
     isMining,
@@ -19,6 +20,7 @@ const MiningButton = ({
     hasScheduledNotification = false
 }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [scaleValue] = React.useState(new Animated.Value(1));
 
     const handleStartMining = async () => {
@@ -42,9 +44,9 @@ const MiningButton = ({
     };
 
     const getButtonText = () => {
-        if (loading) return 'Starting...';
-        if (isMining) return 'Mining in Progress';
-        return 'Start Mining (Watch Ad)';
+        if (loading) return t('mining.starting');
+        if (isMining) return t('mining.miningInProgress');
+        return t('mining.startMiningWatchAd');
     };
 
     const getButtonIcon = () => {

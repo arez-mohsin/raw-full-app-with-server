@@ -9,8 +9,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const AboutScreen = ({ navigation }) => {
+    const { theme } = useTheme();
+    const { t } = useTranslation();
+
     const handleWebsitePress = () => {
         Linking.openURL('https://www.cryptominer.com');
     };
@@ -38,7 +43,7 @@ const AboutScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>About</Text>
+                <Text style={styles.headerTitle}>{t('about.about')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -47,54 +52,54 @@ const AboutScreen = ({ navigation }) => {
                     <View style={styles.appLogo}>
                         <Ionicons name="diamond" size={60} color="#FFD700" />
                     </View>
-                    <Text style={styles.appName}>CryptoMiner</Text>
-                    <Text style={styles.appVersion}>Version 1.0.0</Text>
+                    <Text style={styles.appName}>{t('about.appName')}</Text>
+                    <Text style={styles.appVersion}>{t('about.appVersion')} 1.0.0</Text>
                     <Text style={styles.appTagline}>
-                        The ultimate crypto mining simulation app
+                        {t('about.appTagline')}
                     </Text>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>About CryptoMiner</Text>
+                    <Text style={styles.sectionTitle}>{t('about.aboutCryptoMiner')}</Text>
                     <Text style={styles.description}>
-                        CryptoMiner is an educational cryptocurrency mining simulation app designed to help users learn about blockchain technology and cryptocurrency mining in a safe, controlled environment. Our mission is to make cryptocurrency education accessible to everyone.
+                        {t('about.aboutDescription')}
                     </Text>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Key Features</Text>
+                    <Text style={styles.sectionTitle}>{t('about.keyFeatures')}</Text>
                     <View style={styles.featuresList}>
                         <View style={styles.featureItem}>
                             <Ionicons name="school" size={20} color="#FFD700" />
-                            <Text style={styles.featureText}>Educational Mining Simulation</Text>
+                            <Text style={styles.featureText}>{t('about.educationalMiningSimulation')}</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <Ionicons name="shield-checkmark" size={20} color="#FFD700" />
-                            <Text style={styles.featureText}>Secure & Safe Environment</Text>
+                            <Text style={styles.featureText}>{t('about.secureSafeEnvironment')}</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <Ionicons name="trending-up" size={20} color="#FFD700" />
-                            <Text style={styles.featureText}>Real-time Mining Statistics</Text>
+                            <Text style={styles.featureText}>{t('about.realTimeMiningStatistics')}</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <Ionicons name="people" size={20} color="#FFD700" />
-                            <Text style={styles.featureText}>Community & Referrals</Text>
+                            <Text style={styles.featureText}>{t('about.communityReferrals')}</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <Ionicons name="wallet" size={20} color="#FFD700" />
-                            <Text style={styles.featureText}>Digital Wallet Integration</Text>
+                            <Text style={styles.featureText}>{t('about.digitalWalletIntegration')}</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <Ionicons name="notifications" size={20} color="#FFD700" />
-                            <Text style={styles.featureText}>Smart Notifications</Text>
+                            <Text style={styles.featureText}>{t('about.smartNotifications')}</Text>
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Our Team</Text>
+                    <Text style={styles.sectionTitle}>{t('about.ourTeam')}</Text>
                     <Text style={styles.description}>
-                        CryptoMiner is developed by a passionate team of blockchain enthusiasts, developers, and educators committed to making cryptocurrency accessible to everyone.
+                        {t('about.teamDescription')}
                     </Text>
 
                     <View style={styles.teamGrid}>
@@ -102,49 +107,49 @@ const AboutScreen = ({ navigation }) => {
                             <View style={styles.memberAvatar}>
                                 <Ionicons name="person" size={24} color="#FFD700" />
                             </View>
-                            <Text style={styles.memberName}>John Doe</Text>
-                            <Text style={styles.memberRole}>CEO & Founder</Text>
+                            <Text style={styles.memberName}>{t('about.johnDoe')}</Text>
+                            <Text style={styles.memberRole}>{t('about.ceoFounder')}</Text>
                         </View>
 
                         <View style={styles.teamMember}>
                             <View style={styles.memberAvatar}>
                                 <Ionicons name="person" size={24} color="#FFD700" />
                             </View>
-                            <Text style={styles.memberName}>Jane Smith</Text>
-                            <Text style={styles.memberRole}>Lead Developer</Text>
+                            <Text style={styles.memberName}>{t('about.janeSmith')}</Text>
+                            <Text style={styles.memberRole}>{t('about.leadDeveloper')}</Text>
                         </View>
 
                         <View style={styles.teamMember}>
                             <View style={styles.memberAvatar}>
                                 <Ionicons name="person" size={24} color="#FFD700" />
                             </View>
-                            <Text style={styles.memberName}>Mike Johnson</Text>
-                            <Text style={styles.memberRole}>Blockchain Expert</Text>
+                            <Text style={styles.memberName}>{t('about.mikeJohnson')}</Text>
+                            <Text style={styles.memberRole}>{t('about.blockchainExpert')}</Text>
                         </View>
 
                         <View style={styles.teamMember}>
                             <View style={styles.memberAvatar}>
                                 <Ionicons name="person" size={24} color="#FFD700" />
                             </View>
-                            <Text style={styles.memberName}>Sarah Wilson</Text>
-                            <Text style={styles.memberRole}>UX Designer</Text>
+                            <Text style={styles.memberName}>{t('about.sarahWilson')}</Text>
+                            <Text style={styles.memberRole}>{t('about.uxDesigner')}</Text>
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Our Mission</Text>
+                    <Text style={styles.sectionTitle}>{t('about.ourMission')}</Text>
                     <View style={styles.missionCard}>
                         <Ionicons name="bulb" size={32} color="#FFD700" />
-                        <Text style={styles.missionTitle}>Educate & Empower</Text>
+                        <Text style={styles.missionTitle}>{t('about.educateEmpower')}</Text>
                         <Text style={styles.missionText}>
-                            We believe that everyone should have access to quality cryptocurrency education. Our app provides a safe, educational environment where users can learn about blockchain technology and cryptocurrency mining without financial risk.
+                            {t('about.missionText')}
                         </Text>
                     </View>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Contact Us</Text>
+                    <Text style={styles.sectionTitle}>{t('about.contactUs')}</Text>
 
                     <TouchableOpacity style={styles.contactItem} onPress={handleWebsitePress}>
                         <Ionicons name="globe" size={20} color="#FFD700" />
@@ -165,14 +170,14 @@ const AboutScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Follow Us</Text>
+                    <Text style={styles.sectionTitle}>{t('about.followUs')}</Text>
                     <View style={styles.socialGrid}>
                         <TouchableOpacity
                             style={styles.socialButton}
                             onPress={() => handleSocialPress('twitter')}
                         >
                             <Ionicons name="logo-twitter" size={24} color="#1DA1F2" />
-                            <Text style={styles.socialText}>Twitter</Text>
+                            <Text style={styles.socialText}>{t('about.twitter')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -180,7 +185,7 @@ const AboutScreen = ({ navigation }) => {
                             onPress={() => handleSocialPress('facebook')}
                         >
                             <Ionicons name="logo-facebook" size={24} color="#4267B2" />
-                            <Text style={styles.socialText}>Facebook</Text>
+                            <Text style={styles.socialText}>{t('about.facebook')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -188,7 +193,7 @@ const AboutScreen = ({ navigation }) => {
                             onPress={() => handleSocialPress('instagram')}
                         >
                             <Ionicons name="logo-instagram" size={24} color="#E4405F" />
-                            <Text style={styles.socialText}>Instagram</Text>
+                            <Text style={styles.socialText}>{t('about.instagram')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -196,7 +201,7 @@ const AboutScreen = ({ navigation }) => {
                             onPress={() => handleSocialPress('linkedin')}
                         >
                             <Ionicons name="logo-linkedin" size={24} color="#0077B5" />
-                            <Text style={styles.socialText}>LinkedIn</Text>
+                            <Text style={styles.socialText}>{t('about.linkedin')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

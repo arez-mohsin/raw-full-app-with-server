@@ -12,8 +12,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const KYCScreen = ({ navigation }) => {
+    const { theme } = useTheme();
+    const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState(1);
     const [kycData, setKycData] = useState({
         firstName: '',
@@ -34,10 +38,10 @@ const KYCScreen = ({ navigation }) => {
     const [selfieImage, setSelfieImage] = useState(null);
 
     const steps = [
-        { id: 1, title: 'Personal Info', icon: 'person' },
-        { id: 2, title: 'Address', icon: 'location' },
-        { id: 3, title: 'Documents', icon: 'document' },
-        { id: 4, title: 'Verification', icon: 'checkmark-circle' },
+        { id: 1, title: t('kyc.personalInfo'), icon: 'person' },
+        { id: 2, title: t('kyc.address'), icon: 'location' },
+        { id: 3, title: t('kyc.documents'), icon: 'document' },
+        { id: 4, title: t('kyc.verification'), icon: 'checkmark-circle' },
     ];
 
     const handleInputChange = (field, value) => {
@@ -46,12 +50,12 @@ const KYCScreen = ({ navigation }) => {
 
     const handleImageUpload = (type) => {
         Alert.alert(
-            'Upload Document',
-            'Choose upload method',
+            t('kyc.uploadDocument'),
+            t('kyc.chooseUploadMethod'),
             [
-                { text: 'Camera', onPress: () => console.log('Camera pressed') },
-                { text: 'Gallery', onPress: () => console.log('Gallery pressed') },
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('kyc.camera'), onPress: () => console.log('Camera pressed') },
+                { text: t('kyc.gallery'), onPress: () => console.log('Gallery pressed') },
+                { text: t('kyc.cancel'), style: 'cancel' },
             ]
         );
     };
@@ -67,11 +71,11 @@ const KYCScreen = ({ navigation }) => {
     const submitKYC = async () => {
         try {
             await new Promise(resolve => setTimeout(resolve, 2000));
-            Alert.alert('KYC Submitted', 'Your verification request has been submitted successfully.', [
-                { text: 'OK', onPress: () => navigation.replace('Main') },
+            Alert.alert(t('kyc.kycSubmitted'), t('kyc.verificationRequestSubmitted'), [
+                { text: t('kyc.ok'), onPress: () => navigation.replace('Main') },
             ]);
         } catch (error) {
-            Alert.alert('Error', 'Failed to submit KYC.');
+            Alert.alert(t('kyc.error'), t('kyc.failedToSubmitKyc'));
         }
     };
 
@@ -97,13 +101,13 @@ const KYCScreen = ({ navigation }) => {
     const renderCurrentStep = () => {
         switch (currentStep) {
             case 1:
-                return <Text style={{ color: 'white' }}>Step 1: Personal Info</Text>;
+                return <Text style={{ color: 'white' }}>{t('kyc.step1PersonalInfo')}</Text>;
             case 2:
-                return <Text style={{ color: 'white' }}>Step 2: Address</Text>;
+                return <Text style={{ color: 'white' }}>{t('kyc.step2Address')}</Text>;
             case 3:
-                return <Text style={{ color: 'white' }}>Step 3: Documents</Text>;
+                return <Text style={{ color: 'white' }}>{t('kyc.step3Documents')}</Text>;
             case 4:
-                return <Text style={{ color: 'white' }}>Step 4: Verification</Text>;
+                return <Text style={{ color: 'white' }}>{t('kyc.step4Verification')}</Text>;
             default:
                 return null;
         }
@@ -115,7 +119,7 @@ const KYCScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>KYC Verification</Text>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>{t('kyc.kycTitle')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -127,17 +131,17 @@ const KYCScreen = ({ navigation }) => {
             <View style={{ flexDirection: 'row', padding: 20, paddingBottom: 40 }}>
                 {currentStep > 1 && (
                     <TouchableOpacity style={{ flex: 1, backgroundColor: '#2a2a2a', borderRadius: 12, padding: 16, alignItems: 'center', marginRight: 10 }} onPress={prevStep}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#fff' }}>Previous</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#fff' }}>{t('kyc.previous')}</Text>
                     </TouchableOpacity>
                 )}
                 {currentStep < 4 ? (
                     <TouchableOpacity style={{ flex: 1, backgroundColor: '#FFD700', borderRadius: 12, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginLeft: 10 }} onPress={nextStep}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1a1a1a', marginRight: 8 }}>Next</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1a1a1a', marginRight: 8 }}>{t('kyc_next')}</Text>
                         <Ionicons name="arrow-forward" size={20} color="#1a1a1a" />
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity style={{ flex: 1, backgroundColor: '#FFD700', borderRadius: 12, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginLeft: 10 }} onPress={submitKYC}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1a1a1a', marginRight: 8 }}>Submit KYC</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1a1a1a', marginRight: 8 }}>{t('kyc_submit_kyc')}</Text>
                         <Ionicons name="checkmark" size={20} color="#1a1a1a" />
                     </TouchableOpacity>
                 )}

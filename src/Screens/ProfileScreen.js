@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage, getCurrentLanguage, getAvailableLanguages } from '../i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -415,6 +417,7 @@ const LoadingSkeleton = ({ theme }) => {
 
 const ProfileScreen = ({ navigation }) => {
     const { theme, isDark, toggleTheme } = useTheme();
+    const { t } = useTranslation();
     const [userId, setUserId] = useState(null);
     const [userProfile, setUserProfile] = useState({
         username: 'CryptoMiner',
@@ -439,12 +442,15 @@ const ProfileScreen = ({ navigation }) => {
     });
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [currentLanguage, setCurrentLanguage] = useState('en');
+    const [showLanguageModal, setShowLanguageModal] = useState(false);
 
     // Configure notifications and load biometric status
     useEffect(() => {
         configureNotifications();
         loadNotificationSettings();
         loadBiometricStatus();
+        loadCurrentLanguage();
     }, []);
 
     // Set up real-time user data listener
@@ -637,6 +643,33 @@ const ProfileScreen = ({ navigation }) => {
         }
     };
 
+    // Load current language
+    const loadCurrentLanguage = async () => {
+        try {
+            const language = getCurrentLanguage();
+            setCurrentLanguage(language);
+        } catch (error) {
+            console.error('Error loading current language:', error);
+        }
+    };
+
+    // Handle language change
+    const handleLanguageChange = async (languageCode) => {
+        try {
+            const success = await changeLanguage(languageCode);
+            if (success) {
+                setCurrentLanguage(languageCode);
+                setShowLanguageModal(false);
+                Alert.alert(t('common.success'), t('profile.languageChanged'));
+            } else {
+                Alert.alert(t('common.error'), 'Failed to change language');
+            }
+        } catch (error) {
+            console.error('Error changing language:', error);
+            Alert.alert(t('common.error'), 'Failed to change language');
+        }
+    };
+
     // Refresh profile data
     const onRefresh = async () => {
         setRefreshing(true);
@@ -751,7 +784,7 @@ const ProfileScreen = ({ navigation }) => {
                             : userProfile.username}
                     </Text>
                     <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{userProfile.email}</Text>
-                    <Text style={[styles.joinDate, { color: theme.colors.textTertiary }]}>Member since {formatDate(userProfile.joinDate)}</Text>
+                    <Text style={[styles.joinDate, { color: theme.colors.textTertiary }]}>{t('profile.memberSince')} {formatDate(userProfile.joinDate)}</Text>
                 </View>
 
                 {/* Stats Cards */}
@@ -759,13 +792,13 @@ const ProfileScreen = ({ navigation }) => {
                     <View style={[styles.statCard, { backgroundColor: theme.colors.card }]}>
                         <Ionicons name="diamond" size={24} color={theme.colors.accent} />
                         <Text style={[styles.statNumber, { color: theme.colors.textPrimary }]}>{userProfile.totalMined.toFixed(2)}</Text>
-                        <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>Total Mined</Text>
+                        <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>{t('profile.totalMined')}</Text>
                     </View>
 
                     <View style={[styles.statCard, { backgroundColor: theme.colors.card }]}>
                         <Ionicons name="wallet" size={24} color="#4CAF50" />
                         <Text style={[styles.statNumber, { color: theme.colors.textPrimary }]}>{userProfile.balance.toFixed(2)}</Text>
-                        <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>Balance</Text>
+                        <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>{t('profile.balance')}</Text>
                     </View>
 
                     <View style={[styles.statCard, { backgroundColor: theme.colors.card }]}>
@@ -804,8 +837,8 @@ const ProfileScreen = ({ navigation }) => {
                                 <Ionicons name="gift" size={24} color="#fff" />
                             </View>
                             <View style={styles.inviteTextContainer}>
-                                <Text style={[styles.inviteTitle, { color: theme.colors.textPrimary }]}>Invite Friends</Text>
-                                <Text style={[styles.inviteSubtitle, { color: theme.colors.textSecondary }]}>Get 50 coins for you and your friend!</Text>
+                                <Text style={[styles.inviteTitle, { color: theme.colors.textPrimary }]}>{t('profile.inviteFriends')}</Text>
+                                <Text style={[styles.inviteSubtitle, { color: theme.colors.textSecondary }]}>{t('profile.inviteFriendsSubtitle')}</Text>
                             </View>
                         </View>
                         <TouchableOpacity
@@ -813,20 +846,20 @@ const ProfileScreen = ({ navigation }) => {
                             onPress={() => navigation.navigate('Invite')}
                         >
                             <Ionicons name="share-social" size={20} color="#fff" />
-                            <Text style={styles.inviteButtonText}>Invite Now</Text>
+                            <Text style={styles.inviteButtonText}>{t('profile.inviteNow')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* Settings Section */}
                 <View style={styles.settingsSection}>
-                    <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Settings</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>{t('profile.settings')}</Text>
 
                     <View style={[styles.settingsList, { backgroundColor: theme.colors.card }]}>
                         <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
                             <View style={styles.settingLeft}>
                                 <Ionicons name="notifications" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.settingText, { color: theme.colors.textPrimary }]}>Push Notifications</Text>
+                                <Text style={[styles.settingText, { color: theme.colors.textPrimary }]}>{t('profile.pushNotifications')}</Text>
                             </View>
                             <Switch
                                 value={notificationsEnabled}
@@ -839,7 +872,7 @@ const ProfileScreen = ({ navigation }) => {
                         <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
                             <View style={styles.settingLeft}>
                                 <Ionicons name="moon" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.settingText, { color: theme.colors.textPrimary }]}>Dark Mode</Text>
+                                <Text style={[styles.settingText, { color: theme.colors.textPrimary }]}>{t('profile.darkMode')}</Text>
                             </View>
                             <Switch
                                 value={isDark}
@@ -848,6 +881,22 @@ const ProfileScreen = ({ navigation }) => {
                                 thumbColor={isDark ? '#fff' : '#f4f3f4'}
                             />
                         </View>
+
+                        <TouchableOpacity
+                            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+                            onPress={() => setShowLanguageModal(true)}
+                        >
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="language" size={20} color={theme.colors.accent} />
+                                <Text style={[styles.settingText, { color: theme.colors.textPrimary }]}>{t('profile.languageSettings')}</Text>
+                            </View>
+                            <View style={styles.settingRight}>
+                                <Text style={[styles.settingValue, { color: theme.colors.textSecondary }]}>
+                                    {currentLanguage === 'en' ? t('profile.english') : t('profile.chinese')}
+                                </Text>
+                                <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
+                            </View>
+                        </TouchableOpacity>
 
                         {/* <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
                             <View style={styles.settingLeft}>
@@ -867,7 +916,7 @@ const ProfileScreen = ({ navigation }) => {
 
                 {/* Menu Items */}
                 <View style={styles.menuSection}>
-                    <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Account</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>{t('profile.account')}</Text>
 
                     <View style={[styles.menuList, { backgroundColor: theme.colors.card }]}>
                         <TouchableOpacity
@@ -876,7 +925,7 @@ const ProfileScreen = ({ navigation }) => {
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="person" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>Edit Profile</Text>
+                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>{t('profile.editProfile')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -887,7 +936,7 @@ const ProfileScreen = ({ navigation }) => {
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="shield-checkmark" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>Security</Text>
+                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>{t('profile.securitySettings')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -898,7 +947,7 @@ const ProfileScreen = ({ navigation }) => {
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="card" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>KYC Verification</Text>
+                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>{t('profile.kycVerification')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -909,7 +958,7 @@ const ProfileScreen = ({ navigation }) => {
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="help-circle" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>Help & Support</Text>
+                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>{t('profile.helpSupport')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -920,7 +969,7 @@ const ProfileScreen = ({ navigation }) => {
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="document-text" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>Terms of Service</Text>
+                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>{t('profile.termsOfService')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -931,7 +980,7 @@ const ProfileScreen = ({ navigation }) => {
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="lock-closed" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>Privacy Policy</Text>
+                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>{t('profile.privacyPolicy')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -942,7 +991,7 @@ const ProfileScreen = ({ navigation }) => {
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="information-circle" size={20} color={theme.colors.accent} />
-                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>About</Text>
+                                <Text style={[styles.menuText, { color: theme.colors.textPrimary }]}>{t('profile.about')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -952,14 +1001,54 @@ const ProfileScreen = ({ navigation }) => {
                 {/* Logout Button */}
                 <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.colors.card }]} onPress={handleLogout}>
                     <Ionicons name="log-out" size={20} color="#FF6B6B" />
-                    <Text style={[styles.logoutText, { color: '#FF6B6B' }]}>Logout</Text>
+                    <Text style={[styles.logoutText, { color: '#FF6B6B' }]}>{t('profile.logout')}</Text>
                 </TouchableOpacity>
 
                 {/* App Version */}
                 <View style={styles.versionContainer}>
-                    <Text style={[styles.versionText, { color: theme.colors.textTertiary }]}>Version 1.0.0</Text>
+                    <Text style={[styles.versionText, { color: theme.colors.textTertiary }]}>{t('profile.version')} 1.0.0</Text>
                 </View>
             </ScrollView>
+
+            {/* Language Selection Modal */}
+            {showLanguageModal && (
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.colors.card }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: theme.colors.textPrimary }]}>{t('profile.selectLanguage')}</Text>
+                            <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                                <Ionicons name="close" size={24} color={theme.colors.textTertiary} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.languageList}>
+                            {getAvailableLanguages().map((language) => (
+                                <TouchableOpacity
+                                    key={language.code}
+                                    style={[
+                                        styles.languageItem,
+                                        { borderBottomColor: theme.colors.border },
+                                        currentLanguage === language.code && { backgroundColor: theme.colors.accent + '20' }
+                                    ]}
+                                    onPress={() => handleLanguageChange(language.code)}
+                                >
+                                    <View style={styles.languageInfo}>
+                                        <Text style={[styles.languageName, { color: theme.colors.textPrimary }]}>
+                                            {language.nativeName}
+                                        </Text>
+                                        <Text style={[styles.languageCode, { color: theme.colors.textSecondary }]}>
+                                            {language.name}
+                                        </Text>
+                                    </View>
+                                    {currentLanguage === language.code && (
+                                        <Ionicons name="checkmark" size={20} color={theme.colors.accent} />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                </View>
+            )}
         </LinearGradient>
     );
 };
@@ -1202,6 +1291,71 @@ const styles = StyleSheet.create({
         width: 50,
         height: 30,
         borderRadius: 15,
+    },
+    // Modal styles
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    modalContent: {
+        width: '90%',
+        maxWidth: 400,
+        borderRadius: 16,
+        padding: 20,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    languageList: {
+        maxHeight: 300,
+    },
+    languageItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    languageInfo: {
+        flex: 1,
+    },
+    languageName: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    languageCode: {
+        fontSize: 14,
+        color: '#888',
+    },
+    settingRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    settingValue: {
+        fontSize: 14,
+        marginRight: 8,
     },
 });
 

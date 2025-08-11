@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import adMobService from '../services/AdMobService';
 
 const DailyStreakScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [streak, setStreak] = useState(0);
     const [lastClaimDate, setLastClaimDate] = useState(null);
@@ -219,23 +221,23 @@ const DailyStreakScreen = ({ navigation }) => {
             await NotificationService.sendStreakClaimedNotification(user.uid, newStreak, reward);
 
             Alert.alert(
-                'Daily Reward Claimed! 🎉',
-                `You earned ${reward}${bonusCoins ? ` + ${bonusCoins} bonus` : ''} coins!\n\nStreak: ${newStreak} days\nTotal earned from streaks: ${totalEarned} coins`,
-                [{ text: 'Awesome!' }]
+                t('streak.dailyRewardClaimed'),
+                t('streak.youEarnedCoins', { reward, bonusCoins, newStreak, totalEarned }),
+                [{ text: t('common.awesome') }]
             );
 
         } catch (error) {
             console.error('Error claiming daily reward:', error);
-            Alert.alert('Error', 'Failed to claim daily reward. Please try again.');
+            Alert.alert(t('common.error'), t('streak.failedToClaimDailyReward'));
         } finally {
             setClaiming(false);
         }
     };
 
     const getStreakStatus = () => {
-        if (streak === 0) return 'Start your streak!';
-        if (streak >= 30) return 'Maximum streak reached!';
-        return `${streak} day${streak > 1 ? 's' : ''} streak`;
+        if (streak === 0) return t('streak.startYourStreak');
+        if (streak >= 30) return t('streak.maximumStreakReached');
+        return t('streak.dayStreak', { count: streak, days: streak });
     };
 
     const getNextReward = () => {
@@ -266,8 +268,8 @@ const DailyStreakScreen = ({ navigation }) => {
                 >
                     <View style={styles.headerContent}>
                         <Ionicons name="flame" size={40} color="#FFFFFF" />
-                        <Text style={styles.headerTitle}>Daily Streak</Text>
-                        <Text style={styles.headerSubtitle}>Claim your daily rewards!</Text>
+                        <Text style={styles.headerTitle}>{t('streak.dailyStreak')}</Text>
+                        <Text style={styles.headerSubtitle}>{t('streak.claimYourDailyRewards')}</Text>
                     </View>
                 </LinearGradient>
 
@@ -291,7 +293,7 @@ const DailyStreakScreen = ({ navigation }) => {
                                     {streak}
                                 </Text>
                                 <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                    Current Days
+                                    {t('streak.currentDays')}
                                 </Text>
                             </View>
 
@@ -300,7 +302,7 @@ const DailyStreakScreen = ({ navigation }) => {
                                     {totalEarned}
                                 </Text>
                                 <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                    Total Earned
+                                    {t('streak.totalEarned')}
                                 </Text>
                             </View>
                         </View>
@@ -324,7 +326,7 @@ const DailyStreakScreen = ({ navigation }) => {
                             <>
                                 <Ionicons name="gift" size={24} color="#FFFFFF" />
                                 <Text style={styles.claimButtonText}>
-                                    {canClaim ? `Claim ${getNextReward()} Coins (Watch Ad)` : 'Already Claimed Today'}
+                                    {canClaim ? t('streak.claimRewardWatchAd', { reward: getNextReward() }) : t('streak.alreadyClaimedToday')}
                                 </Text>
                             </>
                         )}
@@ -333,10 +335,10 @@ const DailyStreakScreen = ({ navigation }) => {
                     {/* Reward Schedule */}
                     <View style={[styles.scheduleCard, { backgroundColor: theme.colors.card }]}>
                         <Text style={[styles.scheduleTitle, { color: theme.colors.textPrimary }]}>
-                            Reward Schedule
+                            {t('streak.rewardSchedule')}
                         </Text>
                         <Text style={[styles.scheduleSubtitle, { color: theme.colors.textSecondary }]}>
-                            Linear rewards: 1 coin on day 1, 2 coins on day 2, up to 30 coins on day 30
+                            {t('streak.linearRewardsDescription')}
                         </Text>
 
                         <View style={styles.scheduleGrid}>
@@ -396,31 +398,31 @@ const DailyStreakScreen = ({ navigation }) => {
                     {/* Info Section */}
                     <View style={[styles.infoCard, { backgroundColor: theme.colors.card }]}>
                         <Text style={[styles.infoTitle, { color: theme.colors.textPrimary }]}>
-                            How it works
+                            {t('streak.howItWorks')}
                         </Text>
                         <View style={styles.infoList}>
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color={theme.colors.accent} />
                                 <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-                                    Claim your reward once every 24 hours
+                                    {t('streak.claimRewardOnceEvery24Hours')}
                                 </Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color={theme.colors.accent} />
                                 <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-                                    Rewards increase by 1 coin each day: 1, 2, 3... up to 30 coins
+                                    {t('streak.rewardsIncreaseBy1CoinEachDay')}
                                 </Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color={theme.colors.accent} />
                                 <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-                                    Miss a day and your streak resets to day 1
+                                    {t('streak.missADayAndYourStreakResetsToDay1')}
                                 </Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Ionicons name="checkmark-circle" size={16} color={theme.colors.accent} />
                                 <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-                                    After 30 days, streak resets automatically
+                                    {t('streak.after30DaysStreakResetsAutomatically')}
                                 </Text>
                             </View>
                         </View>

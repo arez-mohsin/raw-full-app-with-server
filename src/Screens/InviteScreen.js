@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
@@ -500,6 +501,7 @@ const LoadingSkeleton = ({ theme }) => {
 
 const InviteScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -738,7 +740,7 @@ const InviteScreen = ({ navigation }) => {
                             <Ionicons name="arrow-back" size={24} color={theme.colors.accent} />
                         </TouchableOpacity>
                         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
-                            Invite Friends
+                            {t('invite.inviteFriends')}
                         </Text>
                         <TouchableOpacity
                             style={[styles.refreshButton, { backgroundColor: theme.colors.accent }]}
@@ -809,7 +811,7 @@ const InviteScreen = ({ navigation }) => {
                             </Text>
                         )}
                         <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>
-                            Total Referrals
+                            {t('invite.totalReferrals')}
                         </Text>
                     </View>
 
@@ -823,7 +825,7 @@ const InviteScreen = ({ navigation }) => {
                             </Text>
                         )}
                         <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>
-                            Total Earned
+                            {t('invite.totalEarned')}
                         </Text>
                     </View>
                 </View>
@@ -831,7 +833,7 @@ const InviteScreen = ({ navigation }) => {
                 {/* How It Works */}
                 <View style={[styles.howItWorksCard, { backgroundColor: theme.colors.card }]}>
                     <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                        How It Works
+                        {t('invite.howItWorks')}
                     </Text>
 
                     <View style={styles.stepContainer}>
@@ -839,7 +841,7 @@ const InviteScreen = ({ navigation }) => {
                             <Text style={styles.stepNumberText}>1</Text>
                         </View>
                         <Text style={[styles.stepText, { color: theme.colors.textSecondary }]}>
-                            Share your invite code with friends
+                            {t('invite.shareInviteCodeWithFriends')}
                         </Text>
                     </View>
 
@@ -848,7 +850,7 @@ const InviteScreen = ({ navigation }) => {
                             <Text style={styles.stepNumberText}>2</Text>
                         </View>
                         <Text style={[styles.stepText, { color: theme.colors.textSecondary }]}>
-                            Friend enters your code during registration
+                            {t('invite.friendEntersCodeDuringRegistration')}
                         </Text>
                     </View>
 
@@ -857,7 +859,7 @@ const InviteScreen = ({ navigation }) => {
                             <Text style={styles.stepNumberText}>3</Text>
                         </View>
                         <Text style={[styles.stepText, { color: theme.colors.textSecondary }]}>
-                            Both you and your friend get 50 coins!
+                            {t('invite.bothGet50Coins')}
                         </Text>
                     </View>
                 </View>
@@ -866,7 +868,7 @@ const InviteScreen = ({ navigation }) => {
                 {referrals.length > 0 && (
                     <View style={[styles.statsCard, { backgroundColor: theme.colors.card }]}>
                         <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                            Referral Statistics
+                            {t('invite.referralStatistics')}
                         </Text>
 
                         <View style={styles.statsGrid}>

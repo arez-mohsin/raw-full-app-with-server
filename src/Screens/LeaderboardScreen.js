@@ -13,12 +13,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { auth, db } from '../firebase';
 import { collection, query, orderBy, limit, getDocs, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LeaderboardScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [leaderboardData, setLeaderboardData] = useState([]);
     const [currentUserRank, setCurrentUserRank] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -117,12 +119,12 @@ const LeaderboardScreen = ({ navigation }) => {
 
     const getFilterLabel = (filter) => {
         const labels = {
-            balance: 'Balance',
-            level: 'Level',
-            experience: 'Experience',
-            totalMined: 'Total Mined'
+            balance: t('leaderboard.balance'),
+            level: t('leaderboard.level'),
+            experience: t('leaderboard.experience'),
+            totalMined: t('leaderboard.totalMined')
         };
-        return labels[filter] || 'Balance';
+        return labels[filter] || t('leaderboard.balance');
     };
 
     const getRankBadge = (rank) => {
@@ -138,7 +140,7 @@ const LeaderboardScreen = ({ navigation }) => {
             case 'totalMined':
                 return `${value.toFixed(3)} coins`;
             case 'level':
-                return `Level ${value}`;
+                return `${t('leaderboard.level')} ${value}`;
             case 'experience':
                 return `${value} XP`;
             default:
@@ -291,7 +293,7 @@ const LeaderboardScreen = ({ navigation }) => {
                     </TouchableOpacity>
                     <Ionicons name="trophy" size={32} color={theme.colors.accent} />
                     <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
-                        Leaderboard
+                        {t('leaderboard.leaderboard')}
                     </Text>
                 </View>
                 {currentUserRank && (
@@ -340,14 +342,14 @@ const LeaderboardScreen = ({ navigation }) => {
                     <View style={styles.emptyState}>
                         <Ionicons name="trophy-outline" size={64} color={theme.colors.textSecondary} />
                         <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                            {loading ? 'Loading leaderboard...' : 'No users found'}
+                            {loading ? t('leaderboard.loadingLeaderboard') : t('leaderboard.noUsersFound')}
                         </Text>
                     </View>
                 }
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
                         <Text style={[styles.listHeaderText, { color: theme.colors.textSecondary }]}>
-                            Top {leaderboardData.length} Users by {getFilterLabel(selectedFilter)}
+                            {t('leaderboard.topUsersBy', { count: leaderboardData.length, filter: getFilterLabel(selectedFilter) })}
                         </Text>
                     </View>
                 }

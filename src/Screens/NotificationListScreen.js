@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth, db } from '../firebase';
 import { doc, collection, query, orderBy, limit, onSnapshot, updateDoc, deleteDoc, where, getDocs } from 'firebase/firestore';
@@ -19,6 +20,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 const NotificationListScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -139,12 +141,12 @@ const NotificationListScreen = ({ navigation }) => {
 
     const clearAllNotifications = async () => {
         Alert.alert(
-            'Clear All Notifications',
-            'Are you sure you want to delete all notifications? This action cannot be undone.',
+            t('notifications.clearAllNotificationsTitle'),
+            t('notifications.clearAllNotificationsConfirmation'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Clear All',
+                    text: t('notifications.clearAll'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -223,14 +225,14 @@ const NotificationListScreen = ({ navigation }) => {
     };
 
     const formatTime = (timestamp) => {
-        if (!timestamp) return 'Unknown';
+        if (!timestamp) return t('activity.unknownTime');
         const now = new Date();
         const diff = now - timestamp;
         const minutes = Math.floor(diff / (1000 * 60));
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-        if (minutes < 1) return 'Just now';
+        if (minutes < 1) return t('activity.justNow');
         if (minutes < 60) return `${minutes}m ago`;
         if (hours < 24) return `${hours}h ago`;
         if (days < 7) return `${days}d ago`;
@@ -245,7 +247,7 @@ const NotificationListScreen = ({ navigation }) => {
             <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
                 <ActivityIndicator size="large" color={theme.colors.accent} />
                 <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-                    Loading notifications...
+                    {t('notifications.loadingNotifications')}
                 </Text>
             </View>
         );
@@ -266,7 +268,7 @@ const NotificationListScreen = ({ navigation }) => {
                         <Ionicons name="arrow-back" size={24} color={theme.colors.textPrimary} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
-                        Notifications
+                        {t('notifications.notifications')}
                     </Text>
                     <View style={styles.headerActions}>
                         {unreadCount > 0 && (
@@ -274,7 +276,7 @@ const NotificationListScreen = ({ navigation }) => {
                                 style={[styles.markAllButton, { backgroundColor: theme.colors.accent }]}
                                 onPress={markAllAsRead}
                             >
-                                <Text style={styles.markAllText}>Mark All Read</Text>
+                                <Text style={styles.markAllText}>{t('notifications.markAllAsRead')}</Text>
                             </TouchableOpacity>
                         )}
                         {notifications.length > 0 && (
@@ -289,7 +291,7 @@ const NotificationListScreen = ({ navigation }) => {
                 </View>
                 {unreadCount > 0 && (
                     <Text style={[styles.unreadCount, { color: theme.colors.accent }]}>
-                        {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+                        {unreadCount} {t('notifications.unreadNotifications').toLowerCase()}
                     </Text>
                 )}
             </View>
@@ -312,7 +314,7 @@ const NotificationListScreen = ({ navigation }) => {
                     <View style={[styles.emptyState, { backgroundColor: theme.colors.card }]}>
                         <Ionicons name="notifications-off" size={64} color={theme.colors.textTertiary} />
                         <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>
-                            No Notifications
+                            {t('notifications.noNotifications')}
                         </Text>
                         <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
                             You're all caught up! New notifications will appear here.
@@ -335,12 +337,12 @@ const NotificationListScreen = ({ navigation }) => {
                                 onPress={() => handleNotificationPress(notification)}
                                 onLongPress={() => {
                                     Alert.alert(
-                                        'Delete Notification',
-                                        'Do you want to delete this notification?',
+                                        t('notifications.deleteNotification'),
+                                        t('notifications.deleteConfirmation'),
                                         [
-                                            { text: 'Cancel', style: 'cancel' },
+                                            { text: t('common.cancel'), style: 'cancel' },
                                             {
-                                                text: 'Delete',
+                                                text: t('common.delete'),
                                                 style: 'destructive',
                                                 onPress: () => deleteNotification(notification.id),
                                             },

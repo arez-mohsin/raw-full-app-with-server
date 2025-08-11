@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { auth, db } from '../firebase';
@@ -23,6 +24,7 @@ const { width } = Dimensions.get('window');
 
 const UpgradeScreen = () => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [user, setUser] = useState(null);
     const [userId, setUserId] = useState(null);
@@ -315,7 +317,7 @@ const UpgradeScreen = () => {
                 <View style={styles.loadingContainer}>
                     <Ionicons name="sync" size={40} color={theme.colors.accent} />
                     <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                        Loading upgrades...
+                        {t('upgrade.loadingUpgrades')}
                     </Text>
                 </View>
             </View>
@@ -339,7 +341,7 @@ const UpgradeScreen = () => {
                 {/* Header */}
                 <View style={styles.header}>
                     <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
-                        Upgrades & Boosts
+                        {t('upgrade.upgradesAndBoosts')}
                     </Text>
                     <View style={styles.balanceContainer}>
                         <Ionicons name="cash" size={20} color={theme.colors.accent} />
@@ -357,8 +359,7 @@ const UpgradeScreen = () => {
                     {/* Upgrades Section */}
                     <View style={styles.section}>
                         <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>
-
-                            Permanent improvements to your mining operation
+                            {t('upgrade.permanentImprovements')}
                         </Text>
 
                         {Object.keys(upgrades).map((type) => {
@@ -397,7 +398,7 @@ const UpgradeScreen = () => {
                                     <View style={styles.upgradeStats}>
                                         <View style={styles.statItem}>
                                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                                Current Bonus
+                                                {t('upgrade.currentBonus')}
                                             </Text>
                                             <Text style={[styles.statValue, { color: theme.colors.accent }]}>
                                                 {info.currentBonus}
@@ -405,7 +406,7 @@ const UpgradeScreen = () => {
                                         </View>
                                         <View style={styles.statItem}>
                                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                                Next Level
+                                                {t('upgrade.nextLevel')}
                                             </Text>
                                             <Text style={[styles.statValue, { color: theme.colors.accent }]}>
                                                 {info.nextBonus}
@@ -413,7 +414,7 @@ const UpgradeScreen = () => {
                                         </View>
                                         <View style={styles.statItem}>
                                             <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                                                Level
+                                                {t('upgrade.level')}
                                             </Text>
                                             <Text style={[styles.statValue, { color: theme.colors.accent }]}>
                                                 {upgrades[type]}
@@ -436,7 +437,7 @@ const UpgradeScreen = () => {
                                             <>
                                                 <Ionicons name="add" size={20} color={theme.colors.primary} />
                                                 <Text style={[styles.upgradeButtonText, { color: theme.colors.primary }]}>
-                                                    Upgrade ({cost} coins)
+                                                    {t('upgrade.upgrade', { cost })}
                                                 </Text>
                                             </>
                                         )}
@@ -449,10 +450,10 @@ const UpgradeScreen = () => {
                     {/* Boosts Section */}
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                            Mining Boosts
+                            {t('upgrade.miningBoosts')}
                         </Text>
                         <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>
-                            Lifetime speed multipliers for increased earnings
+                            {t('upgrade.lifetimeSpeedMultipliers')}
                         </Text>
 
                         {Object.keys(boosts).map((type) => {
@@ -499,7 +500,7 @@ const UpgradeScreen = () => {
                                             </Text>
                                             {!boost.purchased && (
                                                 <Text style={[styles.boostPrice, { color: theme.colors.accent }]}>
-                                                    {boost.cost || 'N/A'} coins
+                                                    {boost.cost || 'N/A'} {t('common.coins')}
                                                 </Text>
                                             )}
                                         </View>
@@ -514,7 +515,7 @@ const UpgradeScreen = () => {
                                         <View style={styles.boostTimer}>
                                             <Ionicons name="checkmark-circle" size={16} color={theme.colors.success} />
                                             <Text style={[styles.timerText, { color: theme.colors.success }]}>
-                                                Lifetime Boost - Active Forever
+                                                {t('upgrade.lifetimeBoostActive')}
                                             </Text>
                                         </View>
                                     )}
@@ -536,14 +537,14 @@ const UpgradeScreen = () => {
                                             <>
                                                 <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                                                 <Text style={[styles.boostButtonText, { color: theme.colors.primary }]}>
-                                                    Purchased
+                                                    {t('upgrade.purchased')}
                                                 </Text>
                                             </>
                                         ) : (
                                             <>
                                                 <Ionicons name="rocket" size={20} color={theme.colors.primary} />
                                                 <Text style={[styles.boostButtonText, { color: theme.colors.primary }]}>
-                                                    Purchase ({(boost.cost || 'N/A')} coins)
+                                                    {t('upgrade.purchase', { cost: boost.cost || 'N/A' })}
                                                 </Text>
                                             </>
                                         )}

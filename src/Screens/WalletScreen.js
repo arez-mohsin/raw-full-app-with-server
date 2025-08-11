@@ -7,10 +7,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const WalletScreen = () => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
 
     return (
@@ -24,56 +26,56 @@ const WalletScreen = () => {
                 </View>
 
                 <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-                    Wallet Coming Soon
+                    {t('wallet.walletComingSoon')}
                 </Text>
 
                 <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                    We're working on something amazing!
+                    {t('wallet.workingOnSomethingAmazing')}
                 </Text>
 
                 <View style={[styles.featuresCard, { backgroundColor: theme.colors.card }]}>
                     <Text style={[styles.featuresTitle, { color: theme.colors.textPrimary }]}>
-                        🚀 Future Features
+                        {t('wallet.futureFeatures')}
                     </Text>
 
                     <View style={styles.featureItem}>
                         <Ionicons name="trending-up" size={20} color={theme.colors.accent} />
                         <Text style={[styles.featureText, { color: theme.colors.textSecondary }]}>
-                            Coin listing and trading
+                            {t('wallet.coinListingAndTrading')}
                         </Text>
                     </View>
 
                     <View style={styles.featureItem}>
                         <Ionicons name="swap-horizontal" size={20} color={theme.colors.accent} />
                         <Text style={[styles.featureText, { color: theme.colors.textSecondary }]}>
-                            Exchange with other cryptocurrencies
+                            {t('wallet.exchangeWithOtherCryptocurrencies')}
                         </Text>
                     </View>
 
                     <View style={styles.featureItem}>
                         <Ionicons name="card" size={20} color={theme.colors.accent} />
                         <Text style={[styles.featureText, { color: theme.colors.textSecondary }]}>
-                            Withdraw to bank account
+                            {t('wallet.withdrawToBankAccount')}
                         </Text>
                     </View>
 
                     <View style={styles.featureItem}>
                         <Ionicons name="gift" size={20} color={theme.colors.accent} />
                         <Text style={[styles.featureText, { color: theme.colors.textSecondary }]}>
-                            Gift cards and rewards
+                            {t('wallet.giftCardsAndRewards')}
                         </Text>
                     </View>
 
                     <View style={styles.featureItem}>
                         <Ionicons name="shield-checkmark" size={20} color={theme.colors.accent} />
                         <Text style={[styles.featureText, { color: theme.colors.textSecondary }]}>
-                            Secure wallet with 2FA
+                            {t('wallet.secureWalletWith2FA')}
                         </Text>
                     </View>
                 </View>
 
                 <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-                    Keep mining and earning coins! The wallet will be available soon with exciting new features.
+                    {t('wallet.keepMiningAndEarningCoins')}
                 </Text>
             </View>
         </LinearGradient>

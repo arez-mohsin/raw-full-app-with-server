@@ -1,10 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { auth } from '../../firebase';
 import { signOut } from 'firebase/auth';
 
 const AccountErrorScreen = ({ navigation }) => {
+    const { t } = useTranslation();
+
     const handleSignOut = async () => {
         try {
             await signOut(auth);
@@ -21,12 +24,12 @@ const AccountErrorScreen = ({ navigation }) => {
         <View style={styles.container}>
             <View style={styles.content}>
                 <Ionicons name="warning" size={64} color="#EF4444" />
-                <Text style={styles.title}>Account Error</Text>
+                <Text style={styles.title}>{t('errors.accountError')}</Text>
                 <Text style={styles.message}>
-                    There was an issue with your account. Please sign in again.
+                    {t('errors.accountIssueSignInAgain')}
                 </Text>
                 <TouchableOpacity style={styles.button} onPress={handleSignOut}>
-                    <Text style={styles.buttonText}>Sign Out</Text>
+                    <Text style={styles.buttonText}>{t('common.logout')}</Text>
                 </TouchableOpacity>
             </View>
         </View>

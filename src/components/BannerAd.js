@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { BannerAd as RNMBannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { useTranslation } from 'react-i18next';
 import adMobService from '../services/AdMobService';
 
 const BannerAd = ({ containerStyle }) => {
+    const { t } = useTranslation();
     const [adFailed, setAdFailed] = useState(false);
     const bannerUnitId = adMobService.getBannerAdUnitId();
 
@@ -12,7 +14,7 @@ const BannerAd = ({ containerStyle }) => {
     if (adFailed) {
         return (
             <View style={[styles.bannerContainer, containerStyle, styles.fallbackContainer]}>
-                <Text style={styles.fallbackText}>Ad Space</Text>
+                <Text style={styles.fallbackText}>{t('common.adSpace')}</Text>
             </View>
         );
     }

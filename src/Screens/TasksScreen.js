@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth, db } from '../firebase';
 import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -20,6 +21,7 @@ import ActivityLogger from '../utils/ActivityLogger.js';
 
 const TasksScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [userId, setUserId] = useState(null);
     const [userBalance, setUserBalance] = useState(0);
     const [userExperience, setUserExperience] = useState(0);
@@ -53,8 +55,8 @@ const TasksScreen = ({ navigation }) => {
     const tasks = [
         {
             id: 'facebook_like',
-            title: 'Like Our Facebook Page',
-            description: 'Visit and like our Facebook page to earn coins',
+            title: t('tasks.facebookLikeTitle'),
+            description: t('tasks.facebookLikeDescription'),
             reward: 10,
             xp: 25,
             icon: 'logo-facebook',
@@ -64,8 +66,8 @@ const TasksScreen = ({ navigation }) => {
         },
         {
             id: 'twitter_follow',
-            title: 'Follow Us on Twitter',
-            description: 'Follow our Twitter account for updates and rewards',
+            title: t('tasks.twitterFollowTitle'),
+            description: t('tasks.twitterFollowDescription'),
             reward: 15,
             xp: 35,
             icon: 'logo-twitter',
@@ -75,8 +77,8 @@ const TasksScreen = ({ navigation }) => {
         },
         {
             id: 'instagram_follow',
-            title: 'Follow Our Instagram',
-            description: 'Follow our Instagram for exclusive content',
+            title: t('tasks.instagramFollowTitle'),
+            description: t('tasks.instagramFollowDescription'),
             reward: 20,
             xp: 45,
             icon: 'logo-instagram',
@@ -86,8 +88,8 @@ const TasksScreen = ({ navigation }) => {
         },
         {
             id: 'youtube_subscribe',
-            title: 'Subscribe to YouTube',
-            description: 'Subscribe to our YouTube channel',
+            title: t('tasks.youtubeSubscribeTitle'),
+            description: t('tasks.youtubeSubscribeDescription'),
             reward: 25,
             xp: 55,
             icon: 'logo-youtube',
@@ -97,8 +99,8 @@ const TasksScreen = ({ navigation }) => {
         },
         {
             id: 'telegram_join',
-            title: 'Join Telegram Group',
-            description: 'Join our Telegram community',
+            title: t('tasks.telegramJoinTitle'),
+            description: t('tasks.telegramJoinDescription'),
             reward: 30,
             xp: 65,
             icon: 'chatbubbles',
@@ -108,8 +110,8 @@ const TasksScreen = ({ navigation }) => {
         },
         {
             id: 'discord_join',
-            title: 'Join Discord Server',
-            description: 'Join our Discord community',
+            title: t('tasks.discordJoinTitle'),
+            description: t('tasks.discordJoinDescription'),
             reward: 35,
             xp: 75,
             icon: 'people',
@@ -119,8 +121,8 @@ const TasksScreen = ({ navigation }) => {
         },
         {
             id: 'daily_login',
-            title: 'Daily Login',
-            description: 'Log in to the app today',
+            title: t('tasks.dailyLoginTitle'),
+            description: t('tasks.dailyLoginDescription'),
             reward: 5,
             xp: 15,
             icon: 'calendar',
@@ -129,8 +131,8 @@ const TasksScreen = ({ navigation }) => {
         },
         {
             id: 'share_app',
-            title: 'Share App',
-            description: 'Share the app with your friends',
+            title: t('tasks.shareAppTitle'),
+            description: t('tasks.shareAppDescription'),
             reward: 50,
             xp: 120,
             icon: 'share-social',
@@ -287,7 +289,7 @@ const TasksScreen = ({ navigation }) => {
 
             Alert.alert(
                 'Task Completed! 🎉',
-                `You earned ${task.reward} coins and ${task.xp} experience!${levelUpMessage}\nNew balance: ${newBalance.toFixed(3)} coins\nTotal experience: ${newExperience}`,
+                `${t('common.taskCompletedReward')}${task.reward}${t('common.taskCompletedXp')}${task.xp}${levelUpMessage}\n${t('common.newBalance')}${newBalance.toFixed(3)}${t('common.totalExperience')}${newExperience}`,
                 [{ text: 'OK' }]
             );
 
@@ -386,7 +388,7 @@ const TasksScreen = ({ navigation }) => {
             >
                 <View style={styles.loadingContainer}>
                     <Text style={[styles.loadingText, { color: theme.colors.textPrimary }]}>
-                        Loading tasks...
+                        {t('common.loadingTasks')}
                     </Text>
                 </View>
             </LinearGradient>
@@ -419,7 +421,7 @@ const TasksScreen = ({ navigation }) => {
                         <Ionicons name="arrow-back" size={24} color={theme.colors.textPrimary} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
-                        Daily Tasks
+                        {t('common.dailyTasks')}
                     </Text>
                     <View style={styles.headerSpacer} />
                 </View>
@@ -429,7 +431,7 @@ const TasksScreen = ({ navigation }) => {
                     <View style={styles.levelHeader}>
                         <Ionicons name="star" size={24} color="#FFD700" />
                         <Text style={[styles.levelTitle, { color: theme.colors.textPrimary }]}>
-                            Level {userLevel}
+                            {t('common.level')} {userLevel}
                         </Text>
                     </View>
                     <View style={styles.levelProgress}>
@@ -438,7 +440,7 @@ const TasksScreen = ({ navigation }) => {
                                 {userExperience} XP
                             </Text>
                             <Text style={[styles.levelNext, { color: theme.colors.textSecondary }]}>
-                                Next: {getXPForNextLevel(userLevel)} XP
+                                {t('common.nextLevelXp')}: {getXPForNextLevel(userLevel)} XP
                             </Text>
                         </View>
                         <View style={styles.progressBarContainer}>
@@ -462,7 +464,7 @@ const TasksScreen = ({ navigation }) => {
                     <View style={styles.progressHeader}>
                         <Ionicons name="trophy" size={24} color={theme.colors.accent} />
                         <Text style={[styles.progressTitle, { color: theme.colors.textPrimary }]}>
-                            Today's Progress
+                            {t('common.todaysProgress')}
                         </Text>
                     </View>
                     <View style={styles.progressStats}>
@@ -471,7 +473,7 @@ const TasksScreen = ({ navigation }) => {
                                 {getCompletedTasksCount()}/{tasks.length}
                             </Text>
                             <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>
-                                Tasks Completed
+                                {t('common.tasksCompleted')}
                             </Text>
                         </View>
                         <View style={styles.progressStat}>
@@ -479,7 +481,7 @@ const TasksScreen = ({ navigation }) => {
                                 +{getTotalReward()}
                             </Text>
                             <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>
-                                Coins Earned
+                                {t('common.coinsEarned')}
                             </Text>
                         </View>
                     </View>
@@ -488,7 +490,7 @@ const TasksScreen = ({ navigation }) => {
                 {/* Tasks List */}
                 <View style={styles.tasksSection}>
                     <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                        Available Tasks
+                        {t('common.availableTasks')}
                     </Text>
                     {tasks.map(renderTaskCard)}
                 </View>
@@ -498,21 +500,21 @@ const TasksScreen = ({ navigation }) => {
                     <View style={styles.tipsHeader}>
                         <Ionicons name="bulb" size={24} color={theme.colors.accent} />
                         <Text style={[styles.tipsTitle, { color: theme.colors.textPrimary }]}>
-                            Tips
+                            {t('common.tips')}
                         </Text>
                     </View>
                     <View style={styles.tipsContent}>
                         <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                            • Complete tasks daily to earn extra coins
+                            {t('common.tipCompleteDaily')}
                         </Text>
                         <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                            • Social media tasks reset daily
+                            {t('common.tipSocialReset')}
                         </Text>
                         <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                            • Some tasks require external actions
+                            {t('common.tipExternalActions')}
                         </Text>
                         <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-                            • Check back daily for new opportunities
+                            {t('common.tipCheckDaily')}
                         </Text>
                     </View>
                 </View>

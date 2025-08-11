@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
 import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import SecurityService from '../services/SecurityService';
 
 const DeviceLogoutChecker = ({ navigation }) => {
+    const { t } = useTranslation();
+
     useEffect(() => {
         const checkDeviceLogout = async () => {
             try {
@@ -10,11 +13,11 @@ const DeviceLogoutChecker = ({ navigation }) => {
 
                 if (shouldLogout) {
                     Alert.alert(
-                        'Security Alert',
-                        'Your account password was changed from another device. You have been logged out for security.',
+                        t('errors.securityError'),
+                        t('errors.passwordChangedFromAnotherDevice'),
                         [
                             {
-                                text: 'OK',
+                                text: t('common.ok'),
                                 onPress: async () => {
                                     await SecurityService.logoutCurrentDevice();
                                     // Navigation will be handled by the auth state change
@@ -36,7 +39,7 @@ const DeviceLogoutChecker = ({ navigation }) => {
         const interval = setInterval(checkDeviceLogout, 30000);
 
         return () => clearInterval(interval);
-    }, [navigation]);
+    }, [navigation, t]);
 
     return null; // This component doesn't render anything
 };

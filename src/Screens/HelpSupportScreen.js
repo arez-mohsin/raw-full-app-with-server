@@ -9,40 +9,44 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const HelpSupportScreen = ({ navigation }) => {
+    const { theme } = useTheme();
+    const { t } = useTranslation();
     const [expandedFAQ, setExpandedFAQ] = useState(null);
 
     const faqData = [
         {
             id: 1,
-            question: 'How does crypto mining work?',
-            answer: 'Crypto mining is the process of validating transactions and adding them to the blockchain. Our app simulates this process and rewards users with cryptocurrency tokens for their participation.',
+            question: t('helpSupport.faq1Question'),
+            answer: t('helpSupport.faq1Answer'),
         },
         {
             id: 2,
-            question: 'How do I withdraw my earnings?',
-            answer: 'You can withdraw your earnings once you reach the minimum withdrawal threshold. Go to the Wallet screen and tap the "Withdraw" button to transfer funds to your external wallet.',
+            question: t('helpSupport.faq2Question'),
+            answer: t('helpSupport.faq2Answer'),
         },
         {
             id: 3,
-            question: 'What is the minimum withdrawal amount?',
-            answer: 'The minimum withdrawal amount is 0.001 BTC or equivalent in other supported cryptocurrencies. This helps cover network transaction fees.',
+            question: t('helpSupport.faq3Question'),
+            answer: t('helpSupport.faq3Answer'),
         },
         {
             id: 4,
-            question: 'How secure is my account?',
-            answer: 'We use industry-standard encryption and security measures to protect your account. We recommend enabling two-factor authentication for additional security.',
+            question: t('helpSupport.faq4Question'),
+            answer: t('helpSupport.faq4Answer'),
         },
         {
             id: 5,
-            question: 'Can I mine multiple cryptocurrencies?',
-            answer: 'Currently, our app supports Bitcoin mining simulation. We plan to add support for other cryptocurrencies in future updates.',
+            question: t('helpSupport.faq5Question'),
+            answer: t('helpSupport.faq5Answer'),
         },
         {
             id: 6,
-            question: 'How often are rewards distributed?',
-            answer: 'Rewards are calculated and distributed every 24 hours. You can check your mining progress in the Home screen.',
+            question: t('helpSupport.faq6Question'),
+            answer: t('helpSupport.faq6Answer'),
         },
     ];
 
@@ -71,44 +75,44 @@ const HelpSupportScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Help & Support</Text>
+                <Text style={styles.headerTitle}>{t('helpSupport.helpSupport')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
                 {/* Quick Actions */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Get Help</Text>
+                    <Text style={styles.sectionTitle}>{t('helpSupport.getHelp')}</Text>
                     <View style={styles.quickActions}>
                         <TouchableOpacity style={styles.actionCard} onPress={handleContactSupport}>
                             <View style={styles.actionIcon}>
                                 <Ionicons name="mail" size={24} color="#FFD700" />
                             </View>
-                            <Text style={styles.actionTitle}>Email Support</Text>
-                            <Text style={styles.actionSubtitle}>Get help via email</Text>
+                            <Text style={styles.actionTitle}>{t('helpSupport.emailSupport')}</Text>
+                            <Text style={styles.actionSubtitle}>{t('helpSupport.getHelpViaEmail')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.actionCard} onPress={handleLiveChat}>
                             <View style={styles.actionIcon}>
                                 <Ionicons name="chatbubbles" size={24} color="#FFD700" />
                             </View>
-                            <Text style={styles.actionTitle}>Live Chat</Text>
-                            <Text style={styles.actionSubtitle}>Chat with support</Text>
+                            <Text style={styles.actionTitle}>{t('helpSupport.liveChat')}</Text>
+                            <Text style={styles.actionSubtitle}>{t('helpSupport.chatWithSupport')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.actionCard} onPress={handleReportBug}>
                             <View style={styles.actionIcon}>
                                 <Ionicons name="bug" size={24} color="#FFD700" />
                             </View>
-                            <Text style={styles.actionTitle}>Report Bug</Text>
-                            <Text style={styles.actionSubtitle}>Report an issue</Text>
+                            <Text style={styles.actionTitle}>{t('helpSupport.reportBug')}</Text>
+                            <Text style={styles.actionSubtitle}>{t('helpSupport.reportAnIssue')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* FAQ Section */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+                    <Text style={styles.sectionTitle}>{t('helpSupport.frequentlyAskedQuestions')}</Text>
                     <View style={styles.faqContainer}>
                         {faqData.map((item) => (
                             <View key={item.id} style={styles.faqItem}>
@@ -135,26 +139,26 @@ const HelpSupportScreen = ({ navigation }) => {
 
                 {/* Contact Info */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Contact Information</Text>
+                    <Text style={styles.sectionTitle}>{t('helpSupport.contactInformation')}</Text>
                     <View style={styles.contactCard}>
                         <View style={styles.contactItem}>
                             <Ionicons name="mail" size={20} color="#FFD700" />
                             <View style={styles.contactTextContainer}>
-                                <Text style={styles.contactLabel}>Email</Text>
+                                <Text style={styles.contactLabel}>{t('helpSupport.email')}</Text>
                                 <Text style={styles.contactValue}>support@cryptominer.com</Text>
                             </View>
                         </View>
                         <View style={styles.contactItem}>
                             <Ionicons name="time" size={20} color="#FFD700" />
                             <View style={styles.contactTextContainer}>
-                                <Text style={styles.contactLabel}>Support Hours</Text>
+                                <Text style={styles.contactLabel}>{t('helpSupport.supportHours')}</Text>
                                 <Text style={styles.contactValue}>24/7</Text>
                             </View>
                         </View>
                         <View style={styles.contactItem}>
                             <Ionicons name="globe" size={20} color="#FFD700" />
                             <View style={styles.contactTextContainer}>
-                                <Text style={styles.contactLabel}>Website</Text>
+                                <Text style={styles.contactLabel}>{t('helpSupport.website')}</Text>
                                 <Text style={styles.contactValue}>www.cryptominer.com</Text>
                             </View>
                         </View>
@@ -163,25 +167,25 @@ const HelpSupportScreen = ({ navigation }) => {
 
                 {/* Resources */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Resources</Text>
+                    <Text style={styles.sectionTitle}>{t('helpSupport.resources')}</Text>
                     <TouchableOpacity style={styles.resourceItem}>
                         <View style={styles.resourceLeft}>
                             <Ionicons name="document-text" size={20} color="#FFD700" />
-                            <Text style={styles.resourceText}>User Guide</Text>
+                            <Text style={styles.resourceText}>{t('helpSupport.userGuide')}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#888" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.resourceItem}>
                         <View style={styles.resourceLeft}>
                             <Ionicons name="videocam" size={20} color="#FFD700" />
-                            <Text style={styles.resourceText}>Video Tutorials</Text>
+                            <Text style={styles.resourceText}>{t('helpSupport.videoTutorials')}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#888" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.resourceItem}>
                         <View style={styles.resourceLeft}>
                             <Ionicons name="people" size={20} color="#FFD700" />
-                            <Text style={styles.resourceText}>Community Forum</Text>
+                            <Text style={styles.resourceText}>{t('helpSupport.communityForum')}</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#888" />
                     </TouchableOpacity>
@@ -190,10 +194,10 @@ const HelpSupportScreen = ({ navigation }) => {
                 {/* App Info */}
                 <View style={styles.section}>
                     <View style={styles.appInfoCard}>
-                        <Text style={styles.appInfoTitle}>CryptoMiner App</Text>
-                        <Text style={styles.appInfoVersion}>Version 1.0.0</Text>
+                        <Text style={styles.appInfoTitle}>{t('helpSupport.cryptoMinerApp')}</Text>
+                        <Text style={styles.appInfoVersion}>{t('helpSupport.version')} 1.0.0</Text>
                         <Text style={styles.appInfoDescription}>
-                            The ultimate crypto mining simulation app. Mine, earn, and learn about cryptocurrency in a safe and educational environment.
+                            {t('helpSupport.appDescription')}
                         </Text>
                     </View>
                 </View>

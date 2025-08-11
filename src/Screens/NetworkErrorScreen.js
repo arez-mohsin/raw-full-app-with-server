@@ -10,11 +10,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import * as Network from 'expo-network';
 import * as Haptics from 'expo-haptics';
 
 const NetworkErrorScreen = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [isChecking, setIsChecking] = useState(false);
     const [networkState, setNetworkState] = useState(null);
 
@@ -47,21 +49,21 @@ const NetworkErrorScreen = ({ navigation }) => {
 
     // Get network status description
     const getNetworkStatusText = () => {
-        if (!networkState) return 'Checking network connection...';
+        if (!networkState) return t('errors.checkingNetworkConnection');
 
         if (networkState.isConnected && networkState.isInternetReachable) {
-            return 'Network connection restored!';
+            return t('errors.networkConnectionRestored');
         }
 
         if (!networkState.isConnected) {
-            return 'No network connection detected';
+            return t('errors.noNetworkConnection');
         }
 
         if (!networkState.isInternetReachable) {
-            return 'Connected to network but no internet access';
+            return t('errors.noInternetAccess');
         }
 
-        return 'Network connection issue detected';
+        return t('errors.networkConnectionIssue');
     };
 
     // Get network type description
@@ -70,13 +72,13 @@ const NetworkErrorScreen = ({ navigation }) => {
 
         switch (networkState.type) {
             case Network.NetworkStateType.WIFI:
-                return 'WiFi';
+                return t('errors.wifi');
             case Network.NetworkStateType.CELLULAR:
-                return 'Cellular';
+                return t('errors.cellular');
             case Network.NetworkStateType.NONE:
-                return 'No Connection';
+                return t('errors.noConnection');
             default:
-                return 'Unknown';
+                return t('errors.unknown');
         }
     };
 
@@ -89,9 +91,9 @@ const NetworkErrorScreen = ({ navigation }) => {
                         <Ionicons name="wifi-off" size={60} color="#ff4444" />
                     </View>
 
-                    <Text style={styles.title}>No Internet Connection</Text>
+                    <Text style={styles.title}>{t('errors.networkError')}</Text>
                     <Text style={styles.subtitle}>
-                        Please check your network settings and try again
+                        {t('errors.checkNetworkSettings')}
                     </Text>
                 </View>
 
@@ -103,7 +105,7 @@ const NetworkErrorScreen = ({ navigation }) => {
                             size={24}
                             color={networkState?.isConnected ? "#4CAF50" : "#ff4444"}
                         />
-                        <Text style={styles.statusTitle}>Network Status</Text>
+                        <Text style={styles.statusTitle}>{t('errors.networkStatus')}</Text>
                     </View>
 
                     <Text style={styles.statusText}>{getNetworkStatusText()}</Text>
@@ -111,19 +113,19 @@ const NetworkErrorScreen = ({ navigation }) => {
                     {networkState && (
                         <View style={styles.networkInfo}>
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>Connection Type:</Text>
+                                <Text style={styles.infoLabel}>{t('errors.connectionType')}:</Text>
                                 <Text style={styles.infoValue}>{getNetworkTypeText()}</Text>
                             </View>
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>Connected:</Text>
+                                <Text style={styles.infoLabel}>{t('errors.connected')}:</Text>
                                 <Text style={[styles.infoValue, { color: networkState.isConnected ? "#4CAF50" : "#ff4444" }]}>
-                                    {networkState.isConnected ? "Yes" : "No"}
+                                    {networkState.isConnected ? t('common.yes') : t('common.no')}
                                 </Text>
                             </View>
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>Internet Access:</Text>
+                                <Text style={styles.infoLabel}>{t('errors.internetAccess')}:</Text>
                                 <Text style={[styles.infoValue, { color: networkState.isInternetReachable ? "#4CAF50" : "#ff4444" }]}>
-                                    {networkState.isInternetReachable ? "Yes" : "No"}
+                                    {networkState.isInternetReachable ? t('common.yes') : t('common.no')}
                                 </Text>
                             </View>
                         </View>
@@ -132,22 +134,22 @@ const NetworkErrorScreen = ({ navigation }) => {
 
                 {/* Troubleshooting Tips */}
                 <View style={styles.tipsCard}>
-                    <Text style={styles.tipsTitle}>Troubleshooting Tips</Text>
+                    <Text style={styles.tipsTitle}>{t('errors.troubleshootingTips')}</Text>
                     <View style={styles.tipItem}>
                         <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                        <Text style={styles.tipText}>Check if WiFi is enabled</Text>
+                        <Text style={styles.tipText}>{t('errors.checkWifiEnabled')}</Text>
                     </View>
                     <View style={styles.tipItem}>
                         <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                        <Text style={styles.tipText}>Turn off airplane mode</Text>
+                        <Text style={styles.tipText}>{t('errors.turnOffAirplaneMode')}</Text>
                     </View>
                     <View style={styles.tipItem}>
                         <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                        <Text style={styles.tipText}>Try switching between WiFi and mobile data</Text>
+                        <Text style={styles.tipText}>{t('errors.switchWifiMobileData')}</Text>
                     </View>
                     <View style={styles.tipItem}>
                         <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                        <Text style={styles.tipText}>Restart your device if problems persist</Text>
+                        <Text style={styles.tipText}>{t('errors.restartDevice')}</Text>
                     </View>
                 </View>
 
@@ -163,7 +165,7 @@ const NetworkErrorScreen = ({ navigation }) => {
                         ) : (
                             <>
                                 <Ionicons name="refresh" size={20} color="#000" />
-                                <Text style={styles.primaryButtonText}>Check Connection</Text>
+                                <Text style={styles.primaryButtonText}>{t('errors.checkConnection')}</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -173,17 +175,17 @@ const NetworkErrorScreen = ({ navigation }) => {
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             Alert.alert(
-                                'Exit App',
-                                'Are you sure you want to exit the app?',
+                                t('errors.exitApp'),
+                                t('errors.exitAppConfirmation'),
                                 [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    { text: 'Exit', style: 'destructive', onPress: () => { } }
+                                    { text: t('common.cancel'), style: 'cancel' },
+                                    { text: t('common.exit'), style: 'destructive', onPress: () => { } }
                                 ]
                             );
                         }}
                     >
                         <Ionicons name="close-circle" size={20} color="#ff4444" />
-                        <Text style={styles.secondaryButtonText}>Exit App</Text>
+                        <Text style={styles.secondaryButtonText}>{t('errors.exitApp')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

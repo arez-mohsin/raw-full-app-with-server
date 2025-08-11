@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { withTranslation } from 'react-i18next';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -29,14 +30,14 @@ class ErrorBoundary extends React.Component {
 
     render() {
         if (this.state.hasError) {
-            return <ErrorFallback onRetry={this.handleRetry} />;
+            return <ErrorFallback onRetry={this.handleRetry} t={this.props.t} />;
         }
 
         return this.props.children;
     }
 }
 
-const ErrorFallback = ({ onRetry }) => {
+const ErrorFallback = ({ onRetry, t }) => {
     return (
         <LinearGradient
             colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']}
@@ -45,10 +46,10 @@ const ErrorFallback = ({ onRetry }) => {
             <View style={styles.content}>
                 <Ionicons name="warning" size={64} color="#FF6B6B" />
                 <Text style={styles.title}>
-                    Oops! Something went wrong
+                    {t('errors.oopsSomethingWentWrong')}
                 </Text>
                 <Text style={styles.message}>
-                    We encountered an unexpected error. Please try again.
+                    {t('errors.unexpectedErrorTryAgain')}
                 </Text>
 
                 <TouchableOpacity
@@ -56,7 +57,7 @@ const ErrorFallback = ({ onRetry }) => {
                     onPress={onRetry}
                 >
                     <Ionicons name="refresh" size={20} color="#fff" />
-                    <Text style={styles.retryButtonText}>Try Again</Text>
+                    <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
                 </TouchableOpacity>
             </View>
         </LinearGradient>
@@ -104,4 +105,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ErrorBoundary; 
+export default withTranslation()(ErrorBoundary); 

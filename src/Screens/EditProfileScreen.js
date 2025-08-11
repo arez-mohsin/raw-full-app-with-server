@@ -11,11 +11,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const EditProfileScreen = ({ navigation }) => {
+    const { t } = useTranslation();
     const [profile, setProfile] = useState({
         username: '',
         email: '',
@@ -62,7 +64,7 @@ const EditProfileScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Error loading profile:', error);
-            Alert.alert('Error', 'Failed to load profile data. Please try again.');
+            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
         } finally {
             setIsLoading(false);
         }
@@ -74,23 +76,23 @@ const EditProfileScreen = ({ navigation }) => {
 
     const handleAvatarChange = () => {
         Alert.alert(
-            'Change Avatar',
-            'Avatar functionality will be available soon!',
-            [{ text: 'OK' }]
+            t('profile.profilePicture'),
+            t('profile.profilePicture'),
+            [{ text: t('common.ok') }]
         );
     };
 
     const validateProfile = () => {
         if (!profile.username.trim()) {
-            Alert.alert('Error', 'Username is required');
+            Alert.alert(t('common.error'), t('validation.required'));
             return false;
         }
         if (!profile.firstName.trim()) {
-            Alert.alert('Error', 'First name is required');
+            Alert.alert(t('common.error'), t('validation.required'));
             return false;
         }
         if (!profile.lastName.trim()) {
-            Alert.alert('Error', 'Last name is required');
+            Alert.alert(t('common.error'), t('validation.required'));
             return false;
         }
         return true;
@@ -102,7 +104,7 @@ const EditProfileScreen = ({ navigation }) => {
         setIsSaving(true);
         try {
             if (!userId) {
-                Alert.alert('Error', 'User not authenticated');
+                Alert.alert(t('common.error'), t('errors.authenticationError'));
                 return;
             }
 
@@ -118,13 +120,13 @@ const EditProfileScreen = ({ navigation }) => {
             });
 
             Alert.alert(
-                'Success',
-                'Profile updated successfully!',
-                [{ text: 'OK', onPress: () => navigation.goBack() }]
+                t('common.success'),
+                t('profile.profileUpdated'),
+                [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
             );
         } catch (error) {
             console.error('Error updating profile:', error);
-            Alert.alert('Error', 'Failed to update profile. Please try again.');
+            Alert.alert(t('common.error'), t('errors.somethingWentWrong'));
         } finally {
             setIsSaving(false);
         }
@@ -135,7 +137,7 @@ const EditProfileScreen = ({ navigation }) => {
             <LinearGradient colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']} style={styles.container}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#FFD700" />
-                    <Text style={styles.loadingText}>Loading profile...</Text>
+                    <Text style={styles.loadingText}>{t('common.loading')}</Text>
                 </View>
             </LinearGradient>
         );
@@ -147,10 +149,10 @@ const EditProfileScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Edit Profile</Text>
+                <Text style={styles.headerTitle}>{t('profile.editProfileTitle')}</Text>
                 <TouchableOpacity onPress={handleSave} disabled={isSaving}>
                     <Text style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}>
-                        {isSaving ? 'Saving...' : 'Save'}
+                        {isSaving ? t('common.loading') : t('profile.saveProfile')}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -165,72 +167,72 @@ const EditProfileScreen = ({ navigation }) => {
                             <Ionicons name="camera" size={16} color="#fff" />
                         </TouchableOpacity>
                     </View>
-                    <Text style={styles.avatarText}>Tap to change photo</Text>
+                    <Text style={styles.avatarText}>{t('profile.takePhoto')}</Text>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Personal Information</Text>
+                    <Text style={styles.sectionTitle}>{t('profile.personalInformation')}</Text>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Username *</Text>
+                        <Text style={styles.inputLabel}>{t('profile.username')} *</Text>
                         <TextInput
                             style={styles.textInput}
                             value={profile.username}
                             onChangeText={(value) => handleInputChange('username', value)}
-                            placeholder="Enter username"
+                            placeholder={t('profile.username')}
                             placeholderTextColor="#666"
                             autoCapitalize="none"
                         />
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Email</Text>
+                        <Text style={styles.inputLabel}>{t('profile.email')}</Text>
                         <TextInput
                             style={[styles.textInput, styles.disabledInput]}
                             value={profile.email}
                             editable={false}
-                            placeholder="Email (cannot be changed)"
+                            placeholder={t('profile.email')}
                             placeholderTextColor="#666"
                         />
                     </View>
 
                     <View style={styles.row}>
                         <View style={[styles.inputGroup, styles.halfWidth]}>
-                            <Text style={styles.inputLabel}>First Name *</Text>
+                            <Text style={styles.inputLabel}>{t('profile.firstName')} *</Text>
                             <TextInput
                                 style={styles.textInput}
                                 value={profile.firstName}
                                 onChangeText={(value) => handleInputChange('firstName', value)}
-                                placeholder="First name"
+                                placeholder={t('profile.firstName')}
                                 placeholderTextColor="#666"
                             />
                         </View>
                         <View style={[styles.inputGroup, styles.halfWidth]}>
-                            <Text style={styles.inputLabel}>Last Name *</Text>
+                            <Text style={styles.inputLabel}>{t('profile.lastName')} *</Text>
                             <TextInput
                                 style={styles.textInput}
                                 value={profile.lastName}
                                 onChangeText={(value) => handleInputChange('lastName', value)}
-                                placeholder="Last name"
+                                placeholder={t('profile.lastName')}
                                 placeholderTextColor="#666"
                             />
                         </View>
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Phone Number</Text>
+                        <Text style={styles.inputLabel}>{t('profile.phone')}</Text>
                         <TextInput
                             style={styles.textInput}
                             value={profile.phoneNumber}
                             onChangeText={(value) => handleInputChange('phoneNumber', value)}
-                            placeholder="Enter phone number"
+                            placeholder={t('profile.phone')}
                             placeholderTextColor="#666"
                             keyboardType="phone-pad"
                         />
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Date of Birth</Text>
+                        <Text style={styles.inputLabel}>{t('profile.dateOfBirth')}</Text>
                         <TextInput
                             style={styles.textInput}
                             value={profile.dateOfBirth}
@@ -241,12 +243,12 @@ const EditProfileScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Location</Text>
+                        <Text style={styles.inputLabel}>{t('profile.location')}</Text>
                         <TextInput
                             style={styles.textInput}
                             value={profile.location}
                             onChangeText={(value) => handleInputChange('location', value)}
-                            placeholder="Enter your location"
+                            placeholder={t('profile.location')}
                             placeholderTextColor="#666"
                         />
                     </View>
