@@ -171,8 +171,8 @@ const SplashScreen = ({ navigation }) => {
 
                 {/* App Name */}
                 <Animated.View style={[styles.textContainer, { opacity: textOpacity }]}>
-                    <Text style={[styles.appName, { color: theme.colors.accent }]}>{t('appName')}</Text>
-                    <Text style={[styles.appTagline, { color: theme.colors.textSecondary }]}>{t('appTagline')}</Text>
+                    <Text style={[styles.appName, { color: theme.colors.accent }]}>RAW</Text>
+                    <Text style={[styles.appTagline, { color: theme.colors.textSecondary }]}>Rewarding your time</Text>
                 </Animated.View>
 
                 {/* Progress Bar */}
@@ -188,12 +188,12 @@ const SplashScreen = ({ navigation }) => {
                             ]}
                         />
                     </View>
-                    <Text style={[styles.loadingText, { color: theme.colors.textTertiary }]}>{t('loadingText')}</Text>
+                    <Text style={[styles.loadingText, { color: theme.colors.textTertiary }]}>Loading...</Text>
                 </View>
 
                 {/* Version */}
                 <View style={styles.versionContainer}>
-                    <Text style={[styles.versionText, { color: theme.colors.textTertiary }]}>{t('versionText')}</Text>
+                    <Text style={[styles.versionText, { color: theme.colors.textTertiary }]}>Version 1.0.0</Text>
                 </View>
             </View>
         </LinearGradient>

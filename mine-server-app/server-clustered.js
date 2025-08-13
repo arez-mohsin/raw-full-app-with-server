@@ -201,7 +201,7 @@ if (cluster.isMaster) {
         MIN_REQUEST_DELAY: 300,
         MAX_REQUEST_DELAY: 1000,
         LOADING_STATE_TIMEOUT: 5000,
-        MAX_SESSIONS_PER_DAY: 8,
+        MAX_SESSIONS_PER_DAY: 999999, // No practical daily limit (effectively unlimited)
         MIN_SESSION_INTERVAL: 60000,
         MAX_CONCURRENT_SESSIONS: 1,
         ANTI_BOT_DELAY: 500,

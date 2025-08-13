@@ -10,30 +10,36 @@
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "resourceClass": "m-medium"
+      },
       "env": {
         "NODE_ENV": "development"
-      },
-      "prebuildCommand": "npx expo prebuild --clean --platform android"
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "resourceClass": "m-medium"
+      },
       "env": {
         "NODE_ENV": "production"
-      },
-      "prebuildCommand": "npx expo prebuild --clean --platform android"
+      }
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {
+        "resourceClass": "m-medium"
+      },
       "env": {
         "NODE_ENV": "production"
-      },
-      "prebuildCommand": "npx expo prebuild --clean --platform android"
+      }
     }
   },
   "submit": {

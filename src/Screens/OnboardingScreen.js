@@ -121,8 +121,8 @@ const OnboardingScreen = ({ navigation, route }) => {
                 await route.params.onComplete();
             }
 
-            // Navigate to Login screen after onboarding completion
-            navigation.replace('Login');
+            // Navigate to Language Selection screen after onboarding completion
+            navigation.replace('LanguageSelection');
         } catch (error) {
             console.log('Error completing onboarding:', error);
         }

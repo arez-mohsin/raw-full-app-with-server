@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "raw-app",
-    "slug": "raw-app",
+    "name": "RAW",
+    "slug": "raw",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

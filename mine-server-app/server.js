@@ -163,7 +163,7 @@ const SECURITY_CONFIG = {
   MIN_REQUEST_DELAY: 300, // Minimum delay between requests (ms)
   MAX_REQUEST_DELAY: 1000, // Maximum delay between requests (ms)
   LOADING_STATE_TIMEOUT: 5000, // Maximum loading state duration (ms)
-  MAX_SESSIONS_PER_DAY: 8, // Maximum mining sessions per day
+  MAX_SESSIONS_PER_DAY: 999999, // No practical daily limit (effectively unlimited)
   MIN_SESSION_INTERVAL: 60000, // Minimum 1 minute between sessions
   MAX_CONCURRENT_SESSIONS: 1, // Only one session per user
   ANTI_BOT_DELAY: 500, // Random delay to prevent bot attacks

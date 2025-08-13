@@ -90,7 +90,8 @@
     "privacyPolicy": "Privacy Policy",
     "or": "or",
     "warning": "Warning",
-    "information": "Information"
+    "information": "Information",
+    "continue": "Continue"
   },
   "navigation": {
     "home": "Home",
@@ -227,21 +228,21 @@
   },
   "onboarding": {
     "welcome": "Welcome to Raw App",
-    "startMining": "Start mining cryptocurrency and earn rewards",
+    "startMining": "Start mining coins and earn rewards",
     "getStarted": "Get Started",
     "skip": "Skip",
-    "welcomeToCryptoMining": "Welcome to Crypto Mining",
-    "startEarningCrypto": "Start earning cryptocurrency with just a tap",
-    "joinMillionsUsers": "Join millions of users worldwide who are earning crypto through our innovative mining platform.",
+    "welcomeToCryptoMining": "Welcome to Coin Mining",
+    "startEarningCrypto": "Start earning coins with just a tap",
+    "joinMillionsUsers": "Join millions of users worldwide who are earning coins through our innovative mining platform. Our coins will be listed on major exchanges soon!",
     "mineDaily": "Mine Daily",
     "simple24HourCycles": "Simple 24-hour mining cycles",
-    "tapMiningButton": "Tap the mining button once every 24 hours to earn crypto. No complex setup required.",
+    "tapMiningButton": "Tap the mining button once every 24 hours to earn coins. No complex setup required. Start building your coin portfolio today!",
     "inviteFriends": "Invite Friends",
     "earnBonusRewards": "Earn bonus rewards together",
-    "shareReferralCode": "Share your referral code with friends and earn extra crypto when they join and start mining.",
+    "shareReferralCode": "Share your referral code with friends and earn extra coins when they join and start mining. Build your network and earn more!",
     "secureWallet": "Secure Wallet",
-    "yourCryptoYourControl": "Your crypto, your control",
-    "keepEarningsSafe": "Keep your earnings safe in your personal wallet. Track all your transactions and mining history."
+    "yourCryptoYourControl": "Your coins, your control",
+    "keepEarningsSafe": "Keep your earnings safe in your personal wallet. Track all your transactions and mining history. Get ready for when our coins hit the exchanges!"
   },
   "wallet": {
     "wallet": "Wallet",
@@ -429,6 +430,11 @@
     "languageChanged": "Language changed successfully",
     "english": "English",
     "chinese": "Chinese",
+    "arabic": "Arabic",
+    "kurdish": "Kurdish",
+    "spanish": "Spanish",
+    "french": "French",
+    "hindi": "Hindi",
     "pushNotifications": "Push Notifications",
     "darkMode": "Dark Mode",
     "inviteFriends": "Invite Friends",
@@ -485,6 +491,13 @@
     "changesDiscarded": "Changes discarded",
     "discardChangesConfirmation": "Are you sure you want to discard your changes?",
     "unsavedChanges": "You have unsaved changes. Do you want to save them before leaving?"
+  },
+  "languageSelection": {
+    "title": "Language Selection",
+    "chooseLanguage": "Choose Your Language",
+    "selectPreferred": "Select your preferred language for the app",
+    "rtlInfo": "Arabic and Kurdish languages support Right-to-Left (RTL) layout",
+    "changing": "Changing language..."
   },
   "notifications": {
     "notifications": "Notifications",
@@ -623,7 +636,7 @@
     "userGuide": "User Guide",
     "videoTutorials": "Video Tutorials",
     "communityForum": "Community Forum",
-    "cryptoMinerApp": "CryptoMiner App",
+    "cryptoMinerApp": "RAW App",
     "version": "Version",
     "appDescription": "The ultimate crypto mining simulation app. Mine, earn, and learn about cryptocurrency in a safe and educational environment",
     "faq1Question": "How does crypto mining work?",
@@ -776,6 +789,11 @@
       "isValid": "Username is valid"
     },
     "generic": "An unexpected error occurred. Please try again.",
+    "oopsSomethingWentWrong": "Oops! Something went wrong",
+    "unexpectedErrorTryAgain": "An unexpected error occurred. Please try again.",
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "authenticationError": "Authentication error. Please log in again.",
+    "passwordChangedFromAnotherDevice": "Your password was changed from another device. Please log in again.",
     "validation": {
       "requiredField": "{{field}} is required",
       "allFieldsValid": "All fields are valid",
@@ -783,6 +801,26 @@
     },
     "warning": "Warning",
     "information": "Information"
+  },
+  "languageSelection": {
+    "chooseYourLanguage": "Choose Your Language",
+    "selectPreferredLanguage": "Select your preferred language to continue",
+    "languageSelectedSuccessfully": "Language selected successfully!",
+    "descriptions": {
+      "english": "Start your coin mining journey in English",
+      "chinese": "Start your coin mining journey in Chinese",
+      "hindi": "Start your coin mining journey in Hindi",
+      "spanish": "Start your coin mining journey in Spanish",
+      "french": "Start your coin mining journey in French",
+      "german": "Start your coin mining journey in German",
+      "japanese": "Start your coin mining journey in Japanese",
+      "korean": "Start your coin mining journey in Korean",
+      "arabic": "Start your coin mining journey in Arabic",
+      "portuguese": "Start your coin mining journey in Portuguese",
+      "italian": "Start your coin mining journey in Italian",
+      "russian": "Start your coin mining journey in Russian",
+      "kurdish": "Start your coin mining journey in Kurdish"
+    }
   },
   "validation": {
     "required": "This field is required",
@@ -842,7 +880,7 @@
     "successfulSessions": "Successful Sessions",
     "failedSessions": "Failed Sessions",
     "starting": "Starting...",
-    "startMiningWatchAd": "Start Mining (Watch Ad)"
+    "startMiningWatchAd": "Start Mining"
   },
   "time": {
     "seconds": "seconds",

@@ -90,7 +90,8 @@
     "privacyPolicy": "Política de privacidad",
     "or": "o",
     "warning": "Advertencia",
-    "information": "Información"
+    "information": "Información",
+    "continue": "Continuar"
   },
   "navigation": {
     "home": "Inicio",
@@ -227,21 +228,21 @@
   },
   "onboarding": {
     "welcome": "Bienvenido a Raw App",
-    "startMining": "Comienza a minar criptomonedas y gana recompensas",
+    "startMining": "Comienza a minar monedas y gana recompensas",
     "getStarted": "Comenzar",
     "skip": "Saltar",
-    "welcomeToCryptoMining": "Bienvenido a Crypto Mining",
-    "startEarningCrypto": "Empieza a ganar criptomonedas con un toque",
-    "joinMillionsUsers": "Únete a millones de usuarios que ganan cripto con nuestra plataforma minera.",
+    "welcomeToCryptoMining": "Bienvenido a Minería de Monedas",
+    "startEarningCrypto": "Empieza a ganar monedas con un toque",
+    "joinMillionsUsers": "Únete a millones de usuarios que ganan monedas con nuestra plataforma minera. ¡Nuestras monedas serán listadas en exchanges importantes pronto!",
     "mineDaily": "Mina diariamente",
     "simple24HourCycles": "Ciclos simples de 24 horas",
-    "tapMiningButton": "Toca el botón de minería cada 24 horas para ganar cripto. Sin configuraciones complejas.",
+    "tapMiningButton": "Toca el botón de minería cada 24 horas para ganar monedas. Sin configuraciones complejas. ¡Comienza a construir tu portafolio de monedas hoy!",
     "inviteFriends": "Invita amigos",
     "earnBonusRewards": "Gana recompensas extra",
-    "shareReferralCode": "Comparte tu código y gana cripto extra cuando se unan.",
+    "shareReferralCode": "Comparte tu código y gana monedas extra cuando se unan. ¡Construye tu red y gana más!",
     "secureWallet": "Monedero seguro",
-    "yourCryptoYourControl": "Tu cripto, tu control",
-    "keepEarningsSafe": "Mantén tus ganancias seguras. Rastrea transacciones e historial."
+    "yourCryptoYourControl": "Tus monedas, tu control",
+    "keepEarningsSafe": "Mantén tus ganancias seguras. Rastrea transacciones e historial. ¡Prepárate para cuando nuestras monedas lleguen a los exchanges!"
   },
   "wallet": {
     "wallet": "Monedero",
@@ -429,6 +430,11 @@
     "languageChanged": "Idioma cambiado",
     "english": "Inglés",
     "chinese": "Chino",
+    "arabic": "Árabe",
+    "kurdish": "Kurdo",
+    "spanish": "Español",
+    "french": "Francés",
+    "hindi": "Hindi",
     "pushNotifications": "Notificaciones push",
     "darkMode": "Modo oscuro",
     "inviteFriends": "Invitar amigos",
@@ -485,6 +491,13 @@
     "changesDiscarded": "Cambios descartados",
     "discardChangesConfirmation": "¿Descartar cambios?",
     "unsavedChanges": "Tienes cambios sin guardar. ¿Guardar antes de salir?"
+  },
+  "languageSelection": {
+    "title": "Selección de Idioma",
+    "chooseLanguage": "Elige Tu Idioma",
+    "selectPreferred": "Selecciona tu idioma preferido para la aplicación",
+    "rtlInfo": "Los idiomas árabe y kurdo soportan diseño de derecha a izquierda (RTL)",
+    "changing": "Cambiando idioma..."
   },
   "notifications": {
     "notifications": "Notificaciones",
@@ -776,13 +789,40 @@
       "isValid": "Usuario válido"
     },
     "generic": "Error inesperado. Intenta nuevamente.",
-    "validation": {
-      "requiredField": "{{field}} es obligatorio",
-      "allFieldsValid": "Todos los campos válidos",
-      "validPhone": "Teléfono válido"
+    "oopsSomethingWentWrong": "¡Ups! Algo salió mal",
+    "unexpectedErrorTryAgain": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+    "somethingWentWrong": "Algo salió mal. Por favor, inténtalo de nuevo.",
+    "authenticationError": "Error de autenticación. Por favor, inicia sesión nuevamente.",
+        "passwordChangedFromAnotherDevice": "Tu contraseña fue cambiada desde otro dispositivo. Por favor, inicia sesión nuevamente.",
+      "validation": {
+      "requiredField": "{{field}} es requerido",
+      "allFieldsValid": "Todos los campos son válidos",
+      "username": {
+        "requirements": "El nombre de usuario debe tener 3-20 caracteres y contener solo letras, números y guiones bajos",
+        "isValid": "El nombre de usuario es válido"
+      }
     },
     "warning": "Advertencia",
     "information": "Información"
+  },
+  "languageSelection": {
+    "chooseYourLanguage": "Elige Tu Idioma",
+    "selectPreferredLanguage": "Selecciona tu idioma preferido para continuar",
+    "languageSelectedSuccessfully": "¡Idioma seleccionado exitosamente!",
+    "descriptions": {
+      "english": "Comienza tu viaje de minería de monedas en inglés",
+      "chinese": "Comienza tu viaje de minería de monedas en chino",
+      "hindi": "Comienza tu viaje de minería de monedas en hindi",
+      "spanish": "Comienza tu viaje de minería de monedas en español",
+      "french": "Comienza tu viaje de minería de monedas en francés",
+      "german": "Comienza tu viaje de minería de monedas en alemán",
+      "japanese": "Comienza tu viaje de minería de monedas en japonés",
+      "korean": "Comienza tu viaje de minería de monedas en coreano",
+      "arabic": "Comienza tu viaje de minería de monedas en árabe",
+      "portuguese": "Comienza tu viaje de minería de monedas en portugués",
+      "italian": "Comienza tu viaje de minería de monedas en italiano",
+      "russian": "Comienza tu viaje de minería de monedas en ruso"
+    }
   },
   "validation": {
     "required": "Campo obligatorio",

@@ -20,6 +20,7 @@ import BannerAd from './src/components/BannerAd';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/config/toastConfig';
+import { useRTL } from './src/hooks/useRTL';
 
 // Import i18n configuration
 import './src/i18n';
@@ -51,6 +52,7 @@ import LeaderboardScreen from "./src/Screens/LeaderboardScreen";
 import NetworkErrorScreen from "./src/Screens/NetworkErrorScreen";
 import SecurityErrorScreen from "./src/Screens/SecurityErrorScreen";
 import ToastDemo from "./src/components/ToastDemo";
+import LanguageSelectionScreen from "./src/Screens/LanguageSelectionScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -58,6 +60,7 @@ const Tab = createBottomTabNavigator();
 function TabNavigator() {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const { direction } = useRTL();
   const insets = useSafeAreaInsets();
   const [canClaimStreak, setCanClaimStreak] = useState(false);
 
@@ -148,6 +151,7 @@ function TabNavigator() {
             paddingBottom: insets.bottom + 5,
             paddingTop: 5,
             height: 60 + insets.bottom,
+            direction,
           },
           headerShown: false,
         })}
@@ -217,6 +221,7 @@ const styles = StyleSheet.create({
 
 function AppContent() {
   const { theme } = useTheme();
+  const { direction } = useRTL();
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -283,6 +288,7 @@ function AppContent() {
 
   const checkAppState = async () => {
     try {
+      await AsyncStorage.clear();
       const hasLaunched = await AsyncStorage.getItem("hasLaunched");
       setIsFirstLaunch(!hasLaunched);
     } catch (error) {
@@ -295,11 +301,22 @@ function AppContent() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      documentTitle={{
+        formatter: (options, route) => `${options?.title ?? route?.name}`,
+      }}
+      theme={{
+        colors: {
+          background: theme.dark ? '#000' : '#fff',
+        },
+      }}
+      style={{ direction }}
+    >
       <StatusBar style={theme.dark ? "light" : "dark"} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />

@@ -1,11 +1,17 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { isRTLLanguage, getTextDirection } from './utils/RTLUtils';
 
 // Import translation files
 import en from './locales/en.json';
 import zh from './locales/zh.json';
 import hi from './locales/hi.json';
 import es from './locales/es.json';
+import fr from './locales/fr.json';
+import ar from './locales/ar.json';
+import ckb from './locales/ckb.json';
+import ru from './locales/ru.json';
+import pt from './locales/pt.json';
 
 // Safe import of ExpoLocalization with fallback
 let deviceLocale = 'en';
@@ -29,31 +35,105 @@ const resources = {
     },
     es: {
         translation: es,
+    },
+    fr: {
+        translation: fr,
+    },
+    ar: {
+        translation: ar,
+    },
+    ckb: {
+        translation: ckb,
+    },
+    ru: {
+        translation: ru,
+    },
+    pt: {
+        translation: pt,
     }
 };
 
-i18n
-    .use(initReactI18next)
-    .init({
-        resources,
-        lng: deviceLocale,
-        fallbackLng: 'en',
-        debug: __DEV__, // Enable debug mode in development
+// Debug: Check if languageSelection translations are loaded
+console.log('i18n resources loaded:', Object.keys(resources));
+console.log('English translations keys:', Object.keys(en));
+console.log('languageSelection in en:', en.languageSelection);
 
-        interpolation: {
-            escapeValue: false, // React already escapes values
-        },
+// Initialize i18n with proper error handling
+const initI18n = async () => {
+    try {
+        // Add a small delay to ensure all resources are loaded
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        react: {
-            useSuspense: false, // Disable Suspense for React Native
-        },
-    });
+        await i18n
+            .use(initReactI18next)
+            .init({
+                resources,
+                lng: deviceLocale,
+                fallbackLng: 'en',
+                debug: __DEV__, // Enable debug mode in development
+                load: 'languageOnly', // Only load language, not region
+                preload: ['en', 'ar', 'ckb'], // Preload common languages
 
-// Function to change language
+                interpolation: {
+                    escapeValue: false, // React already escapes values
+                },
+
+                react: {
+                    useSuspense: false, // Disable Suspense for React Native
+                },
+            });
+
+        // Debug: Check i18n initialization
+        console.log('i18n initialized with language:', i18n.language);
+        console.log('i18n has languageSelection.title:', i18n.exists('languageSelection.title'));
+
+        return true;
+    } catch (error) {
+        console.error('Failed to initialize i18n:', error);
+        return false;
+    }
+};
+
+// Initialize i18n immediately
+initI18n();
+
+// Function to change language with better error handling
 export const changeLanguage = async (language) => {
     try {
+        // Ensure i18n is initialized
+        if (!i18n.isInitialized) {
+            console.log('i18n not initialized, waiting...');
+            await new Promise(resolve => {
+                const checkInit = () => {
+                    if (i18n.isInitialized) {
+                        resolve();
+                    } else {
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            });
+        }
+
+        // Check if the language exists in resources
+        if (!resources[language]) {
+            console.error(`Language ${language} not found in resources`);
+            return false;
+        }
+
+        // Change language
         await i18n.changeLanguage(language);
-        return true;
+        console.log('Language changed to:', language);
+        console.log('New language has languageSelection.title:', i18n.exists('languageSelection.title'));
+
+        // Verify the change was successful
+        if (i18n.language === language) {
+            console.log('Language change successful');
+            return true;
+        } else {
+            console.error('Language change failed - language mismatch');
+            return false;
+        }
     } catch (error) {
         console.error('Error changing language:', error);
         return false;
@@ -65,13 +145,28 @@ export const getCurrentLanguage = () => {
     return i18n.language;
 };
 
+// Function to get current language direction
+export const getCurrentLanguageDirection = () => {
+    return getTextDirection(getCurrentLanguage());
+};
+
+// Function to check if current language is RTL
+export const isCurrentLanguageRTL = () => {
+    return isRTLLanguage(getCurrentLanguage());
+};
+
 // Function to get available languages
 export const getAvailableLanguages = () => {
     return [
         { code: 'en', name: 'English', nativeName: 'English' },
         { code: 'zh', name: 'Chinese', nativeName: '中文' },
         { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
-        { code: 'es', name: 'Spanish', nativeName: 'Español' }
+        { code: 'es', name: 'Spanish', nativeName: 'Español' },
+        { code: 'fr', name: 'French', nativeName: 'Français' },
+        { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+        { code: 'ckb', name: 'Kurdish', nativeName: 'کوردی' },
+        { code: 'ru', name: 'Russian', nativeName: 'Русский' },
+        { code: 'pt', name: 'Portuguese', nativeName: 'Português' }
     ];
 };
 

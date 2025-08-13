@@ -90,7 +90,8 @@
     "privacyPolicy": "隐私政策",
     "or": "或",
     "warning": "警告",
-    "information": "信息"
+    "information": "信息",
+    "continue": "继续"
   },
   "navigation": {
     "home": "首页",
@@ -227,21 +228,21 @@
   },
   "onboarding": {
     "welcome": "欢迎使用原始应用",
-    "startMining": "开始挖掘加密货币并赢取奖励",
+    "startMining": "开始挖掘代币并赢取奖励",
     "getStarted": "开始使用",
     "skip": "跳过",
-    "welcomeToCryptoMining": "欢迎使用加密货币挖矿",
-    "startEarningCrypto": "轻点即可开始赚取加密货币",
-    "joinMillionsUsers": "加入全球数百万用户，通过我们的创新挖矿平台赚取加密货币。",
+    "welcomeToCryptoMining": "欢迎使用代币挖矿",
+    "startEarningCrypto": "轻点即可开始赚取代币",
+    "joinMillionsUsers": "加入全球数百万用户，通过我们的创新挖矿平台赚取代币。我们的代币即将在主要交易所上市！",
     "mineDaily": "每日挖矿",
     "simple24HourCycles": "简单的24小时挖矿周期",
-    "tapMiningButton": "每24小时点击一次挖矿按钮即可赚取加密货币。无需复杂设置。",
+    "tapMiningButton": "每24小时点击一次挖矿按钮即可赚取代币。无需复杂设置。立即开始构建您的代币投资组合！",
     "inviteFriends": "邀请朋友",
     "earnBonusRewards": "共同赢取额外奖励",
-    "shareReferralCode": "分享您的推荐码，当朋友加入并开始挖矿时获得额外加密货币。",
+    "shareReferralCode": "分享您的推荐码，当朋友加入并开始挖矿时获得额外代币。建立您的网络，赚取更多收益！",
     "secureWallet": "安全钱包",
-    "yourCryptoYourControl": "您的加密货币，您掌控",
-    "keepEarningsSafe": "在个人钱包中安全保管收益。跟踪所有交易和挖矿历史。"
+    "yourCryptoYourControl": "您的代币，您掌控",
+    "keepEarningsSafe": "在个人钱包中安全保管收益。跟踪所有交易和挖矿历史。为我们的代币登陆交易所做好准备！"
   },
   "wallet": {
     "wallet": "钱包",
@@ -428,6 +429,11 @@
     "languageChanged": "语言切换成功",
     "english": "英语",
     "chinese": "中文",
+    "arabic": "阿拉伯语",
+    "kurdish": "库尔德语",
+    "spanish": "西班牙语",
+    "french": "法语",
+    "hindi": "印地语",
     "pushNotifications": "推送通知",
     "darkMode": "深色模式",
     "inviteFriends": "邀请朋友",
@@ -480,6 +486,13 @@
     "changesDiscarded": "更改已放弃",
     "discardChangesConfirmation": "确定放弃更改?",
     "unsavedChanges": "您有未保存的更改。离开前是否保存?"
+  },
+  "languageSelection": {
+    "title": "语言选择",
+    "chooseLanguage": "选择您的语言",
+    "selectPreferred": "选择您偏好的应用语言",
+    "rtlInfo": "阿拉伯语和库尔德语支持从右到左（RTL）布局",
+    "changing": "正在更改语言..."
   },
   "notifications": {
     "notifications": "通知",
@@ -762,13 +775,40 @@
       "isValid": "用户名有效"
     },
     "generic": "发生意外错误，请重试。",
+    "oopsSomethingWentWrong": "哎呀！出错了",
+    "unexpectedErrorTryAgain": "发生意外错误，请重试。",
+    "somethingWentWrong": "出现错误，请重试。",
+    "authenticationError": "身份验证错误，请重新登录。",
+    "passwordChangedFromAnotherDevice": "您的密码已在其他设备上更改，请重新登录。",
     "validation": {
-      "requiredField": "{{field}}必填",
-      "allFieldsValid": "所有字段有效",
-      "validPhone": "电话号码有效"
+      "requiredField": "{{field}} 是必需的",
+      "allFieldsValid": "所有字段都有效",
+      "username": {
+        "requirements": "用户名必须是3-20个字符，只能包含字母、数字和下划线",
+        "isValid": "用户名有效"
+      }
     },
     "warning": "警告",
     "information": "信息"
+  },
+  "languageSelection": {
+    "chooseYourLanguage": "选择您的语言",
+    "selectPreferredLanguage": "选择您偏好的语言以继续",
+    "languageSelectedSuccessfully": "语言选择成功！",
+    "descriptions": {
+      "english": "用英语开始您的硬币挖矿之旅",
+      "chinese": "用中文开始您的硬币挖矿之旅",
+      "hindi": "用印地语开始您的硬币挖矿之旅",
+      "spanish": "用西班牙语开始您的硬币挖矿之旅",
+      "french": "用法语开始您的硬币挖矿之旅",
+      "german": "用德语开始您的硬币挖矿之旅",
+      "japanese": "用日语开始您的硬币挖矿之旅",
+      "korean": "用韩语开始您的硬币挖矿之旅",
+      "arabic": "用阿拉伯语开始您的硬币挖矿之旅",
+      "portuguese": "用葡萄牙语开始您的硬币挖矿之旅",
+      "italian": "用意大利语开始您的硬币挖矿之旅",
+      "russian": "用俄语开始您的硬币挖矿之旅"
+    }
   },
   "validation": {
     "required": "此字段必填",
