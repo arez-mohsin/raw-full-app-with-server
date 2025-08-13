@@ -18,9 +18,41 @@ import {
  */
 export const useRTL = () => {
     const { i18n } = useTranslation();
-    const currentLanguage = i18n.language;
+    const currentLanguage = i18n.language || 'en'; // Provide fallback
 
     const rtlUtils = useMemo(() => {
+        // Ensure currentLanguage is defined before using it
+        if (!currentLanguage) {
+            return {
+                currentLanguage: 'en',
+                isRTL: false,
+                direction: 'ltr',
+                writingDirection: 'ltr',
+                textAlign: 'left',
+                flexDirection: 'row',
+                getMarginDirection: (startValue, endValue) => startValue,
+                getPaddingDirection: (startValue, endValue) => startValue,
+                getBorderRadiusDirection: (leftValue, rightValue) => leftValue,
+                rtlStyles: {
+                    writingDirection: 'ltr',
+                    textAlign: 'left',
+                    flexDirection: 'row',
+                },
+                containerStyles: {
+                    writingDirection: 'ltr',
+                    flexDirection: 'row',
+                },
+                cardContainerStyles: {
+                    writingDirection: 'ltr',
+                    flexDirection: 'column',
+                },
+                textStyles: {
+                    writingDirection: 'ltr',
+                    textAlign: 'left',
+                },
+            };
+        }
+
         const isRTL = isRTLLanguage(currentLanguage);
         const direction = getTextDirection(currentLanguage);
         const writingDirection = getWritingDirection(currentLanguage);

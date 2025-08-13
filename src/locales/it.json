@@ -600,6 +600,10 @@
     "biometricEnabled": "Abilitato (",
     "biometricUse": "Usa ",
     "biometricNotAvailable": "Non disponibile su questo dispositivo",
+    "enableBiometricTitle": "Abilita Autenticazione Biometrica",
+    "enableBiometricMessage": "Sei sicuro di voler abilitare l'autenticazione biometrica? Questo ti permetterà di accedere usando la tua impronta digitale o Face ID.",
+    "disableBiometricTitle": "Disabilita Autenticazione Biometrica",
+    "disableBiometricMessage": "Sei sicuro di voler disabilitare l'autenticazione biometrica? Questo renderà il tuo account meno sicuro e dovrai usare la tua password per accedere.",
     "accountSecurity": "Sicurezza Account",
     "activeSessions": "Sessioni Attive",
     "manageLoggedInDevices": "Gestisci i tuoi dispositivi connessi",
@@ -650,7 +654,8 @@
     "faq5Question": "Posso minare più criptovalute?",
     "faq5Answer": "Attualmente la nostra app supporta la simulazione del mining Bitcoin. Pianifichiamo di aggiungere il supporto per altre criptovalute nei futuri aggiornamenti.",
     "faq6Question": "Con quale frequenza vengono distribuite le ricompense?",
-    "faq6Answer": "Le ricompense vengono calcolate e distribuite ogni 24 ore. Puoi controllare i tuoi progressi di mining nella schermata Home."
+    "faq6Answer": "Le ricompense vengono calcolate e distribuite ogni 24 ore. Puoi controllare i tuoi progressi di mining nella schermata Home.",
+    "suggestFeature": "Suggerisci funzionalità"
   },
   "about": {
     "about": "Informazioni",
@@ -979,7 +984,9 @@
     "descriptionOfService": "Descrizione del Servizio",
     "acceptanceOfTerms": "Accettazione dei Termini",
     "acceptanceOfTermsText": "Accedendo e utilizzando l'applicazione mobile CryptoMiner (\"App\"), accetti e acconsenti di essere vincolato dai termini e dalle disposizioni di questo accordo. Se non sei d'accordo, non utilizzare questo servizio.",
-    "descriptionOfServiceText": "CryptoMiner è un'applicazione educativa di simulazione del crypto mining che consente agli utenti di apprendere la tecnologia blockchain e il crypto mining in un ambiente sicuro e controllato. Questa non è una vera applicazione di crypto mining e non fornisce ricompense di mining reali."
+    "descriptionOfServiceText": "CryptoMiner è un'applicazione educativa di simulazione del crypto mining che consente agli utenti di apprendere la tecnologia blockchain e il crypto mining in un ambiente sicuro e controllato. Questa non è una vera applicazione di crypto mining e non fornisce ricompense di mining reali.",
+    "introduction": "1. Introduzione",
+    "introductionText": "Utilizzando CryptoMiner, accetti di essere vincolato da questi termini di servizio. Se non sei d'accordo con una parte di questi termini, non devi utilizzare il nostro servizio."
   },
   "privacy": {
     "privacyPolicy": "Informativa sulla Privacy",

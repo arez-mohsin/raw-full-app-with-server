@@ -15,12 +15,11 @@ import ErrorBoundary from "./src/components/ErrorBoundary";
 import PerformanceMonitor from "./src/utils/PerformanceMonitor";
 import DeviceLogoutChecker from "./src/components/DeviceLogoutChecker";
 import { AppState } from 'react-native';
-import adMobService from './src/services/AdMobService';
-import BannerAd from './src/components/BannerAd';
+
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/config/toastConfig';
-import { useRTL } from './src/hooks/useRTL';
+
 
 // Import i18n configuration
 import './src/i18n';
@@ -56,6 +55,8 @@ import NetworkErrorScreen from "./src/Screens/NetworkErrorScreen";
 import SecurityErrorScreen from "./src/Screens/SecurityErrorScreen";
 import ToastDemo from "./src/components/ToastDemo";
 import LanguageSelectionScreen from "./src/Screens/LanguageSelectionScreen";
+import ProfileLanguageScreen from "./src/Screens/ProfileLanguageScreen";
+import ChangePasswordScreen from "./src/Screens/ChangePasswordScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,7 +64,6 @@ const Tab = createBottomTabNavigator();
 function TabNavigator() {
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const { direction } = useRTL();
   const insets = useSafeAreaInsets();
   const [canClaimStreak, setCanClaimStreak] = useState(false);
 
@@ -154,7 +154,7 @@ function TabNavigator() {
             paddingBottom: insets.bottom + 5,
             paddingTop: 5,
             height: 60 + insets.bottom,
-            direction,
+
           },
           headerShown: false,
         })}
@@ -195,7 +195,7 @@ function TabNavigator() {
           }}
         />
       </Tab.Navigator>
-      {/* <BannerAd containerStyle={{ paddingBottom: insets.bottom }} /> */}
+
     </>
   );
 }
@@ -224,40 +224,21 @@ const styles = StyleSheet.create({
 
 function AppContent() {
   const { theme } = useTheme();
-  const { direction } = useRTL();
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const checkAppState = async () => {
+    try {
+      // await AsyncStorage.clear();
+      const hasLaunched = await AsyncStorage.getItem("hasLaunched");
+      setIsFirstLaunch(!hasLaunched);
+    } catch (error) {
+      console.log("Error checking app state:", error);
+    }
+  };
+
   useEffect(() => {
-    // Initialize ads and enable App Open on foreground
-    const initializeAds = async () => {
-      try {
-        console.log('Initializing AdMob service...');
-        await adMobService.initialize();
-
-        // Wait a bit then preload ads
-        setTimeout(async () => {
-          try {
-            await adMobService.preloadAds();
-            console.log('Ads preloaded successfully');
-          } catch (error) {
-            console.warn('Failed to preload ads, trying retry mechanism:', error);
-            try {
-              await adMobService.retryLoadAds(2);
-            } catch (retryError) {
-              console.warn('Retry mechanism also failed:', retryError);
-            }
-          }
-        }, 2000);
-      } catch (error) {
-        console.error('Failed to initialize AdMob:', error);
-      }
-    };
-
-    initializeAds();
-    const removeAppState = adMobService.enableAppOpenOnForeground(AppState);
-
     checkAppState();
 
     // Set up Firebase Auth state listener
@@ -265,39 +246,12 @@ function AppContent() {
       console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
       setIsAuthenticated(!!user);
       setIsLoading(false);
-
-      // Preload ads when user is authenticated
-      if (user) {
-        setTimeout(async () => {
-          try {
-            await adMobService.preloadAds();
-          } catch (error) {
-            console.warn('Failed to preload ads after auth, trying retry mechanism:', error);
-            try {
-              await adMobService.retryLoadAds(2);
-            } catch (retryError) {
-              console.warn('Retry mechanism also failed after auth:', retryError);
-            }
-          }
-        }, 1000);
-      }
     });
 
     return () => {
       unsubscribe();
-      removeAppState && removeAppState();
     };
   }, []);
-
-  const checkAppState = async () => {
-    try {
-      await AsyncStorage.clear();
-      const hasLaunched = await AsyncStorage.getItem("hasLaunched");
-      setIsFirstLaunch(!hasLaunched);
-    } catch (error) {
-      console.log("Error checking app state:", error);
-    }
-  };
 
   if (isLoading) {
     return null;
@@ -328,9 +282,9 @@ function AppContent() {
           },
         };
       })()}
-      style={{ direction }}
+      style={{}}
     >
-      <StatusBar style={theme.dark ? "light" : "dark"} />
+      <StatusBar style={'auto'} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
@@ -346,6 +300,41 @@ function AppContent() {
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Security" component={SecurityScreen} />
         <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+        <Stack.Screen
+          name="ProfileLanguage"
+          component={ProfileLanguageScreen}
+          options={{
+            presentation: 'modal',
+            headerShown: true,
+            headerTitle: 'Language',
+            headerTitleStyle: {
+              color: theme.colors.textPrimary,
+            },
+            headerStyle: {
+              backgroundColor: theme.colors.primary,
+            }
+          }}
+        />
+        <Stack.Screen
+          name="ChangePassword"
+          component={ChangePasswordScreen}
+          options={{
+            presentation: 'modal',
+            headerShown: true,
+            headerTitle: 'Change Password',
+            headerTitleStyle: {
+              color: '#fff',
+            },
+            headerLef: () => (
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+            ),
+            headerStyle: {
+              backgroundColor: '#1a1a1a',
+            }
+          }}
+        />
         <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
         <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
         <Stack.Screen name="About" component={AboutScreen} />

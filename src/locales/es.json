@@ -452,6 +452,10 @@
     "termsOfService": "Términos de servicio",
     "privacyPolicy": "Política de privacidad",
     "logout": "Cerrar sesión",
+    "confirmLogout": "Confirmar cierre de sesión",
+    "logoutMessage": "¿Estás seguro de que quieres cerrar sesión? Esto te desconectará de tu cuenta.",
+    "logoutSuccess": "Sesión cerrada exitosamente",
+    "logoutError": "Error al cerrar sesión. Por favor, inténtalo de nuevo.",
     "editProfile": "Editar perfil",
     "saveChanges": "Guardar cambios",
     "discardChanges": "Descartar cambios",
@@ -601,6 +605,10 @@
     "biometricEnabled": "Habilitado (",
     "biometricUse": "Usar ",
     "biometricNotAvailable": "No disponible en este dispositivo",
+    "enableBiometricTitle": "Habilitar Autenticación Biométrica",
+    "enableBiometricMessage": "¿Estás seguro de que quieres habilitar la autenticación biométrica? Esto te permitirá iniciar sesión usando tu huella dactilar o Face ID.",
+    "disableBiometricTitle": "Deshabilitar Autenticación Biométrica",
+    "disableBiometricMessage": "¿Estás seguro de que quieres deshabilitar la autenticación biométrica? Esto hará que tu cuenta sea menos segura y necesitarás usar tu contraseña para iniciar sesión.",
     "accountSecurity": "Seguridad de cuenta",
     "activeSessions": "Sesiones activas",
     "manageLoggedInDevices": "Administra tus dispositivos",
@@ -651,7 +659,8 @@
     "faq5Question": "¿Puedo minar múltiples criptomonedas?",
     "faq5Answer": "Actualmente solo Bitcoin. Planeamos añadir más en futuras actualizaciones.",
     "faq6Question": "¿Cada cuánto se distribuyen recompensas?",
-    "faq6Answer": "Las recompensas se calculan y distribuyen cada 24 horas. Revisa tu progreso en Inicio."
+    "faq6Answer": "Las recompensas se calculan y distribuyen cada 24 horas. Revisa tu progreso en Inicio.",
+    "suggestFeature": "Sugerir función"
   },
   "about": {
     "about": "Acerca de",
@@ -982,7 +991,9 @@
     "descriptionOfService": "Descripción del servicio",
     "acceptanceOfTerms": "Aceptación de términos",
     "acceptanceOfTermsText": "Al usar RAW, aceptas los términos de este acuerdo. Si no estás de acuerdo, no uses el servicio.",
-    "descriptionOfServiceText": "RAW es una app educativa que simula minería de criptomonedas. No es una app de minería real ni proporciona recompensas reales."
+    "descriptionOfServiceText": "RAW es una app educativa que simula minería de criptomonedas. No es una app de minería real ni proporciona recompensas reales.",
+    "introduction": "1. Introducción",
+    "introductionText": "Al usar RAW, aceptas estar sujeto a estos términos de servicio. Si no estás de acuerdo con alguna parte de estos términos, no debes usar nuestro servicio."
   },
   "privacy": {
     "privacyPolicy": "Política de privacidad",
@@ -1021,6 +1032,8 @@
     "californiaPrivacyRights": "14. Derechos de California",
     "californiaPrivacyRightsText": "Residentes de California tienen derechos adicionales bajo CCPA.",
     "gdprCompliance": "15. Cumplimiento GDPR",
-    "gdprComplianceText": "Cumplimos con GDPR para usuarios en la Unión Europea."
+    "gdprComplianceText": "Cumplimos con GDPR para usuarios en la Unión Europea.",
+    "deviceInformationText": "Recopilamos automáticamente:\n• Tipo y modelo de dispositivo\n• Versión de SO\n• Versión de app\n• Dirección IP\n• Identificadores",
+    "usageInformationText": "Recopilamos:\n• Funciones usadas\n• Tiempo en app\n• Actividades de minería\n• Rendimiento"
   }
 }

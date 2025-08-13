@@ -17,7 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import ActivityLogger from '../utils/ActivityLogger';
 import NotificationService from '../utils/NotificationService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import adMobService from '../services/AdMobService';
+
 import ToastService from '../utils/ToastService';
 
 const DailyStreakScreen = ({ navigation }) => {
@@ -111,48 +111,14 @@ const DailyStreakScreen = ({ navigation }) => {
         }, [loadStreakData])
     );
 
-    useEffect(() => {
-        loadStreakData();
-
-        // Check ad availability when component mounts
-        setTimeout(async () => {
-            try {
-                const adStatus = await adMobService.checkAdAvailability();
-                console.log('DailyStreakScreen - Ad availability check result:', adStatus);
-            } catch (error) {
-                console.warn('DailyStreakScreen - Failed to check ad availability:', error);
-            }
-        }, 2000);
-    }, [loadStreakData]);
-
     const handleDailyClaim = async () => {
         if (!canClaim || claiming) return;
 
         setClaiming(true);
         try {
-            // Check if rewarded ad is ready before offering it
+            // No ads - direct claim
             let rewardedEarned = false;
-            if (adMobService.isRewardedAdReady()) {
-                console.log('Rewarded ad is ready, showing ad before streak claim...');
-                // Offer rewarded ad before claim
-                rewardedEarned = await adMobService.showRewardedAdSafely('streak_claim');
-            } else if (adMobService.shouldSkipAds()) {
-                console.log('Skipping ads due to fallback mode, claiming streak directly...');
-                // Skip ads and claim streak directly
-            } else {
-                console.log('Rewarded ad not ready, claiming without ad');
-                // Debug ad status
-                adMobService.debugAdStatus();
-                // Try to preload ads for next time
-                setTimeout(() => {
-                    adMobService.preloadAds();
-                }, 1000);
-            }
-
             let bonusCoins = 0;
-            if (rewardedEarned) {
-                bonusCoins = 2;
-            }
 
             const user = auth.currentUser;
             if (!user) throw new Error('User not authenticated');

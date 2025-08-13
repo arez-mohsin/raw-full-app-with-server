@@ -101,9 +101,9 @@ class BiometricService {
     // Disable biometric authentication for the current user
     async disableBiometric(userId) {
         try {
-            // Store the disabled state
+            // Remove the biometric enabled entry from AsyncStorage
             const key = `biometric_enabled_${userId}`;
-            await AsyncStorage.setItem(key, 'false');
+            await AsyncStorage.removeItem(key);
 
             // Update user document in Firestore
             const userRef = doc(db, 'users', userId);

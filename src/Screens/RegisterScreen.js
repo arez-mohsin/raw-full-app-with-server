@@ -372,7 +372,14 @@ const RegisterScreen = ({ navigation }) => {
 
     // Handle registration with comprehensive validation
     const handleRegister = async () => {
-        if (isButtonDisabled || isBlocked) return;
+        console.log('handleRegister called');
+        console.log('isButtonDisabled:', isButtonDisabled);
+        console.log('isBlocked:', isBlocked);
+
+        if (isButtonDisabled || isBlocked) {
+            console.log('Registration blocked or button disabled');
+            return;
+        }
 
         if (isBlocked) {
             triggerError("general", "Too many failed attempts. Please wait 5 minutes before trying again.");
@@ -380,8 +387,10 @@ const RegisterScreen = ({ navigation }) => {
         }
 
         setErrors({});
+        console.log('Starting validation...');
 
         if (!username.trim()) {
+            console.log('Username validation failed');
             triggerError("username", "Username is required");
             return;
         }
@@ -467,11 +476,15 @@ const RegisterScreen = ({ navigation }) => {
         setIsLoading(true);
 
         try {
+            console.log('Creating Firebase user...');
             const userCredential = await createUserWithEmailAndPassword(
                 auth,
                 email,
                 password
             );
+            console.log('Firebase user created successfully:', userCredential.user.uid);
+
+            console.log('Saving device history...');
             await saveDeviceHistory(userCredential.user.uid);
 
             // Handle invite code if provided
@@ -506,6 +519,7 @@ const RegisterScreen = ({ navigation }) => {
                 }
             }
 
+            console.log('Creating user document in Firestore...');
             const userRef = doc(db, "users", userCredential.user.uid);
             await setDoc(userRef, {
                 uid: userCredential.user.uid,
@@ -533,9 +547,14 @@ const RegisterScreen = ({ navigation }) => {
                 },
             });
 
+            console.log('Registration successful, navigating to EmailVerification');
             hapticSuccess();
             navigation.navigate("EmailVerification", { email });
         } catch (error) {
+            console.error('Registration error:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+
             let errorMessage = "Registration failed. Please try again.";
             switch (error.code) {
                 case "auth/email-already-in-use":
@@ -581,7 +600,7 @@ const RegisterScreen = ({ navigation }) => {
             }
 
             if (result.success) {
-                await hapticSuccess();
+                hapticSuccess();
 
                 // Check if email is verified before navigating to main app
 

@@ -29,7 +29,7 @@ import * as Crypto from 'expo-crypto';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
-import adMobService from '../services/AdMobService';
+
 import ToastService from '../utils/ToastService';
 
 const MAX_SESSION_SECONDS = 7200; // 2 hours
@@ -111,6 +111,36 @@ const generateDeviceFingerprint = async () => {
 // Enhanced secure API client with comprehensive security
 const secureApiCall = async (endpoint, data, userId) => {
     try {
+        // Check if user is still authenticated
+        if (!auth.currentUser) {
+            console.warn('User not authenticated, redirecting to login');
+            throw new Error('User not authenticated. Please log in again.');
+        }
+
+        // Verify the user ID matches the current authenticated user
+        if (auth.currentUser.uid !== userId) {
+            console.warn('User ID mismatch, user may have changed');
+            throw new Error('Authentication mismatch. Please log in again.');
+        }
+
+        // Check if the user's token is about to expire (within 5 minutes)
+        try {
+            const tokenResult = await auth.currentUser.getIdTokenResult();
+            if (tokenResult.expirationTime) {
+                const expirationTime = new Date(tokenResult.expirationTime).getTime();
+                const currentTime = Date.now();
+                const timeUntilExpiry = expirationTime - currentTime;
+
+                // If token expires in less than 5 minutes, force refresh
+                if (timeUntilExpiry < 300000) { // 5 minutes in milliseconds
+                    console.log('Token expiring soon, forcing refresh');
+                    await auth.currentUser.getIdToken(true);
+                }
+            }
+        } catch (tokenCheckError) {
+            console.warn('Token check failed, proceeding with current token:', tokenCheckError);
+        }
+
         // Skip rate limiting for mining operations
         const isMiningOperation = endpoint === '/start-mining';
 
@@ -137,11 +167,32 @@ const secureApiCall = async (endpoint, data, userId) => {
         const timestamp = Date.now().toString();
         const deviceFingerprint = await generateDeviceFingerprint();
 
-        // Get Firebase token
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) {
-            throw new Error('No authentication token available');
+        // Get Firebase token with force refresh if needed
+        let token;
+        try {
+            // First try to get a fresh token without forcing refresh
+            token = await auth.currentUser?.getIdToken();
+            if (!token) {
+                // If no token, try to force refresh
+                token = await auth.currentUser?.getIdToken(true);
+            }
+        } catch (tokenError) {
+            console.error('Token refresh error:', tokenError);
+            // Try to get a fresh token one more time
+            try {
+                token = await auth.currentUser?.getIdToken();
+            } catch (refreshError) {
+                console.error('Failed to get fresh token:', refreshError);
+                throw new Error('Authentication token unavailable. Please log in again.');
+            }
         }
+
+        if (!token) {
+            throw new Error('No authentication token available. Please log in again.');
+        }
+
+        // Log token status for debugging
+        console.log('Token obtained successfully, length:', token.length);
 
         // Security: Validate input data
         if (!userId || typeof userId !== 'string' || userId.length < 10) {
@@ -193,6 +244,10 @@ const secureApiCall = async (endpoint, data, userId) => {
 
             // Handle specific HTTP status codes
             if (response.status === 401) {
+                console.error('Authentication failed - user may need to re-login');
+                console.error('Response headers:', response.headers);
+                console.error('Response status:', response.status);
+                // Don't throw error immediately, let the calling function handle it
                 throw new Error('Authentication failed. Please log in again.');
             } else if (response.status === 403) {
                 throw new Error('Access denied. Your account may be suspended.');
@@ -238,6 +293,16 @@ const secureApiCall = async (endpoint, data, userId) => {
         // Security: Handle network errors
         if (error.name === 'AbortError') {
             throw new Error('Request timeout. Please check your connection.');
+        }
+
+        // Handle authentication errors specifically
+        if (error.message.includes('Authentication failed') ||
+            error.message.includes('Please log in again') ||
+            error.message.includes('User not authenticated') ||
+            error.message.includes('Authentication mismatch')) {
+            console.warn('Authentication error detected, user may need to re-login');
+            // Don't throw the error, let the calling function handle it gracefully
+            throw error;
         }
 
         throw error;
@@ -563,6 +628,7 @@ const HomeScreen = ({ navigation }) => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
+                console.log('User authenticated:', user.uid);
                 setUserId(user.uid);
                 await initializeUserData(user.uid);
                 // Set up real-time listeners
@@ -579,16 +645,8 @@ const HomeScreen = ({ navigation }) => {
                     await updatePushTokenInDatabase(token);
                 }
 
-                // Check ad availability after user is authenticated
-                setTimeout(async () => {
-                    try {
-                        const adStatus = await adMobService.checkAdAvailability();
-                        console.log('Ad availability check result:', adStatus);
-                    } catch (error) {
-                        console.warn('Failed to check ad availability:', error);
-                    }
-                }, 3000);
             } else {
+                console.log('User not authenticated, cleaning up...');
                 setUserId(null);
                 // Clean up listeners
                 cleanupListeners();
@@ -1224,7 +1282,10 @@ const HomeScreen = ({ navigation }) => {
 
     const checkMiningSession = async () => {
         try {
-            if (!userId) return;
+            if (!userId || !auth.currentUser) {
+                console.log('User not authenticated, skipping mining session check');
+                return;
+            }
 
             const response = await secureApiCall('/check-mining-session', { userId }, userId);
 
@@ -1244,6 +1305,18 @@ const HomeScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Check mining session error:', error);
+
+            // Handle authentication errors gracefully
+            if (error.message.includes('Authentication failed') ||
+                error.message.includes('Please log in again') ||
+                error.message.includes('User not authenticated') ||
+                error.message.includes('Authentication mismatch')) {
+                console.warn('Authentication error in checkMiningSession - user may need to re-login');
+                // Don't show error toast for auth issues, just log it
+                // The auth state change handler will handle cleanup
+                return;
+            }
+
             // Don't show alert for timeout errors - they're expected on slow connections
             if (!error.message.includes('timeout') && !error.message.includes('Aborted')) {
                 console.warn('Non-timeout error in checkMiningSession:', error.message);
@@ -1260,33 +1333,34 @@ const HomeScreen = ({ navigation }) => {
                 return;
             }
 
-            // Check if rewarded ad is ready before offering it
-            if (adMobService.isRewardedAdReady()) {
-                console.log('Rewarded ad is ready, showing ad before mining...');
-                // Offer rewarded ad before starting mining
-                const rewardedEarned = await adMobService.showRewardedAdSafely('start_mining');
-                if (rewardedEarned) {
-                    try {
-                        // Optional: grant small bonus for ad view
-                        await ActivityLogger.logBonusAward(userId, 'rewarded_mining_start', 3);
-                        setBalance(prev => prev + 3);
-                    } catch { }
-                }
-            } else if (adMobService.shouldSkipAds()) {
-                console.log('Skipping ads due to fallback mode, starting mining directly...');
-                // Skip ads and start mining directly
-            } else {
-                console.log('Rewarded ad not ready, starting mining without ad');
-                // Debug ad status
-                adMobService.debugAdStatus();
-                // Try to preload ads for next time
-                setTimeout(() => {
-                    adMobService.preloadAds();
-                }, 1000);
+            // Check authentication status before proceeding
+            if (!auth.currentUser) {
+                ToastService.error('Please log in to start mining');
+                return;
             }
 
+            // Verify the user ID matches the current authenticated user
+            if (auth.currentUser.uid !== userId) {
+                ToastService.error('Authentication mismatch. Please log in again.');
+                return;
+            }
+
+
+
             // Check for expired sessions first
-            await checkMiningSession();
+            try {
+                await checkMiningSession();
+            } catch (error) {
+                if (error.message.includes('Authentication failed') ||
+                    error.message.includes('Please log in again') ||
+                    error.message.includes('User not authenticated') ||
+                    error.message.includes('Authentication mismatch')) {
+                    console.warn('Authentication error in startMining, aborting');
+                    return;
+                }
+                // Re-throw other errors
+                throw error;
+            }
 
             // Anti-cheat: Validate session integrity
             if (!validateSessionIntegrity()) {

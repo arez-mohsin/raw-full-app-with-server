@@ -466,6 +466,10 @@
     "termsOfService": "Terms of Service",
     "privacyPolicy": "Privacy Policy",
     "logout": "Logout",
+    "confirmLogout": "Confirm Logout",
+    "logoutMessage": "Are you sure you want to logout? This will sign you out of your account.",
+    "logoutSuccess": "Logged out successfully",
+    "logoutError": "Failed to logout. Please try again.",
     "editProfile": "Edit Profile",
     "saveChanges": "Save Changes",
     "discardChanges": "Discard Changes",
@@ -615,6 +619,10 @@
     "biometricEnabled": "Enabled (",
     "biometricUse": "Use ",
     "biometricNotAvailable": "Not available on this device",
+    "enableBiometricTitle": "Enable Biometric Authentication",
+    "enableBiometricMessage": "Are you sure you want to enable biometric authentication? This will allow you to log in using your fingerprint or face ID.",
+    "disableBiometricTitle": "Disable Biometric Authentication",
+    "disableBiometricMessage": "Are you sure you want to disable biometric authentication? This will make your account less secure and you will need to use your password to log in.",
     "accountSecurity": "Account Security",
     "activeSessions": "Active Sessions",
     "manageLoggedInDevices": "Manage your logged-in devices",
@@ -665,7 +673,8 @@
     "faq5Question": "Can I mine multiple cryptocurrencies?",
     "faq5Answer": "Currently, our app supports Bitcoin mining simulation. We plan to add support for other cryptocurrencies in future updates.",
     "faq6Question": "How often are rewards distributed?",
-    "faq6Answer": "Rewards are calculated and distributed every 24 hours. You can check your mining progress in the Home screen."
+    "faq6Answer": "Rewards are calculated and distributed every 24 hours. You can check your mining progress in the Home screen.",
+    "suggestFeature": "Suggest Feature"
   },
   "about": {
     "about": "About",
@@ -994,7 +1003,9 @@
     "descriptionOfService": "Description of Service",
     "acceptanceOfTerms": "Acceptance of Terms",
     "acceptanceOfTermsText": "By accessing and using the CryptoMiner mobile application (\"App\"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.",
-    "descriptionOfServiceText": "CryptoMiner is a cryptocurrency mining simulation application that allows users to learn about blockchain technology and cryptocurrency mining through educational content and simulated mining activities. This is not a real cryptocurrency mining application and does not provide actual mining rewards."
+    "descriptionOfServiceText": "CryptoMiner is a cryptocurrency mining simulation application that allows users to learn about blockchain technology and cryptocurrency mining through educational content and simulated mining activities. This is not a real cryptocurrency mining application and does not provide actual mining rewards.",
+    "introduction": "1. Introduction",
+    "introductionText": "By using CryptoMiner, you accept to be bound by these terms of service. If you do not agree with any part of these terms, you must not use our service."
   },
   "privacy": {
     "privacyPolicy": "Privacy Policy",

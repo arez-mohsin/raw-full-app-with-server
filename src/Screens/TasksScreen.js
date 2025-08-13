@@ -18,6 +18,7 @@ import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from 'fir
 import { onAuthStateChanged } from 'firebase/auth';
 import ActivityLogger from '../utils/ActivityLogger.js';
 import ToastService from '../utils/ToastService';
+import { hapticMedium, hapticSuccess, hapticError } from '../utils/HapticUtils';
 
 const TasksScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -27,6 +28,7 @@ const TasksScreen = ({ navigation }) => {
     const [userExperience, setUserExperience] = useState(0);
     const [userLevel, setUserLevel] = useState(1);
     const [completedTasks, setCompletedTasks] = useState({});
+    const [runningTasks, setRunningTasks] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const insets = useSafeAreaInsets();
@@ -193,6 +195,7 @@ const TasksScreen = ({ navigation }) => {
     const handleTaskComplete = async (task) => {
         try {
             if (completedTasks[task.id]) {
+                hapticMedium();
                 ToastService.warning('You have already completed this task today.');
                 return;
             }
@@ -217,8 +220,8 @@ const TasksScreen = ({ navigation }) => {
                     // or use a different approach for multiple options
                 }
             } else {
-                // For daily tasks
-                completeTask(task);
+                // For daily tasks, start with 5 second delay
+                startTaskWithDelay(task);
             }
         } catch (error) {
             console.error('Error handling task:', error);
@@ -271,11 +274,60 @@ const TasksScreen = ({ navigation }) => {
             const leveledUp = newLevel > userLevel;
             const levelUpMessage = leveledUp ? `\n🎉 LEVEL UP! You reached Level ${newLevel}!` : '';
 
+            // Haptic feedback for task completion
+            hapticSuccess();
+
             ToastService.success(`${t('common.taskCompletedReward')}${task.reward}${t('common.taskCompletedXp')}${task.xp}${levelUpMessage}\n${t('common.newBalance')}${newBalance.toFixed(3)}${t('common.totalExperience')}${newExperience}`);
 
         } catch (error) {
             console.error('Error completing task:', error);
+            hapticError();
             ToastService.error('Failed to complete task. Please try again.');
+        }
+    };
+
+    const startTaskWithDelay = async (task) => {
+        try {
+            if (!userId) return;
+
+            // Haptic feedback for starting task
+            hapticMedium();
+
+            // Set task as running
+            setRunningTasks(prev => ({
+                ...prev,
+                [task.id]: true
+            }));
+
+            // Show starting message
+            ToastService.info(`Starting ${task.title}... Please wait 5 seconds.`);
+
+            // Countdown from 5 to 1
+            for (let i = 5; i > 0; i--) {
+                // Update the running text to show countdown
+                setRunningTasks(prev => ({
+                    ...prev,
+                    [task.id]: i
+                }));
+
+                if (i > 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+
+            // Complete the task
+            await completeTask(task);
+
+        } catch (error) {
+            console.error('Error starting task with delay:', error);
+            hapticError();
+            ToastService.error('Failed to start task. Please try again.');
+        } finally {
+            // Clear running state
+            setRunningTasks(prev => ({
+                ...prev,
+                [task.id]: false
+            }));
         }
     };
 
@@ -331,10 +383,35 @@ const TasksScreen = ({ navigation }) => {
                             <Ionicons name="checkmark-circle" size={20} color="#fff" />
                             <Text style={styles.completedText}>Completed</Text>
                         </View>
+                    ) : runningTasks[task.id] ? (
+                        <View style={styles.runningContainer}>
+                            <View style={[styles.runningButton, { backgroundColor: theme.colors.warning }]}>
+                                <Ionicons name="time" size={20} color="#fff" />
+                                <Text style={styles.runningText}>
+                                    {typeof runningTasks[task.id] === 'number' ? `${runningTasks[task.id]}s` : 'Running...'}
+                                </Text>
+                            </View>
+                            {typeof runningTasks[task.id] === 'number' && (
+                                <View style={styles.progressBarContainer}>
+                                    <View style={[styles.progressBar, { backgroundColor: theme.colors.border }]}>
+                                        <View
+                                            style={[
+                                                styles.progressFill,
+                                                {
+                                                    backgroundColor: theme.colors.accent,
+                                                    width: `${((6 - runningTasks[task.id]) / 5) * 100}%`
+                                                }
+                                            ]}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+                        </View>
                     ) : (
                         <TouchableOpacity
                             style={[styles.completeButton, { backgroundColor: theme.colors.accent }]}
                             onPress={() => handleTaskComplete(task)}
+                            disabled={runningTasks[task.id]}
                         >
                             <Ionicons name="play" size={20} color="#fff" />
                             <Text style={styles.completeText}>Start Task</Text>
@@ -709,6 +786,38 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 8,
+    },
+    runningButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FF9800',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 25,
+    },
+    runningText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
+    },
+    runningContainer: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    progressBarContainer: {
+        height: 4,
+        width: '100%',
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    progressBar: {
+        height: '100%',
+        borderRadius: 2,
+    },
+    progressFill: {
+        height: '100%',
+        borderRadius: 2,
     },
     tipsCard: {
         borderRadius: 16,

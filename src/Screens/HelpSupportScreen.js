@@ -63,7 +63,7 @@ const HelpSupportScreen = ({ navigation }) => {
     };
 
     const handleReportBug = () => {
-        Linking.openURL('mailto:bugs@cryptominer.com?subject=Bug Report');
+        Linking.openURL('mailto:rawchain01@gmail.com?subject=Bug Report');
     };
 
     return (

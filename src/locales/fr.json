@@ -589,6 +589,10 @@
     "biometricEnabled": "Activée (",
     "biometricUse": "Utiliser ",
     "biometricNotAvailable": "Non disponible sur cet appareil",
+    "enableBiometricTitle": "Activer l'authentification biométrique",
+    "enableBiometricMessage": "Êtes-vous sûr de vouloir activer l'authentification biométrique ? Cela vous permettra de vous connecter en utilisant votre empreinte digitale ou Face ID.",
+    "disableBiometricTitle": "Désactiver l'authentification biométrique",
+    "disableBiometricMessage": "Êtes-vous sûr de vouloir désactiver l'authentification biométrique ? Cela rendra votre compte moins sécurisé et vous devrez utiliser votre mot de passe pour vous connecter.",
     "accountSecurity": "Sécurité du compte",
     "activeSessions": "Sessions actives",
     "manageLoggedInDevices": "Gérez vos appareils connectés",
@@ -638,7 +642,8 @@
     "faq5Question": "Puis-je miner plusieurs cryptomonnaies ?",
     "faq5Answer": "Actuellement Bitcoin uniquement. D'autres devises arrivent bientôt.",
     "faq6Question": "Quand sont distribuées les récompenses ?",
-    "faq6Answer": "Les récompenses sont calculées et distribuées toutes les 24 heures."
+    "faq6Answer": "Les récompenses sont calculées et distribuées toutes les 24 heures.",
+    "suggestFeature": "Suggérer une fonctionnalité"
   },
   "about": {
     "about": "À propos",
@@ -966,7 +971,9 @@
     "descriptionOfService": "Description du service",
     "acceptanceOfTerms": "Acceptation des conditions",
     "acceptanceOfTermsText": "En utilisant CryptoMiner, vous acceptez ces conditions. Si vous n'êtes pas d'accord, n'utilisez pas le service.",
-    "descriptionOfServiceText": "CryptoMiner est une application éducative de simulation de minage crypto qui ne fournit pas de récompenses réelles."
+    "descriptionOfServiceText": "CryptoMiner est une application éducative de simulation de minage crypto qui ne fournit pas de récompenses réelles.",
+    "introduction": "1. Introduction",
+    "introductionText": "En utilisant CryptoMiner, vous acceptez d'être lié par ces conditions de service. Si vous n'êtes pas d'accord avec une partie de ces conditions, vous ne devez pas utiliser notre service."
   },
   "privacy": {
     "privacyPolicy": "Politique de confidentialité",

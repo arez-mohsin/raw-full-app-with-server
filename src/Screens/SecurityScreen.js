@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,6 +8,7 @@ import {
     Switch,
     TextInput,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +18,7 @@ import { auth } from '../firebase';
 import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from '../utils/HapticUtils';
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
+
 import ToastService from '../utils/ToastService';
 
 const SecurityScreen = ({ navigation }) => {
@@ -35,20 +36,8 @@ const SecurityScreen = ({ navigation }) => {
         emailNotifications: true,
         loginAlerts: true
     });
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [passwordStrength, setPasswordStrength] = useState({ isValid: false, score: 0, feedback: [] });
-    const [changingPassword, setChangingPassword] = useState(false);
     const [updatingBiometric, setUpdatingBiometric] = useState(false);
 
-
-    // Bottom sheet refs
-    const passwordBottomSheetRef = useRef(null);
-
-    // Bottom sheet snap points
-    const passwordSnapPoints = useMemo(() => ['90%'], []);
 
     const userId = auth.currentUser?.uid;
 
@@ -56,14 +45,7 @@ const SecurityScreen = ({ navigation }) => {
         loadSecurityData();
     }, []);
 
-    // Bottom sheet handlers
-    const handlePasswordBottomSheetPresent = useCallback(() => {
-        passwordBottomSheetRef.current?.present();
-    }, []);
 
-    const handleBottomSheetDismiss = useCallback(() => {
-        passwordBottomSheetRef.current?.dismiss();
-    }, []);
 
     const loadSecurityData = async () => {
         try {
@@ -102,53 +84,10 @@ const SecurityScreen = ({ navigation }) => {
     };
 
     const handlePasswordChange = () => {
-        handlePasswordBottomSheetPresent();
+        navigation.navigate('ChangePassword');
     };
 
-    const handlePasswordSubmit = async () => {
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            ToastService.error('Please fill in all fields');
-            return;
-        }
 
-        if (newPassword !== confirmPassword) {
-            ToastService.error('New passwords do not match');
-            return;
-        }
-
-        // Validate password strength
-        const strength = SecurityService.validatePasswordStrength(newPassword);
-        if (!strength.isValid) {
-            ToastService.error('Weak Password: ' + strength.feedback.join(', '));
-            return;
-        }
-
-        try {
-            setChangingPassword(true);
-            await hapticMedium();
-
-            const result = await SecurityService.changePassword(currentPassword, newPassword);
-
-            if (result.success) {
-                await hapticSuccess();
-                ToastService.success(result.message);
-                handleBottomSheetDismiss();
-                setCurrentPassword('');
-                setNewPassword('');
-                setConfirmPassword('');
-                setPasswordStrength({ isValid: false, score: 0, feedback: [] });
-            } else {
-                await hapticError();
-                ToastService.error(result.message);
-            }
-        } catch (error) {
-            console.error('Password change error:', error);
-            await hapticError();
-            ToastService.error('Failed to change password. Please try again.');
-        } finally {
-            setChangingPassword(false);
-        }
-    };
 
     const handleBiometricToggle = async () => {
         if (!biometricStatus.isAvailable) {
@@ -156,36 +95,104 @@ const SecurityScreen = ({ navigation }) => {
             return;
         }
 
-        try {
-            setUpdatingBiometric(true);
-            await hapticMedium();
+        if (!biometricStatus.isEnabled) {
+            // Haptic feedback for showing dialog
+            hapticMedium();
 
-            if (!biometricStatus.isEnabled) {
-                // Enable biometric
-                const result = await BiometricService.enableBiometric(userId);
+            // Show confirmation dialog for enabling biometric
+            Alert.alert(
+                t('security.enableBiometricTitle'),
+                t('security.enableBiometricMessage'),
+                [
+                    {
+                        text: t('common.cancel'),
+                        style: 'cancel',
+                        onPress: () => hapticLight(),
+                    },
+                    {
+                        text: t('security.enableBiometric'),
+                        style: 'default',
+                        onPress: async () => {
+                            try {
+                                setUpdatingBiometric(true);
+                                await hapticMedium();
 
-                if (result.success) {
-                    await hapticSuccess();
-                    ToastService.success('Biometric authentication enabled successfully!');
-                    // Reload biometric status
-                    const newStatus = await BiometricService.getBiometricStatus(userId);
-                    setBiometricStatus(newStatus);
-                } else {
-                    await hapticError();
-                    ToastService.error(result.message);
+                                const result = await BiometricService.enableBiometric(userId);
+
+                                if (result.success) {
+                                    await hapticSuccess();
+                                    ToastService.success('Biometric authentication enabled successfully!');
+                                    // Reload biometric status
+                                    const newStatus = await BiometricService.getBiometricStatus(userId);
+                                    setBiometricStatus(newStatus);
+                                } else {
+                                    await hapticError();
+                                    ToastService.error(result.message);
+                                }
+                            } catch (error) {
+                                console.error('Biometric enable error:', error);
+                                await hapticError();
+                                ToastService.error('Failed to enable biometric authentication');
+                            } finally {
+                                setUpdatingBiometric(false);
+                            }
+                        },
+                    },
+                ],
+                {
+                    cancelable: true,
+                    onDismiss: () => hapticLight()
                 }
-            } else {
-                // Disable biometric
-                ToastService.warning('Are you sure you want to disable biometric authentication? This will make your account less secure.');
-                // For now, we'll just show a warning. In a real app, you might want to add a confirmation modal
-                // or use a different approach for destructive actions
-            }
-        } catch (error) {
-            console.error('Biometric toggle error:', error);
-            await hapticError();
-            ToastService.error('Failed to update biometric settings');
-        } finally {
-            setUpdatingBiometric(false);
+            );
+        } else {
+            // Haptic feedback for showing dialog
+            hapticMedium();
+
+            // Show confirmation dialog for disabling biometric
+            Alert.alert(
+                t('security.disableBiometricTitle'),
+                t('security.disableBiometricMessage'),
+                [
+                    {
+                        text: t('common.cancel'),
+                        style: 'cancel',
+                        onPress: () => hapticLight(),
+                    },
+                    {
+                        text: t('security.disableBiometric'),
+                        style: 'destructive',
+                        onPress: async () => {
+                            try {
+                                setUpdatingBiometric(true);
+                                await hapticMedium();
+
+                                const result = await BiometricService.disableBiometric(userId);
+
+                                if (result.success) {
+                                    await hapticSuccess();
+                                    ToastService.success('Biometric authentication disabled successfully!');
+                                    // Reload biometric status
+                                    const newStatus = await BiometricService.getBiometricStatus(userId);
+                                    setBiometricStatus(newStatus);
+                                } else {
+                                    await hapticError();
+                                    ToastService.error(result.message);
+                                }
+                            } catch (error) {
+                                console.error('Biometric disable error:', error);
+                                await hapticError();
+                                ToastService.error('Failed to disable biometric authentication');
+                            } finally {
+                                setUpdatingBiometric(false);
+                            }
+                        },
+                    },
+                ],
+                {
+                    cancelable: true,
+                    onDismiss: () => hapticLight()
+                }
+            );
         }
     };
 
@@ -211,29 +218,9 @@ const SecurityScreen = ({ navigation }) => {
         }
     };
 
-    const handlePasswordInputChange = (text, field) => {
-        if (field === 'newPassword') {
-            setNewPassword(text);
-            const strength = SecurityService.validatePasswordStrength(text);
-            setPasswordStrength(strength);
-        } else if (field === 'currentPassword') {
-            setCurrentPassword(text);
-        } else if (field === 'confirmPassword') {
-            setConfirmPassword(text);
-        }
-    };
 
-    const getPasswordStrengthColor = () => {
-        if (passwordStrength.score <= 2) return '#ff4444';
-        if (passwordStrength.score <= 3) return '#ffaa00';
-        return '#44ff44';
-    };
 
-    const getPasswordStrengthText = () => {
-        if (passwordStrength.score <= 2) return 'Weak';
-        if (passwordStrength.score <= 3) return 'Fair';
-        return 'Strong';
-    };
+
 
     const renderPasswordBottomSheet = () => (
         <BottomSheetModal
@@ -356,92 +343,91 @@ const SecurityScreen = ({ navigation }) => {
     }
 
     return (
-        <BottomSheetModalProvider>
-            <LinearGradient
-                colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']}
-                style={styles.container}
-            >
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
+        <LinearGradient
+            colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']}
+            style={styles.container}
+        >
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Security</Text>
+                <View style={{ width: 24 }} />
+            </View>
+
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+                {/* Authentication */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{t('security.authentication')}</Text>
+
+                    <TouchableOpacity style={styles.securityItem} onPress={handlePasswordChange}>
+                        <View style={styles.securityLeft}>
+                            <Ionicons name="key" size={20} color="#FFD700" />
+                            <View style={styles.securityTextContainer}>
+                                <Text style={styles.securityTitle}>{t('security.changePassword')}</Text>
+                                <Text style={styles.securitySubtitle}>{t('security.updateAccountPassword')}</Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#888" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Security</Text>
-                    <View style={{ width: 24 }} />
+
+                    <View style={styles.securityItem}>
+                        <View style={styles.securityLeft}>
+                            <Ionicons name="finger-print" size={20} color="#FFD700" />
+                            <View style={styles.securityTextContainer}>
+                                <Text style={styles.securityTitle}>{t('security.biometricLogin')}</Text>
+                                <Text style={styles.securitySubtitle}>
+                                    {biometricStatus.isEnabled
+                                        ? `${t('security.biometricEnabled')}${biometricStatus.supportedTypes.join(', ')}`
+                                        : biometricStatus.isAvailable
+                                            ? `${t('security.biometricUse')}${biometricStatus.supportedTypes.join(' or ')}`
+                                            : t('security.biometricNotAvailable')
+                                    }
+                                </Text>
+                            </View>
+                        </View>
+                        {updatingBiometric ? (
+                            <ActivityIndicator size="small" color="#FFD700" />
+                        ) : (
+                            <Switch
+                                value={biometricStatus.isEnabled}
+                                onValueChange={handleBiometricToggle}
+                                trackColor={{ false: '#444', true: '#FFD700' }}
+                                thumbColor={biometricStatus.isEnabled ? '#fff' : '#f4f3f4'}
+                                disabled={!biometricStatus.isAvailable}
+                            />
+                        )}
+                    </View>
                 </View>
 
-                <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                    {/* Authentication */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{t('security.authentication')}</Text>
 
-                        <TouchableOpacity style={styles.securityItem} onPress={handlePasswordChange}>
-                            <View style={styles.securityLeft}>
-                                <Ionicons name="key" size={20} color="#FFD700" />
-                                <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>{t('security.changePassword')}</Text>
-                                    <Text style={styles.securitySubtitle}>{t('security.updateAccountPassword')}</Text>
-                                </View>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color="#888" />
-                        </TouchableOpacity>
+                {/* Account Security */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{t('security.accountSecurity')}</Text>
 
-                        <View style={styles.securityItem}>
-                            <View style={styles.securityLeft}>
-                                <Ionicons name="finger-print" size={20} color="#FFD700" />
-                                <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>{t('security.biometricLogin')}</Text>
-                                    <Text style={styles.securitySubtitle}>
-                                        {biometricStatus.isEnabled
-                                            ? `${t('security.biometricEnabled')}${biometricStatus.supportedTypes.join(', ')}`
-                                            : biometricStatus.isAvailable
-                                                ? `${t('security.biometricUse')}${biometricStatus.supportedTypes.join(' or ')}`
-                                                : t('security.biometricNotAvailable')
-                                        }
-                                    </Text>
-                                </View>
+                    <TouchableOpacity style={styles.securityItem}>
+                        <View style={styles.securityLeft}>
+                            <Ionicons name="phone-portrait" size={20} color="#FFD700" />
+                            <View style={styles.securityTextContainer}>
+                                <Text style={styles.securityTitle}>{t('security.activeSessions')}</Text>
+                                <Text style={styles.securitySubtitle}>{t('security.manageLoggedInDevices')}</Text>
                             </View>
-                            {updatingBiometric ? (
-                                <ActivityIndicator size="small" color="#FFD700" />
-                            ) : (
-                                <Switch
-                                    value={biometricStatus.isEnabled}
-                                    onValueChange={handleBiometricToggle}
-                                    trackColor={{ false: '#444', true: '#FFD700' }}
-                                    thumbColor={biometricStatus.isEnabled ? '#fff' : '#f4f3f4'}
-                                    disabled={!biometricStatus.isAvailable}
-                                />
-                            )}
                         </View>
-                    </View>
+                        <Ionicons name="chevron-forward" size={20} color="#888" />
+                    </TouchableOpacity>
 
-
-                    {/* Account Security */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{t('security.accountSecurity')}</Text>
-
-                        <TouchableOpacity style={styles.securityItem}>
-                            <View style={styles.securityLeft}>
-                                <Ionicons name="phone-portrait" size={20} color="#FFD700" />
-                                <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>{t('security.activeSessions')}</Text>
-                                    <Text style={styles.securitySubtitle}>{t('security.manageLoggedInDevices')}</Text>
-                                </View>
+                    <TouchableOpacity style={styles.securityItem}>
+                        <View style={styles.securityLeft}>
+                            <Ionicons name="shield" size={20} color="#FFD700" />
+                            <View style={styles.securityTextContainer}>
+                                <Text style={styles.securityTitle}>{t('security.securityLog')}</Text>
+                                <Text style={styles.securitySubtitle}>{t('security.viewRecentSecurityActivities')}</Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color="#888" />
-                        </TouchableOpacity>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#888" />
+                    </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.securityItem}>
-                            <View style={styles.securityLeft}>
-                                <Ionicons name="shield" size={20} color="#FFD700" />
-                                <View style={styles.securityTextContainer}>
-                                    <Text style={styles.securityTitle}>{t('security.securityLog')}</Text>
-                                    <Text style={styles.securitySubtitle}>{t('security.viewRecentSecurityActivities')}</Text>
-                                </View>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color="#888" />
-                        </TouchableOpacity>
-
-                        {/* <TouchableOpacity style={styles.securityItem}>
+                    {/* <TouchableOpacity style={styles.securityItem}>
                         <View style={styles.securityLeft}>
                             <Ionicons name="lock-closed" size={20} color="#FFD700" />
                             <View style={styles.securityTextContainer}>
@@ -451,27 +437,27 @@ const SecurityScreen = ({ navigation }) => {
                         </View>
                         <Ionicons name="chevron-forward" size={20} color="#888" />
                     </TouchableOpacity> */}
+                </View>
+
+                {/* Security Tips */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Security Tips</Text>
+
+                    <View style={styles.tipCard}>
+                        <Ionicons name="bulb" size={24} color="#FFD700" />
+                        <Text style={styles.tipTitle}>Keep Your Account Secure</Text>
+                        <Text style={styles.tipText}>
+                            {SecurityService.getSecurityTips().map((tip, index) => (
+                                `• ${tip}${index < SecurityService.getSecurityTips().length - 1 ? '\n' : ''}`
+                            ))}
+                        </Text>
                     </View>
+                </View>
+            </ScrollView>
 
-                    {/* Security Tips */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Security Tips</Text>
 
-                        <View style={styles.tipCard}>
-                            <Ionicons name="bulb" size={24} color="#FFD700" />
-                            <Text style={styles.tipTitle}>Keep Your Account Secure</Text>
-                            <Text style={styles.tipText}>
-                                {SecurityService.getSecurityTips().map((tip, index) => (
-                                    `• ${tip}${index < SecurityService.getSecurityTips().length - 1 ? '\n' : ''}`
-                                ))}
-                            </Text>
-                        </View>
-                    </View>
-                </ScrollView>
+        </LinearGradient>
 
-                {renderPasswordBottomSheet()}
-            </LinearGradient>
-        </BottomSheetModalProvider>
     );
 };
 
