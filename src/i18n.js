@@ -3,17 +3,19 @@ import { initReactI18next } from 'react-i18next';
 import { isRTLLanguage, getTextDirection } from './utils/RTLUtils';
 
 // Import translation files
-import en from './locales/en.json';
+import en from './locales/en.json'; //
 import zh from './locales/zh.json';
-import hi from './locales/hi.json';
-import es from './locales/es.json';
-import fr from './locales/fr.json';
-import ar from './locales/ar.json';
-import ckb from './locales/ckb.json';
-import ru from './locales/ru.json';
-import pt from './locales/pt.json';
-
-// Safe import of ExpoLocalization with fallback
+import hi from './locales/hi.json'; //
+import es from './locales/es.json'; //
+import fr from './locales/fr.json'; //
+import ar from './locales/ar.json'; //
+import ckb from './locales/ckb.json'; //
+import ru from './locales/ru.json'; //
+import pt from './locales/pt.json'; //
+import tr from './locales/tr.json';
+import de from './locales/de.json'; //
+import fa from './locales/fa.json'; //
+import ja from './locales/ja.json';         
 let deviceLocale = 'en';
 try {
     const Localization = require('expo-localization');
@@ -50,7 +52,19 @@ const resources = {
     },
     pt: {
         translation: pt,
-    }
+    },
+    tr: {
+        translation: tr,
+    },
+    de: {
+        translation: de,
+    },
+    fa: {
+        translation: fa,
+    }, 
+    ja: {
+        translation: ja,     
+    },
 };
 
 // Debug: Check if languageSelection translations are loaded
@@ -166,7 +180,12 @@ export const getAvailableLanguages = () => {
         { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
         { code: 'ckb', name: 'Kurdish', nativeName: 'کوردی' },
         { code: 'ru', name: 'Russian', nativeName: 'Русский' },
-        { code: 'pt', name: 'Portuguese', nativeName: 'Português' }
+        { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
+        { code: 'tr', name: 'Turkish', nativeName: 'Türkçe' },
+        { code: 'de', name: 'German', nativeName: 'Deutsch' },
+        { code: 'ja', name: 'Japanese', nativeName: '日本語' }, 
+        { code: 'fa', name: 'Persian', nativeName: 'فارسی' },
+
     ];
 };
 
