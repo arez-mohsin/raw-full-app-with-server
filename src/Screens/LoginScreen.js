@@ -21,7 +21,7 @@ import ErrorHandler from '../utils/ErrorHandler';
 import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
 import SocialAuthService from '../services/SocialAuthService';
-import * as Haptics from 'expo-haptics';
+import { hapticMedium, hapticSuccess, hapticError, hapticLight } from '../utils/HapticUtils';
 import * as Device from 'expo-device';
 import * as Network from 'expo-network';
 import * as Location from 'expo-location';
@@ -211,7 +211,7 @@ const LoginScreen = ({ navigation }) => {
             if (hasErrors) {
                 setEmailError(newErrors.email || '');
                 setPasswordError(newErrors.password || '');
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                await hapticError();
                 // Re-enable button on validation error
                 setButtonDisabled(false);
                 setButtonCooldown(0);
@@ -221,7 +221,7 @@ const LoginScreen = ({ navigation }) => {
             // Validate email format
             if (!ErrorHandler.validateEmail(email)) {
                 setEmailError('Please enter a valid email address');
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                await hapticError();
                 // Re-enable button on validation error
                 setButtonDisabled(false);
                 setButtonCooldown(0);
@@ -231,7 +231,7 @@ const LoginScreen = ({ navigation }) => {
             // Validate password length
             if (password.length < 6) {
                 setPasswordError('Password must be at least 6 characters');
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                await hapticError();
                 // Re-enable button on validation error
                 setButtonDisabled(false);
                 setButtonCooldown(0);
@@ -283,7 +283,7 @@ const LoginScreen = ({ navigation }) => {
             }
 
             // Success haptic feedback
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await hapticSuccess();
 
             // Check if email is verified before navigating to main app
             if (user.emailVerified) {
@@ -297,7 +297,7 @@ const LoginScreen = ({ navigation }) => {
             console.error('Login error:', error);
             const errorMessage = ErrorHandler.getErrorMessage(error);
             setGeneralError(errorMessage);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            await hapticError();
         } finally {
             setIsLoading(false);
             // Re-enable button after 5 seconds
@@ -319,7 +319,7 @@ const LoginScreen = ({ navigation }) => {
 
         try {
             setBiometricLoading(true);
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await hapticMedium();
 
             // Authenticate with biometric
             const biometricResult = await BiometricService.authenticateWithBiometric('Log in to your account');
@@ -381,7 +381,7 @@ const LoginScreen = ({ navigation }) => {
                 // Continue with login even if logging fails
             }
 
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await hapticSuccess();
 
             // Check if email is verified before navigating to main app
             if (user.emailVerified) {
@@ -406,7 +406,7 @@ const LoginScreen = ({ navigation }) => {
             }
 
             setGeneralError(errorMessage);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            await hapticError();
         } finally {
             setBiometricLoading(false);
         }
@@ -447,7 +447,7 @@ const LoginScreen = ({ navigation }) => {
             setIsLoading(true);
             setGeneralError('');
 
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await hapticMedium();
 
             let result;
             if (provider === 'Google') {
@@ -459,7 +459,7 @@ const LoginScreen = ({ navigation }) => {
             }
 
             if (result.success) {
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                await hapticSuccess();
                 navigation.replace('Main');
             }
 
@@ -478,7 +478,7 @@ const LoginScreen = ({ navigation }) => {
             }
 
             setGeneralError(errorMessage);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            await hapticError();
         } finally {
             setIsLoading(false);
             setTimeout(() => {
@@ -558,7 +558,7 @@ const LoginScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 onPress={() => {
                                     setShowPassword(!showPassword);
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    hapticLight();
                                 }}
                                 style={styles.eyeButton}
                                 disabled={isLoading}
@@ -577,7 +577,7 @@ const LoginScreen = ({ navigation }) => {
                         <TouchableOpacity
                             style={styles.forgotPassword}
                             onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                hapticLight();
                                 navigation.navigate('ForgotPassword');
                             }}
                             disabled={isLoading}
@@ -669,7 +669,7 @@ const LoginScreen = ({ navigation }) => {
                         </Text>
                         <TouchableOpacity
                             onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                hapticLight();
                                 navigation.navigate('Register');
                             }}
                             disabled={isLoading}

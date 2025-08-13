@@ -490,7 +490,8 @@
     "chooseLanguage": "Choisissez Votre Langue",
     "selectPreferred": "Sélectionnez votre langue préférée pour l'application",
     "rtlInfo": "Les langues arabe et kurde prennent en charge la mise en page de droite à gauche (RTL)",
-    "changing": "Changement de langue..."
+    "changing": "Changement de langue...",
+    "continueWithDefault": "Continuer en Anglais"
   },
   "notifications": {
     "notifications": "Notifications",

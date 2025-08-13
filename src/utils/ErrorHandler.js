@@ -1,5 +1,8 @@
-import * as Haptics from 'expo-haptics';
+import React from 'react';
+import { Alert, Linking, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import ToastService from './ToastService';
+import { hapticMedium, hapticLight, hapticError, hapticSuccess } from './HapticUtils';
 
 class ErrorHandler {
     static firebaseAuthErrorKeys = {
@@ -138,26 +141,26 @@ class ErrorHandler {
         const message = this.getErrorMessage(error);
         const translatedTitle = this.t(title);
 
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        await hapticError();
         ToastService.error(message);
         return message;
     }
 
     async showSuccess(messageKey, titleKey = 'common.success', params = {}) {
         const message = this.t(messageKey, params);
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await hapticSuccess();
         ToastService.success(message);
     }
 
     async showWarning(messageKey, titleKey = 'common.warning', params = {}) {
         const message = this.t(messageKey, params);
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        await hapticMedium();
         ToastService.warning(message);
     }
 
     async showInfo(messageKey, titleKey = 'common.information', params = {}) {
         const message = this.t(messageKey, params);
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await hapticLight();
         ToastService.info(message);
     }
 

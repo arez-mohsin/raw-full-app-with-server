@@ -13,11 +13,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
+
 import { useTranslation } from 'react-i18next';
 import { useRTL } from '../hooks/useRTL';
 import { useTheme } from '../context/ThemeContext';
 import { getAvailableLanguages, changeLanguage } from '../i18n'; // Import from i18n.js
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { hapticMedium, hapticSuccess, hapticError } from '../utils/HapticUtils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,6 +27,7 @@ const LanguageSelectionScreen = ({ navigation }) => {
     const { t, i18n } = useTranslation();
     const { isRTL, direction, textAlign, flexDirection } = useRTL();
     const { theme } = useTheme();
+    const insets = useSafeAreaInsets();
 
     const [selectedLanguage, setSelectedLanguage] = useState('en');
     const [isChanging, setIsChanging] = useState(false);
@@ -34,6 +37,7 @@ const LanguageSelectionScreen = ({ navigation }) => {
     const fadeAnims = useRef([]);
     const slideAnims = useRef([]);
     const scaleAnims = useRef([]);
+    const continueButtonScale = useRef(new Animated.Value(1));
 
     // Check if i18n is ready
     useEffect(() => {
@@ -161,7 +165,7 @@ const LanguageSelectionScreen = ({ navigation }) => {
 
         try {
             setIsChanging(true);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            hapticMedium();
 
             // Use the changeLanguage function from i18n.js
             const success = await changeLanguage(languageCode);
@@ -170,7 +174,7 @@ const LanguageSelectionScreen = ({ navigation }) => {
                 await AsyncStorage.setItem('userLanguage', languageCode);
                 setSelectedLanguage(languageCode);
 
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                hapticSuccess();
 
                 // Navigate to login screen after language change
                 setTimeout(() => {
@@ -178,13 +182,43 @@ const LanguageSelectionScreen = ({ navigation }) => {
                 }, 800);
             } else {
                 console.error('Language change failed');
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                hapticError();
                 setIsChanging(false);
             }
 
         } catch (error) {
             console.error('Error changing language:', error);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            hapticError();
+            setIsChanging(false);
+        }
+    };
+
+    const handleContinueWithDefault = async () => {
+        if (isChanging) return;
+
+        try {
+            setIsChanging(true);
+            hapticMedium();
+
+            // Set English as default if not already selected
+            if (selectedLanguage !== 'en') {
+                const success = await changeLanguage('en');
+                if (success) {
+                    await AsyncStorage.setItem('userLanguage', 'en');
+                    setSelectedLanguage('en');
+                }
+            }
+
+            hapticSuccess();
+
+            // Navigate to login screen
+            setTimeout(() => {
+                navigation.replace('Login');
+            }, 800);
+
+        } catch (error) {
+            console.error('Error continuing with default language:', error);
+            hapticError();
             setIsChanging(false);
         }
     };
@@ -292,17 +326,6 @@ const LanguageSelectionScreen = ({ navigation }) => {
                     flexDirection: flexDirection
                 }
             ]}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                >
-                    <Ionicons
-                        name={isRTL ? "arrow-forward" : "arrow-back"}
-                        size={24}
-                        color={theme.colors.textPrimary}
-                    />
-                </TouchableOpacity>
 
                 <Text style={[
                     styles.headerTitle,
@@ -364,6 +387,52 @@ const LanguageSelectionScreen = ({ navigation }) => {
                 </View>
             </ScrollView>
 
+            {/* Fixed Continue Button */}
+            <View style={[
+                styles.continueButtonContainer,
+                {
+                    backgroundColor: 'transparent',
+                    paddingBottom: insets.bottom + 10
+                }
+            ]}>
+                <Animated.View style={{ transform: [{ scale: continueButtonScale.current }] }}>
+                    <TouchableOpacity
+                        style={[
+                            styles.continueButton,
+                            {
+                                backgroundColor: theme.colors.accent,
+                                opacity: isChanging ? 0.6 : 1
+                            }
+                        ]}
+                        onPress={() => handleContinueWithDefault()}
+                        disabled={isChanging}
+                        activeOpacity={0.8}
+                        onPressIn={() => {
+                            Animated.spring(continueButtonScale.current, {
+                                toValue: 0.95,
+                                useNativeDriver: true,
+                            }).start();
+                        }}
+                        onPressOut={() => {
+                            Animated.spring(continueButtonScale.current, {
+                                toValue: 1,
+                                useNativeDriver: true,
+                            }).start();
+                        }}
+                    >
+                        <Text style={styles.continueButtonText}>
+                            {t('languageSelection.continueWithDefault', 'Continue with English')}
+                        </Text>
+                        <Ionicons
+                            name={isRTL ? "arrow-back" : "arrow-forward"}
+                            size={20}
+                            color="black"
+                            style={{ marginStart: 8 }}
+                        />
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+
             {/* Loading Overlay */}
             {isChanging && (
                 <View style={styles.loadingOverlay}>
@@ -395,29 +464,34 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         paddingHorizontal: 20,
         paddingTop: 60,
         paddingBottom: 20,
         borderBottomWidth: 1,
+        position: 'relative',
     },
     backButton: {
-        padding: 8,
-        borderRadius: 12,
+        position: 'absolute',
+        left: 20,
+        width: 40,
+        height: 40,
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: '700',
-        flex: 1,
+        textAlign: 'center',
     },
     headerRight: {
+        position: 'absolute',
+        right: 20,
         width: 40,
     },
     content: {
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 40,
+        paddingBottom: 120, // Increased to account for fixed continue button and safe area
     },
     introSection: {
         paddingHorizontal: 20,
@@ -549,6 +623,45 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 16,
         fontWeight: '600',
+    },
+    continueButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderTopWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    continueButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    continueButtonText: {
+        color: 'black',
+        fontSize: 18,
+        fontWeight: '700',
+        textAlign: 'center',
     },
 });
 

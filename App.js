@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
@@ -24,6 +24,9 @@ import { useRTL } from './src/hooks/useRTL';
 
 // Import i18n configuration
 import './src/i18n';
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+  console.error('Global Error:', error);
+});
 
 // Import screens
 import SplashScreen from "./src/Screens/SplashScreen";
@@ -192,7 +195,7 @@ function TabNavigator() {
           }}
         />
       </Tab.Navigator>
-      <BannerAd containerStyle={{ paddingBottom: insets.bottom }} />
+      {/* <BannerAd containerStyle={{ paddingBottom: insets.bottom }} /> */}
     </>
   );
 }
@@ -305,11 +308,26 @@ function AppContent() {
       documentTitle={{
         formatter: (options, route) => `${options?.title ?? route?.name}`,
       }}
-      theme={{
-        colors: {
-          background: theme.dark ? '#000' : '#fff',
-        },
-      }}
+      theme={(function () {
+        const base = theme.dark ? NavigationDarkTheme : NavigationDefaultTheme;
+        const fonts = {
+          regular: { fontFamily: 'System', fontWeight: '400' },
+          medium: { fontFamily: 'System', fontWeight: '500' },
+          light: { fontFamily: 'System', fontWeight: '300' },
+          thin: { fontFamily: 'System', fontWeight: '100' },
+        };
+        return {
+          ...base,
+          colors: {
+            ...base.colors,
+            background: theme.dark ? '#000' : '#fff',
+          },
+          fonts: {
+            ...(base.fonts || {}),
+            ...fonts,
+          },
+        };
+      })()}
       style={{ direction }}
     >
       <StatusBar style={theme.dark ? "light" : "dark"} />

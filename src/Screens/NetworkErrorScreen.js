@@ -11,8 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import * as Network from 'expo-network';
-import * as Haptics from 'expo-haptics';
 import ToastService from '../utils/ToastService';
+import { hapticMedium, hapticSuccess, hapticError } from '../utils/HapticUtils';
 
 const NetworkErrorScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -29,14 +29,14 @@ const NetworkErrorScreen = ({ navigation }) => {
 
             if (state.isConnected && state.isInternetReachable) {
                 // Network is available, navigate to appropriate screen
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                await hapticSuccess();
                 navigation.replace('Splash');
             } else {
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                await hapticError();
             }
         } catch (error) {
             console.error('Network check error:', error);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            await hapticError();
         } finally {
             setIsChecking(false);
         }
@@ -173,7 +173,7 @@ const NetworkErrorScreen = ({ navigation }) => {
                     <TouchableOpacity
                         style={styles.secondaryButton}
                         onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            hapticMedium();
                             ToastService.warning(t('errors.exitAppConfirmation'));
                             // For now, we'll just show a warning. In a real app, you might want to add a modal
                             // or use a different approach for multiple options

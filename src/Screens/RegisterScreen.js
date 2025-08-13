@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium, hapticSuccess, hapticError } from '../utils/HapticUtils';
 import * as Device from 'expo-device';
 import * as Application from 'expo-application';
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
@@ -174,7 +174,7 @@ const RegisterScreen = ({ navigation }) => {
 
     // Enhanced error handling with security features
     const triggerError = (field, message) => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        hapticError();
         Vibration.vibrate(50);
         setErrors((prev) => ({ ...prev, [field]: message }));
 
@@ -187,7 +187,7 @@ const RegisterScreen = ({ navigation }) => {
             setTimeout(() => {
                 setIsBlocked(false);
                 setRegistrationAttempts(0);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                hapticSuccess();
             }, 300000); // 5 minutes block
         }
 
@@ -533,7 +533,7 @@ const RegisterScreen = ({ navigation }) => {
                 },
             });
 
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            hapticSuccess();
             navigation.navigate("EmailVerification", { email });
         } catch (error) {
             let errorMessage = "Registration failed. Please try again.";
@@ -569,7 +569,7 @@ const RegisterScreen = ({ navigation }) => {
             setIsLoading(true);
             setGeneralError('');
 
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await hapticMedium();
 
             let result;
             if (provider === 'Google') {
@@ -581,7 +581,7 @@ const RegisterScreen = ({ navigation }) => {
             }
 
             if (result.success) {
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                await hapticSuccess();
 
                 // Check if email is verified before navigating to main app
 
@@ -604,7 +604,7 @@ const RegisterScreen = ({ navigation }) => {
             }
 
             setGeneralError(errorMessage);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            await hapticError();
         } finally {
             setIsLoading(false);
             setTimeout(() => {
@@ -625,7 +625,7 @@ const RegisterScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 style={styles.backButton}
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    hapticLight();
                                     navigation.goBack();
                                 }}
                             >
@@ -635,7 +635,7 @@ const RegisterScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 style={styles.infoButton}
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    hapticLight();
                                     handlePresentModalPress();
                                 }}
                             >
@@ -816,7 +816,7 @@ const RegisterScreen = ({ navigation }) => {
                                     style={styles.eyeButton}
                                     onPress={() => {
                                         setShowPassword(!showPassword);
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        hapticLight();
                                     }}
                                     disabled={isLoading}
                                 >
@@ -851,7 +851,7 @@ const RegisterScreen = ({ navigation }) => {
                                     style={styles.eyeButton}
                                     onPress={() => {
                                         setShowConfirmPassword(!showConfirmPassword);
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        hapticLight();
                                     }}
                                     disabled={isLoading}
                                 >
@@ -992,7 +992,7 @@ const RegisterScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 style={styles.loginButton}
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    hapticLight();
                                     navigation.navigate('Login');
                                 }}
                                 disabled={isLoading}

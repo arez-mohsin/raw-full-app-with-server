@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
+import { hapticLight, hapticError, hapticSuccess } from '../utils/HapticUtils';
 import { auth, db } from '../firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -95,7 +95,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     // Enhanced error handling with security features
     const triggerError = (field, message) => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        hapticError();
         Vibration.vibrate(50);
         setErrors((prev) => ({ ...prev, [field]: message }));
         setGeneralError('');
@@ -183,7 +183,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         try {
             await sendPasswordResetEmail(auth, email.trim().toLowerCase());
 
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            hapticSuccess();
             setSuccessMessage('Password reset email sent! Check your inbox and spam folder.');
 
             // Clear form after success
@@ -224,7 +224,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 style={styles.backButton}
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    hapticLight();
                                     navigation.goBack();
                                 }}
                             >
@@ -234,7 +234,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 style={styles.infoButton}
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    hapticLight();
                                     handlePresentModalPress();
                                 }}
                             >
@@ -328,7 +328,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 style={styles.backToLoginButton}
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    hapticLight();
                                     navigation.goBack();
                                 }}
                                 disabled={isLoading}

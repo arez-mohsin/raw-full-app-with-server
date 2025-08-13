@@ -13,7 +13,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
-import * as Haptics from 'expo-haptics';
+import { hapticSuccess } from '../utils/HapticUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ToastService from '../utils/ToastService';
 
@@ -26,7 +26,7 @@ const SecurityErrorScreen = ({ navigation }) => {
         try {
             setIsLoading(true);
             await signOut(auth);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await hapticSuccess();
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],

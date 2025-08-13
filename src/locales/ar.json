@@ -492,7 +492,8 @@
     "chooseLanguage": "اختر لغتك",
     "selectPreferred": "اختر لغتك المفضلة للتطبيق",
     "rtlInfo": "اللغتان العربية والكردية تدعمان التخطيط من اليمين إلى اليسار (RTL)",
-    "changing": "جاري تغيير اللغة..."
+    "changing": "جاري تغيير اللغة...",
+    "continueWithDefault": "المتابعة باللغة الإنجليزية"
   },
   "notifications": {
     "notifications": "الإشعارات",

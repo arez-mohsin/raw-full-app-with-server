@@ -15,7 +15,10 @@ import pt from './locales/pt.json'; //
 import tr from './locales/tr.json';
 import de from './locales/de.json'; //
 import fa from './locales/fa.json'; //
-import ja from './locales/ja.json';         
+import ja from './locales/ja.json';          
+import it from './locales/it.json';
+
+
 let deviceLocale = 'en';
 try {
     const Localization = require('expo-localization');
@@ -64,6 +67,9 @@ const resources = {
     }, 
     ja: {
         translation: ja,     
+    },
+    it: {
+        translation: it,
     },
 };
 
@@ -185,7 +191,7 @@ export const getAvailableLanguages = () => {
         { code: 'de', name: 'German', nativeName: 'Deutsch' },
         { code: 'ja', name: 'Japanese', nativeName: '日本語' }, 
         { code: 'fa', name: 'Persian', nativeName: 'فارسی' },
-
+        { code: 'it', name: 'Italian', nativeName: 'Italiano' },
     ];
 };
 

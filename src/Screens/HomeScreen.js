@@ -22,8 +22,8 @@ import { doc, updateDoc, getDoc, collection, query, orderBy, limit, getDocs, onS
 import { onAuthStateChanged } from 'firebase/auth';
 import ActivityLogger from '../utils/ActivityLogger';
 import NotificationService from '../utils/NotificationService';
-import * as Haptics from 'expo-haptics';
 import * as Device from 'expo-device';
+import { hapticSuccess, hapticError } from '../utils/HapticUtils';
 import * as Application from 'expo-application';
 import * as Crypto from 'expo-crypto';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -408,6 +408,8 @@ const HomeScreen = ({ navigation }) => {
     const [notificationsListener, setNotificationsListener] = useState(null);
     const [scheduledNotificationId, setScheduledNotificationId] = useState(null);
     const [pushToken, setPushToken] = useState(null);
+
+
 
     // Push notification functions
     const registerForPushNotificationsAsync = async () => {
@@ -1344,12 +1346,12 @@ const HomeScreen = ({ navigation }) => {
                 // }
 
                 console.log('Mining started successfully! Session will run for 2 hours.');
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                hapticSuccess();
                 ToastService.success('Your 2-hour mining session has begun! You\'ll receive a notification when it completes.');
             }
         } catch (error) {
             console.error('Start mining error:', error);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            hapticError();
             ToastService.error(error.message || 'Failed to start mining');
         } finally {
             setLoading(false);

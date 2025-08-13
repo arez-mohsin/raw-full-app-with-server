@@ -4,14 +4,14 @@
     "slug": "raw",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/raw-logo-production.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "com.arezmohssin99.rawapp",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/raw-logo-production.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,

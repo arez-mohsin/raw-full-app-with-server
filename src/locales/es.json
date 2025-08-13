@@ -497,7 +497,8 @@
     "chooseLanguage": "Elige Tu Idioma",
     "selectPreferred": "Selecciona tu idioma preferido para la aplicación",
     "rtlInfo": "Los idiomas árabe y kurdo soportan diseño de derecha a izquierda (RTL)",
-    "changing": "Cambiando idioma..."
+    "changing": "Cambiando idioma...",
+    "continueWithDefault": "Continuar con Inglés"
   },
   "notifications": {
     "notifications": "Notificaciones",

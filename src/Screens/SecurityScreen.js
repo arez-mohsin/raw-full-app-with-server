@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { auth } from '../firebase';
 import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium, hapticSuccess, hapticError } from '../utils/HapticUtils';
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
 import ToastService from '../utils/ToastService';
 
@@ -125,12 +125,12 @@ const SecurityScreen = ({ navigation }) => {
 
         try {
             setChangingPassword(true);
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await hapticMedium();
 
             const result = await SecurityService.changePassword(currentPassword, newPassword);
 
             if (result.success) {
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                await hapticSuccess();
                 ToastService.success(result.message);
                 handleBottomSheetDismiss();
                 setCurrentPassword('');
@@ -138,12 +138,12 @@ const SecurityScreen = ({ navigation }) => {
                 setConfirmPassword('');
                 setPasswordStrength({ isValid: false, score: 0, feedback: [] });
             } else {
-                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                await hapticError();
                 ToastService.error(result.message);
             }
         } catch (error) {
             console.error('Password change error:', error);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            await hapticError();
             ToastService.error('Failed to change password. Please try again.');
         } finally {
             setChangingPassword(false);
@@ -158,20 +158,20 @@ const SecurityScreen = ({ navigation }) => {
 
         try {
             setUpdatingBiometric(true);
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            await hapticMedium();
 
             if (!biometricStatus.isEnabled) {
                 // Enable biometric
                 const result = await BiometricService.enableBiometric(userId);
 
                 if (result.success) {
-                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    await hapticSuccess();
                     ToastService.success('Biometric authentication enabled successfully!');
                     // Reload biometric status
                     const newStatus = await BiometricService.getBiometricStatus(userId);
                     setBiometricStatus(newStatus);
                 } else {
-                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                    await hapticError();
                     ToastService.error(result.message);
                 }
             } else {
@@ -182,7 +182,7 @@ const SecurityScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Biometric toggle error:', error);
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            await hapticError();
             ToastService.error('Failed to update biometric settings');
         } finally {
             setUpdatingBiometric(false);
@@ -197,7 +197,7 @@ const SecurityScreen = ({ navigation }) => {
             const result = await SecurityService.updateSecurityNotifications(userId, newSettings);
 
             if (result.success) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                await hapticLight();
             } else {
                 // Revert on failure
                 setSecuritySettings(securitySettings);
