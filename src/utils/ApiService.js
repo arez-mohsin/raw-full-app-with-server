@@ -44,19 +44,27 @@ class ApiService {
                 // Get fresh token if needed
                 let token = null;
                 if (!skipAuth) {
-                    token = await this.getFreshToken();
+                    // Use custom token if provided, otherwise get fresh token
+                    if (options.customToken) {
+                        token = options.customToken;
+                        console.log('Using custom token for API call, length:', token ? token.length : 0);
+                    } else {
+                        token = await this.getFreshToken();
+                        console.log('Using fresh token from getFreshToken, length:', token ? token.length : 0);
+                    }
                 }
 
-                // Prepare request data
+                // Prepare request data with device fingerprint
                 const requestData = {
                     ...data,
                     userId,
                     timestamp: Date.now().toString(),
-                    attempt: attempt + 1
+                    attempt: attempt + 1,
+                    deviceFingerprint: options.deviceFingerprint || 'no-fingerprint'
                 };
 
                 // Make the request
-                const response = await this.makeRequest(endpoint, requestData, token, timeout);
+                const response = await this.makeRequest(endpoint, requestData, token, timeout, options.deviceFingerprint);
                 return response;
 
             } catch (error) {
@@ -79,16 +87,26 @@ class ApiService {
             }
         };
 
-        // Execute with retry mechanism
-        return networkService.retryWithBackoff(
-            () => apiCall(),
-            maxRetries,
-            retryDelay
-        );
+        // Execute with retry mechanism, but respect shouldNotRetry logic
+        try {
+            return await apiCall();
+        } catch (error) {
+            // If this is an error that shouldn't be retried, throw it immediately
+            if (this.shouldNotRetry(error)) {
+                throw error;
+            }
+
+            // For other errors, use the retry mechanism
+            return networkService.retryWithBackoff(
+                () => apiCall(),
+                maxRetries,
+                retryDelay
+            );
+        }
     }
 
     // Make the actual HTTP request
-    async makeRequest(endpoint, data, token, timeout) {
+    async makeRequest(endpoint, data, token, timeout, deviceFingerprint) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -97,12 +115,24 @@ class ApiService {
                 'Content-Type': 'application/json',
                 'User-Agent': 'RAWApp/1.0',
                 'X-Timestamp': Date.now().toString(),
-                'X-Request-ID': this.generateRequestId()
+                'X-Request-ID': this.generateRequestId(),
+                'X-Device-ID': deviceFingerprint || 'unknown-device'
             };
 
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
+                console.log('Authorization header set with token, length:', token.length);
+            } else {
+                console.log('No token available for request');
             }
+
+            console.log('Request headers being sent:', {
+                'Content-Type': headers['Content-Type'],
+                'User-Agent': headers['User-Agent'],
+                'X-Timestamp': headers['X-Timestamp'],
+                'X-Device-ID': headers['X-Device-ID'],
+                'Authorization': headers['Authorization'] ? `Bearer ${token ? token.substring(0, 20) + '...' : 'none'}` : 'none'
+            });
 
             const response = await fetch(`${this.baseUrl}${endpoint}`, {
                 method: 'POST',

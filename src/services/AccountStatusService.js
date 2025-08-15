@@ -388,7 +388,7 @@ class AccountStatusService {
                 lockoutType: null
             });
 
-            console.log('Failed login attempts and hourly attempts reset for user:', userId);
+
             return true;
 
         } catch (error) {

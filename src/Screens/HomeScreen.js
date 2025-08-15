@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -32,6 +32,7 @@ import Constants from 'expo-constants';
 
 import ToastService from '../utils/ToastService';
 import apiService from '../utils/ApiService';
+import AccountStatusService from '../services/AccountStatusService';
 
 const MAX_SESSION_SECONDS = 7200; // 2 hours
 const SESSION_UPDATE_INTERVAL = 300000; // 5 minutes
@@ -82,18 +83,57 @@ Notifications.setNotificationHandler({
     }),
 });
 
-// Enhanced device fingerprint generation
+// Validate Firebase authentication token
+const validateAuthToken = async () => {
+    try {
+        if (!auth.currentUser) {
+            console.log('No current user for token validation');
+            return false;
+        }
+
+        // Force token refresh to ensure it's valid
+        console.log('Forcing token refresh for user:', auth.currentUser.uid);
+        const freshToken = await auth.currentUser.getIdToken(true);
+
+        if (!freshToken) {
+            console.log('Failed to get fresh token');
+            return false;
+        }
+
+        // Verify token is valid
+        const tokenResult = await auth.currentUser.getIdTokenResult();
+        const currentTime = Date.now();
+        const expirationTime = new Date(tokenResult.expirationTime).getTime();
+
+        if (expirationTime <= currentTime) {
+            console.log('Token still expired after refresh');
+            return false;
+        }
+
+        console.log('Token refreshed and valid, expires in', Math.round((expirationTime - currentTime) / 1000), 'seconds');
+        return true;
+    } catch (error) {
+        console.error('Token validation failed:', error);
+        return false;
+    }
+};
+
+// Production-ready device fingerprint generation
 const generateDeviceFingerprint = async () => {
     try {
-        const deviceId = Device.osInternalBuildId || Device.deviceName || 'unknown';
-        const appVersion = Application.nativeApplicationVersion || '1.0.0';
-        const platform = Platform.OS;
-        const deviceModel = Device.modelName || 'unknown';
-        const deviceYear = Device.deviceYearClass || 'unknown';
-        const totalMemory = Device.totalMemory || 'unknown';
+        // Ensure all values are strings and have fallbacks
+        const deviceId = String(Device.osInternalBuildId || Device.deviceName || 'unknown').substring(0, 20);
+        const appVersion = String(Application.nativeApplicationVersion || '1.0.0').substring(0, 20);
+        const platform = String(Platform.OS || 'unknown').substring(0, 10);
+        const deviceModel = String(Device.modelName || 'unknown').substring(0, 20);
 
-        // Simplified fingerprint to reduce false positives
+        // Create fingerprint with guaranteed values
         const fingerprint = `${deviceId}-${platform}-${deviceModel}-${appVersion}`;
+
+        // Validate fingerprint is not empty
+        if (!fingerprint || fingerprint.length < 10) {
+            throw new Error('Generated fingerprint too short');
+        }
 
         // Enhanced hash function
         let hash = 0;
@@ -102,10 +142,21 @@ const generateDeviceFingerprint = async () => {
             hash = ((hash << 5) - hash) + char;
             hash = hash & hash; // Convert to 32-bit integer
         }
-        return Math.abs(hash).toString(16).padStart(8, '0');
+
+        const result = Math.abs(hash).toString(16).padStart(8, '0');
+
+        // Final validation
+        if (!result || result.length !== 8) {
+            throw new Error('Hash result invalid');
+        }
+
+        return result;
     } catch (error) {
-        console.error('Error generating device fingerprint:', error);
-        return 'unknown-device-' + Date.now();
+        console.error('Device fingerprint generation failed:', error);
+        // Production fallback - always return a valid fingerprint
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 10000);
+        return `fallback-${timestamp.toString(36)}-${random.toString(16)}`.substring(0, 8);
     }
 };
 
@@ -114,16 +165,58 @@ const generateDeviceFingerprint = async () => {
 // Enhanced secure API client with comprehensive security
 const secureApiCall = async (endpoint, data, userId) => {
     try {
+        // Validate authentication token first
+        const isTokenValid = await validateAuthToken();
+        if (!isTokenValid) {
+            console.error('Authentication token validation failed');
+            throw new Error('Authentication failed. Please log in again.');
+        }
+
+        // Ensure device fingerprint is generated before making the call
+        let deviceFingerprint = await generateDeviceFingerprint();
+
+        // Fallback if fingerprint generation fails
+        if (!deviceFingerprint || deviceFingerprint.length < 8) {
+            console.warn('Primary device fingerprint generation failed, using fallback');
+            deviceFingerprint = `fallback-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+        }
+
+        if (!deviceFingerprint || deviceFingerprint.length < 8) {
+            console.error('All device fingerprint generation methods failed');
+            throw new Error('Failed to generate valid device fingerprint');
+        }
+
+        console.log('Device fingerprint validated:', deviceFingerprint);
+
+        // Get a fresh token before making the API call
+        const freshToken = await auth.currentUser.getIdToken(true);
+        console.log('Fresh token obtained for API call, length:', freshToken ? freshToken.length : 0);
+
         // Use the new ApiService for better error handling and retry mechanisms
         return await apiService.secureApiCall(endpoint, data, userId, {
             timeout: SECURITY_CONFIG.REQUEST_TIMEOUT,
             maxRetries: 3,
-            retryDelay: 2000
+            retryDelay: 2000,
+            deviceFingerprint, // Pass the fingerprint explicitly
+            skipAuth: false, // Ensure authentication is checked
+            customToken: freshToken // Pass the fresh token directly
         });
     } catch (error) {
         console.error('Secure API call error:', error);
 
-        // Handle specific error types
+        // Handle authentication errors immediately - don't retry these
+        if (error.message.includes('Authentication failed') ||
+            error.message.includes('Please log in again') ||
+            error.message.includes('User not authenticated') ||
+            error.message.includes('Authentication mismatch') ||
+            error.message.includes('Authentication token unavailable')) {
+
+            console.warn('Authentication error detected, user needs to re-login');
+            // Don't throw the error, let the calling function handle it gracefully
+            throw error;
+        }
+
+        // Handle network unavailability
         if (error.message.includes('Network unavailable')) {
             // Queue the request for later when network is available
             console.log('Network unavailable, queuing request for later');
@@ -248,6 +341,15 @@ const HomeScreen = ({ navigation }) => {
     const { t } = useTranslation();
     const [user, setUser] = useState(null);
     const [userId, setUserId] = useState(null);
+
+    // Use ref to track current userId for auth callbacks
+    const userIdRef = useRef(null);
+
+    // Debug userId state changes
+    useEffect(() => {
+        console.log('userId state changed to:', userId);
+        userIdRef.current = userId; // Keep ref in sync
+    }, [userId]);
     const [balance, setBalance] = useState(0);
     const [isMining, setIsMining] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
@@ -451,17 +553,112 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
+    // Synchronize authentication state for Expo Go
+    useEffect(() => {
+        // Check if user is already authenticated on component mount
+        const currentUser = auth.currentUser;
+        if (currentUser && !userId) {
+            console.log('Expo Go: Found existing authenticated user:', currentUser.uid);
+            setUserId(currentUser.uid);
+        }
+    }, [userId]); // Add userId dependency to re-run when it changes
+
+    // Additional synchronization on component mount
+    useEffect(() => {
+        const syncUserId = () => {
+            const currentUser = auth.currentUser;
+            if (currentUser && currentUser.uid !== userId) {
+                console.log('Component mount: Syncing userId from', userId, 'to', currentUser.uid);
+                setUserId(currentUser.uid);
+            }
+        };
+
+        // Run immediately
+        syncUserId();
+
+        // Also run after a short delay to catch any late auth state changes
+        const timeoutId = setTimeout(syncUserId, 1000);
+
+        // Test device fingerprint generation
+        const testFingerprint = async () => {
+            try {
+                const fingerprint = await generateDeviceFingerprint();
+                console.log('Device fingerprint test successful:', fingerprint);
+            } catch (error) {
+                console.error('Device fingerprint test failed:', error);
+            }
+        };
+
+        // Test fingerprint generation after a short delay
+        setTimeout(testFingerprint, 2000);
+
+        return () => clearTimeout(timeoutId);
+    }, []); // Only run on mount
+
     // Handle authentication and initialize real-time listeners
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            console.log('Expo Go: Auth state changed:', {
+                hasUser: !!user,
+                userId: user?.uid,
+                currentStateUserId: userId,
+                authCurrentUser: auth.currentUser?.uid
+            });
+
             if (user) {
                 console.log('User authenticated:', user.uid);
                 setUserId(user.uid);
+
+                // Ensure userId is set immediately for Expo Go compatibility
+                if (!userIdRef.current || userIdRef.current !== user.uid) {
+                    console.log('Setting userId state for authenticated user:', user.uid);
+                    setUserId(user.uid);
+                }
+
+                // Check account status before proceeding
+                const accountStatus = await AccountStatusService.canUserAccess(user.uid);
+                if (!accountStatus.canAccess) {
+                    console.log('Account access denied:', accountStatus.status, accountStatus.message);
+                    // Navigate to account status error screen
+                    navigation.replace('AccountStatusError', { userId: user.uid });
+                    return;
+                }
+
                 await initializeUserData(user.uid);
+
+                // Ensure token is fresh
+                try {
+                    await user.getIdToken(true);
+                    console.log('Token refreshed for user:', user.uid);
+                } catch (error) {
+                    console.error('Failed to refresh token:', error);
+                }
+
                 // Set up real-time listeners
-                setupRealtimeListeners(user.uid);
-                // Check for expired sessions on load
-                await checkMiningSession();
+                await setupRealtimeListeners(user.uid);
+
+                // Delay mining session check to avoid immediate authentication issues in Expo Go
+                setTimeout(async () => {
+                    try {
+                        // Force update userId state if needed
+                        if (userIdRef.current !== user.uid) {
+                            console.log('Force updating userId state from', userIdRef.current, 'to', user.uid);
+                            setUserId(user.uid);
+                        }
+
+                        // Double-check that user is still authenticated before proceeding
+                        if (auth.currentUser && auth.currentUser.uid === user.uid) {
+                            console.log('Proceeding with delayed mining session check for user:', user.uid);
+                            await checkMiningSession();
+                        } else {
+                            console.log('User authentication changed during delay, skipping mining session check');
+                        }
+                    } catch (error) {
+                        console.log('Delayed mining session check failed:', error.message);
+                        // Don't redirect on delayed check failure
+                    }
+                }, 3000); // Wait 3 seconds for Expo Go to stabilize
+
                 // Check for existing scheduled notifications
                 await checkScheduledNotifications();
 
@@ -471,6 +668,26 @@ const HomeScreen = ({ navigation }) => {
                     setPushToken(token);
                     await updatePushTokenInDatabase(token);
                 }
+
+                // Set up periodic token refresh (every 30 minutes)
+                const tokenRefreshInterval = setInterval(async () => {
+                    try {
+                        if (auth.currentUser && auth.currentUser.uid === user.uid) {
+                            await auth.currentUser.getIdToken(true);
+                            console.log('Periodic token refresh successful for user:', user.uid);
+                        } else {
+                            console.log('User changed, clearing token refresh interval');
+                            clearInterval(tokenRefreshInterval);
+                        }
+                    } catch (error) {
+                        console.error('Periodic token refresh failed:', error);
+                    }
+                }, 30 * 60 * 1000); // 30 minutes
+
+                // Clean up interval on unmount
+                return () => {
+                    clearInterval(tokenRefreshInterval);
+                };
 
             } else {
                 console.log('User not authenticated, cleaning up...');
@@ -516,7 +733,7 @@ const HomeScreen = ({ navigation }) => {
         });
 
         return () => {
-            Notifications.removeNotificationSubscription(notificationListener);
+            notificationListener?.remove();
         };
     }, [isMining]);
 
@@ -541,9 +758,45 @@ const HomeScreen = ({ navigation }) => {
         });
 
         return () => {
-            Notifications.removeNotificationSubscription(notificationReceivedListener);
+            notificationReceivedListener?.remove();
         };
     }, [userId]);
+
+    // Periodic account status check to ensure user hasn't been disabled/locked while using the app
+    useEffect(() => {
+        if (!userId) return;
+
+        const checkAccountStatus = async () => {
+            try {
+                const accountStatus = await AccountStatusService.canUserAccess(userId);
+                if (!accountStatus.canAccess) {
+                    console.log('Account access denied during app usage:', accountStatus.status, accountStatus.message);
+                    // Navigate to account status error screen
+                    navigation.replace('AccountStatusError', { userId });
+                }
+            } catch (error) {
+                console.error('Error checking account status:', error);
+                // On error, continue allowing access to avoid blocking legitimate users
+            }
+        };
+
+        // Check account status every 5 minutes while the app is active
+        const intervalId = setInterval(checkAccountStatus, 5 * 60 * 1000);
+
+        // Also check when the app comes to foreground
+        const handleAppStateChange = (nextAppState) => {
+            if (nextAppState === 'active') {
+                checkAccountStatus();
+            }
+        };
+
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+        return () => {
+            clearInterval(intervalId);
+            subscription?.remove();
+        };
+    }, [userId, navigation]);
 
     // Clean up listeners on unmount
     useEffect(() => {
@@ -605,7 +858,16 @@ const HomeScreen = ({ navigation }) => {
     };
 
     // Set up real-time listeners for user data and activities
-    const setupRealtimeListeners = (uid) => {
+    const setupRealtimeListeners = async (uid) => {
+        // Check account status before setting up real-time listeners
+        const accountStatus = await AccountStatusService.canUserAccess(uid);
+        if (!accountStatus.canAccess) {
+            console.log('Account access denied in setupRealtimeListeners:', accountStatus.status, accountStatus.message);
+            // Navigate to account status error screen
+            navigation.replace('AccountStatusError', { userId: uid });
+            return;
+        }
+
         // User data listener
         const userRef = doc(db, "users", uid);
         const userUnsubscribe = onSnapshot(userRef, (doc) => {
@@ -858,6 +1120,15 @@ const HomeScreen = ({ navigation }) => {
 
     // Initialize user data
     const initializeUserData = async (uid) => {
+        // Check account status before initializing user data
+        const accountStatus = await AccountStatusService.canUserAccess(uid);
+        if (!accountStatus.canAccess) {
+            console.log('Account access denied in initializeUserData:', accountStatus.status, accountStatus.message);
+            // Navigate to account status error screen
+            navigation.replace('AccountStatusError', { userId: uid });
+            return;
+        }
+
         const userRef = doc(db, "users", uid);
 
         try {
@@ -1109,8 +1380,49 @@ const HomeScreen = ({ navigation }) => {
 
     const checkMiningSession = async () => {
         try {
-            if (!userId || !auth.currentUser) {
-                console.log('User not authenticated, skipping mining session check');
+            console.log('checkMiningSession called with userId:', userId, 'auth.currentUser:', auth.currentUser?.uid);
+
+            // Enhanced authentication check for Expo Go
+            if (!userId) {
+                console.log('No userId in state, skipping mining session check');
+                return;
+            }
+
+            if (!auth.currentUser) {
+                console.log('No current user in auth, skipping mining session check');
+                return;
+            }
+
+            if (auth.currentUser.uid !== userId) {
+                console.log('User ID mismatch, skipping mining session check');
+                return;
+            }
+
+            // Validate token before proceeding
+            const isTokenValid = await validateAuthToken();
+            if (!isTokenValid) {
+                console.log('Token validation failed in checkMiningSession');
+                // Try to re-authenticate the user
+                try {
+                    console.log('Attempting to re-authenticate user...');
+                    await auth.currentUser.getIdToken(true);
+                    console.log('Re-authentication successful');
+                } catch (reauthError) {
+                    console.error('Re-authentication failed:', reauthError);
+                    // User needs to log in again
+                    navigation.replace('Login');
+                    return;
+                }
+            }
+
+            console.log('Authentication verified, proceeding with mining session check for user:', userId);
+
+            // Check account status before checking mining session
+            const accountStatus = await AccountStatusService.canUserAccess(userId);
+            if (!accountStatus.canAccess) {
+                console.log('Account access denied in checkMiningSession:', accountStatus.status, accountStatus.message);
+                // Navigate to account status error screen
+                navigation.replace('AccountStatusError', { userId });
                 return;
             }
 
@@ -1139,8 +1451,8 @@ const HomeScreen = ({ navigation }) => {
                 error.message.includes('User not authenticated') ||
                 error.message.includes('Authentication mismatch')) {
                 console.warn('Authentication error in checkMiningSession - user may need to re-login');
-                // Don't show error toast for auth issues, just log it
-                // The auth state change handler will handle cleanup
+                // Don't redirect immediately, just log the issue
+                // The auth state change handler will handle cleanup if needed
                 return;
             }
 
@@ -1160,15 +1472,35 @@ const HomeScreen = ({ navigation }) => {
                 return;
             }
 
-            // Check authentication status before proceeding
+            // Enhanced authentication check for Expo Go
             if (!auth.currentUser) {
+                console.log('No current user in auth, cannot start mining');
                 ToastService.error('Please log in to start mining');
+                return;
+            }
+
+            if (!userId) {
+                console.log('No userId in state, cannot start mining');
+                ToastService.error('Authentication state error. Please restart the app.');
                 return;
             }
 
             // Verify the user ID matches the current authenticated user
             if (auth.currentUser.uid !== userId) {
+                console.log('User ID mismatch in startMining:', { authUid: auth.currentUser.uid, stateUid: userId });
                 ToastService.error('Authentication mismatch. Please log in again.');
+                return;
+            }
+
+            console.log('Authentication verified for mining, proceeding...');
+
+            // Check account status before starting mining
+            const accountStatus = await AccountStatusService.canUserAccess(userId);
+            if (!accountStatus.canAccess) {
+                console.log('Account access denied in startMining:', accountStatus.status, accountStatus.message);
+                ToastService.error('Account access denied. Please contact support.');
+                // Navigate to account status error screen
+                navigation.replace('AccountStatusError', { userId });
                 return;
             }
 
@@ -1182,7 +1514,8 @@ const HomeScreen = ({ navigation }) => {
                     error.message.includes('Please log in again') ||
                     error.message.includes('User not authenticated') ||
                     error.message.includes('Authentication mismatch')) {
-                    console.warn('Authentication error in startMining, aborting');
+                    console.warn('Authentication error in startMining, aborting operation');
+                    // Don't redirect immediately, just abort the operation
                     return;
                 }
                 // Re-throw other errors
@@ -1252,6 +1585,17 @@ const HomeScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Start mining error:', error);
+
+            // Handle authentication errors by redirecting to login
+            if (error.message.includes('Authentication failed') ||
+                error.message.includes('Please log in again') ||
+                error.message.includes('User not authenticated') ||
+                error.message.includes('Authentication mismatch')) {
+                console.warn('Authentication error in startMining, redirecting to login');
+                navigation.replace('Login');
+                return;
+            }
+
             hapticError();
             ToastService.error(error.message || 'Failed to start mining');
         } finally {
@@ -1354,6 +1698,15 @@ const HomeScreen = ({ navigation }) => {
         setRefreshing(true);
         try {
             if (userId) {
+                // Check account status before refreshing data
+                const accountStatus = await AccountStatusService.canUserAccess(userId);
+                if (!accountStatus.canAccess) {
+                    console.log('Account access denied in onRefresh:', accountStatus.status, accountStatus.message);
+                    // Navigate to account status error screen
+                    navigation.replace('AccountStatusError', { userId });
+                    return;
+                }
+
                 // Check for expired mining sessions
                 await checkMiningSession();
 
