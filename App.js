@@ -15,6 +15,8 @@ import ErrorBoundary from "./src/components/ErrorBoundary";
 import PerformanceMonitor from "./src/utils/PerformanceMonitor";
 import DeviceLogoutChecker from "./src/components/DeviceLogoutChecker";
 import { AppState } from 'react-native';
+import UserStatusService from './src/services/UserStatusService';
+import { useAppState } from './src/hooks/useAppState';
 
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
@@ -228,6 +230,9 @@ function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Use custom hook for app state management
+  useAppState();
+
   const checkAppState = async () => {
     try {
       // await AsyncStorage.clear();
@@ -246,12 +251,29 @@ function AppContent() {
       console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
       setIsAuthenticated(!!user);
       setIsLoading(false);
+
+      // Initialize user status service when auth state changes
+      if (user) {
+        UserStatusService.handleUserLogin(user);
+      } else {
+        // Clean up when user logs out
+        UserStatusService.handleUserLogout();
+      }
     });
 
     return () => {
       unsubscribe();
     };
   }, []);
+
+  // Handle app unmounting to set user offline
+  useEffect(() => {
+    return () => {
+      if (isAuthenticated) {
+        UserStatusService.setUserOffline();
+      }
+    };
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return null;

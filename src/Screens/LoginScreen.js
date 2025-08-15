@@ -16,7 +16,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import ErrorHandler from '../utils/ErrorHandler';
 import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
@@ -28,6 +28,7 @@ import * as Location from 'expo-location';
 import * as Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import ToastService from '../utils/ToastService';
+import AccountStatusService from '../services/AccountStatusService';
 
 const LoginScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -256,6 +257,14 @@ const LoginScreen = ({ navigation }) => {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            // Reset failed login attempts on successful login
+            try {
+                await AccountStatusService.resetFailedLoginAttempts(user.uid);
+            } catch (resetError) {
+                console.error('Error resetting failed attempts:', resetError);
+                // Continue with login even if reset fails
+            }
+
             // Update user document with device info and login data
             try {
                 const userRef = doc(db, 'users', user.uid);
@@ -287,7 +296,21 @@ const LoginScreen = ({ navigation }) => {
 
             // Check if email is verified before navigating to main app
             if (user.emailVerified) {
-                navigation.replace('Main');
+                // Check account status (disabled/locked)
+                try {
+                    const accountStatus = await AccountStatusService.canUserAccess(user.uid);
+                    if (accountStatus.canAccess) {
+                        // Account is active, navigate to main app
+                        navigation.replace('Main');
+                    } else {
+                        // Account is disabled or locked
+                        navigation.replace('AccountStatusError');
+                    }
+                } catch (error) {
+                    console.error('Error checking account status:', error);
+                    // On error, assume account status issue
+                    navigation.replace('AccountStatusError');
+                }
             } else {
                 // Navigate to email verification screen
                 navigation.replace('EmailVerification');
@@ -295,8 +318,46 @@ const LoginScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error('Login error:', error);
-            const errorMessage = ErrorHandler.getErrorMessage(error);
-            setGeneralError(errorMessage);
+
+            // Record failed login attempt if user exists
+            if (email) {
+                try {
+                    // Try to find user by email to record failed attempt
+                    const usersRef = collection(db, 'users');
+                    const q = query(usersRef, where('email', '==', email.toLowerCase()));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        const userDoc = querySnapshot.docs[0];
+                        const userId = userDoc.id;
+
+                        // Record failed attempt
+                        await AccountStatusService.recordFailedLoginAttempt(userId, {
+                            deviceInfo: await getDeviceInfo(),
+                            ipAddress: 'unknown', // Could be enhanced with actual IP
+                            userAgent: 'React Native App'
+                        });
+
+                        // Check if account is now locked
+                        const lockoutStatus = await AccountStatusService.getLockoutStatus(userId);
+                        if (lockoutStatus.isLocked && lockoutStatus.remainingTime > 0) {
+                            const minutesRemaining = Math.ceil(lockoutStatus.remainingTime / 60000);
+                            setGeneralError(`Account temporarily locked due to too many failed attempts. Try again in ${minutesRemaining} minutes.`);
+                        } else {
+                            const errorMessage = ErrorHandler.getErrorMessage(error);
+                            setGeneralError(errorMessage);
+                        }
+                    } else {
+                        setGeneralError(errorMessage);
+                    }
+                } catch (recordError) {
+                    console.error('Error recording failed attempt:', recordError);
+                    setGeneralError(errorMessage);
+                }
+            } else {
+                setGeneralError(errorMessage);
+            }
+
             await hapticError();
         } finally {
             setIsLoading(false);
@@ -337,6 +398,14 @@ const LoginScreen = ({ navigation }) => {
             // Attempt login with stored credentials
             const userCredential = await signInWithEmailAndPassword(auth, lastLoginEmail, storedCredentials.password);
             const user = userCredential.user;
+
+            // Reset failed login attempts on successful biometric login
+            try {
+                await AccountStatusService.resetFailedLoginAttempts(user.uid);
+            } catch (resetError) {
+                console.error('Error resetting failed attempts:', resetError);
+                // Continue with login even if reset fails
+            }
 
             // Check if biometric is enabled for this user
             const biometricEnabled = await BiometricService.isBiometricEnabled(user.uid);
@@ -385,7 +454,21 @@ const LoginScreen = ({ navigation }) => {
 
             // Check if email is verified before navigating to main app
             if (user.emailVerified) {
-                navigation.replace('Main');
+                // Check account status (disabled/locked)
+                try {
+                    const accountStatus = await AccountStatusService.canUserAccess(user.uid);
+                    if (accountStatus.canAccess) {
+                        // Account is active, navigate to main app
+                        navigation.replace('Main');
+                    } else {
+                        // Account is disabled or locked
+                        navigation.replace('AccountStatusError');
+                    }
+                } catch (error) {
+                    console.error('Error checking account status:', error);
+                    // On error, assume account status issue
+                    navigation.replace('AccountStatusError');
+                }
             } else {
                 // Navigate to email verification screen
                 navigation.replace('EmailVerification');
@@ -460,7 +543,28 @@ const LoginScreen = ({ navigation }) => {
 
             if (result.success) {
                 await hapticSuccess();
-                navigation.replace('Main');
+
+                // Check account status for social login users
+                try {
+                    const user = auth.currentUser;
+                    if (user) {
+                        const accountStatus = await AccountStatusService.canUserAccess(user.uid);
+                        if (accountStatus.canAccess) {
+                            // Account is active, navigate to main app
+                            navigation.replace('Main');
+                        } else {
+                            // Account is disabled or locked
+                            navigation.replace('AccountStatusError');
+                        }
+                    } else {
+                        // Fallback to main app if no user found
+                        navigation.replace('Main');
+                    }
+                } catch (error) {
+                    console.error('Error checking account status for social login:', error);
+                    // On error, assume account status issue
+                    navigation.replace('AccountStatusError');
+                }
             }
 
         } catch (error) {

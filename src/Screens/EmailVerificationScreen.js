@@ -19,6 +19,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { hapticMedium, hapticLight, hapticSuccess, hapticError, hapticWarning } from '../utils/HapticUtils';
 import ErrorHandler from '../utils/ErrorHandler';
 import ToastService from '../utils/ToastService';
+import AccountStatusService from '../services/AccountStatusService';
 
 const EmailVerificationScreen = ({ navigation, route }) => {
     const { theme } = useTheme();
@@ -83,11 +84,24 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                     // Update user document in Firestore
                     await updateUserEmailVerified(updatedUser.uid);
 
-                    // Navigate to Main directly since user is now verified
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Main' }],
-                    });
+                    // Check account status before navigating
+                    try {
+                        const accountStatus = await AccountStatusService.canUserAccess(updatedUser.uid);
+                        if (accountStatus.canAccess) {
+                            // Account is active, navigate to main app
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Main' }],
+                            });
+                        } else {
+                            // Account is disabled or locked
+                            navigation.replace('AccountStatusError');
+                        }
+                    } catch (error) {
+                        console.error('Error checking account status:', error);
+                        // On error, assume account status issue
+                        navigation.replace('AccountStatusError');
+                    }
                 }
             }
         } catch (error) {
@@ -109,7 +123,24 @@ const EmailVerificationScreen = ({ navigation, route }) => {
 
                     // Show success message and navigate after a delay
                     ToastService.success('Your email has been successfully verified. You can continue to the app now.');
-                    setTimeout(() => navigation.replace('Main'), 2000);
+
+                    // Check account status before navigating
+                    setTimeout(async () => {
+                        try {
+                            const accountStatus = await AccountStatusService.canUserAccess(currentUser.uid);
+                            if (accountStatus.canAccess) {
+                                // Account is active, navigate to main app
+                                navigation.replace('Main');
+                            } else {
+                                // Account is disabled or locked
+                                navigation.replace('AccountStatusError');
+                            }
+                        } catch (error) {
+                            console.error('Error checking account status:', error);
+                            // On error, assume account status issue
+                            navigation.replace('AccountStatusError');
+                        }
+                    }, 2000);
                 } else {
                     // Send verification email automatically when screen loads
                     try {

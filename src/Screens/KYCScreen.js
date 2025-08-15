@@ -14,6 +14,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import ToastService from '../utils/ToastService';
+import AccountStatusService from '../services/AccountStatusService';
+import { auth } from '../firebase';
 
 const KYCScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -66,7 +68,30 @@ const KYCScreen = ({ navigation }) => {
         try {
             await new Promise(resolve => setTimeout(resolve, 2000));
             ToastService.success(t('kyc.verificationRequestSubmitted'));
-            setTimeout(() => navigation.replace('Main'), 1500);
+
+            // Check account status before navigating
+            setTimeout(async () => {
+                try {
+                    const user = auth.currentUser;
+                    if (user) {
+                        const accountStatus = await AccountStatusService.canUserAccess(user.uid);
+                        if (accountStatus.canAccess) {
+                            // Account is active, navigate to main app
+                            navigation.replace('Main');
+                        } else {
+                            // Account is disabled or locked
+                            navigation.replace('AccountStatusError');
+                        }
+                    } else {
+                        // Fallback to main app if no user found
+                        navigation.replace('Main');
+                    }
+                } catch (error) {
+                    console.error('Error checking account status:', error);
+                    // On error, assume account status issue
+                    navigation.replace('AccountStatusError');
+                }
+            }, 1500);
         } catch (error) {
             ToastService.error(t('kyc.failedToSubmitKyc'));
         }

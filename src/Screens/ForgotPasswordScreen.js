@@ -21,6 +21,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import ErrorHandler from '../utils/ErrorHandler';
+import AccountStatusService from '../services/AccountStatusService';
 
 const ForgotPasswordScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -28,11 +29,25 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     // Check if user is already authenticated
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
             if (user) {
                 // Check if email is verified before redirecting to main app
                 if (user.emailVerified) {
-                    navigation.replace('Main');
+                    // Check account status (disabled/locked)
+                    try {
+                        const accountStatus = await AccountStatusService.canUserAccess(user.uid);
+                        if (accountStatus.canAccess) {
+                            // Account is active, navigate to main app
+                            navigation.replace('Main');
+                        } else {
+                            // Account is disabled or locked
+                            navigation.replace('AccountStatusError');
+                        }
+                    } catch (error) {
+                        console.error('Error checking account status:', error);
+                        // On error, assume account status issue
+                        navigation.replace('AccountStatusError');
+                    }
                 } else {
                     // User is authenticated but email is not verified
                     navigation.replace('EmailVerification');

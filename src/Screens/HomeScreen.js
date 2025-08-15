@@ -31,6 +31,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 
 import ToastService from '../utils/ToastService';
+import apiService from '../utils/ApiService';
 
 const MAX_SESSION_SECONDS = 7200; // 2 hours
 const SESSION_UPDATE_INTERVAL = 300000; // 5 minutes
@@ -108,203 +109,29 @@ const generateDeviceFingerprint = async () => {
     }
 };
 
+
+
 // Enhanced secure API client with comprehensive security
 const secureApiCall = async (endpoint, data, userId) => {
     try {
-        // Check if user is still authenticated
-        if (!auth.currentUser) {
-            console.warn('User not authenticated, redirecting to login');
-            throw new Error('User not authenticated. Please log in again.');
-        }
-
-        // Verify the user ID matches the current authenticated user
-        if (auth.currentUser.uid !== userId) {
-            console.warn('User ID mismatch, user may have changed');
-            throw new Error('Authentication mismatch. Please log in again.');
-        }
-
-        // Check if the user's token is about to expire (within 5 minutes)
-        try {
-            const tokenResult = await auth.currentUser.getIdTokenResult();
-            if (tokenResult.expirationTime) {
-                const expirationTime = new Date(tokenResult.expirationTime).getTime();
-                const currentTime = Date.now();
-                const timeUntilExpiry = expirationTime - currentTime;
-
-                // If token expires in less than 5 minutes, force refresh
-                if (timeUntilExpiry < 300000) { // 5 minutes in milliseconds
-                    console.log('Token expiring soon, forcing refresh');
-                    await auth.currentUser.getIdToken(true);
-                }
-            }
-        } catch (tokenCheckError) {
-            console.warn('Token check failed, proceeding with current token:', tokenCheckError);
-        }
-
-        // Skip rate limiting for mining operations
-        const isMiningOperation = endpoint === '/start-mining';
-
-        if (!isMiningOperation) {
-            // Security: Check request frequency (only for non-mining operations)
-            const now = Date.now();
-            if (now - lastRequestTime < SECURITY_CONFIG.MIN_REQUEST_INTERVAL) {
-                throw new Error('Request too frequent. Please slow down.');
-            }
-            lastRequestTime = now;
-
-            // Security: Check request count (only for non-mining operations)
-            requestCount++;
-            if (requestCount > SECURITY_CONFIG.MAX_REQUESTS_PER_MINUTE) {
-                throw new Error('Too many requests. Please wait before trying again.');
-            }
-
-            // Security: Reset request count every minute
-            setTimeout(() => {
-                requestCount = Math.max(0, requestCount - 1);
-            }, 60000);
-        }
-
-        const timestamp = Date.now().toString();
-        const deviceFingerprint = await generateDeviceFingerprint();
-
-        // Get Firebase token with force refresh if needed
-        let token;
-        try {
-            // First try to get a fresh token without forcing refresh
-            token = await auth.currentUser?.getIdToken();
-            if (!token) {
-                // If no token, try to force refresh
-                token = await auth.currentUser?.getIdToken(true);
-            }
-        } catch (tokenError) {
-            console.error('Token refresh error:', tokenError);
-            // Try to get a fresh token one more time
-            try {
-                token = await auth.currentUser?.getIdToken();
-            } catch (refreshError) {
-                console.error('Failed to get fresh token:', refreshError);
-                throw new Error('Authentication token unavailable. Please log in again.');
-            }
-        }
-
-        if (!token) {
-            throw new Error('No authentication token available. Please log in again.');
-        }
-
-        // Log token status for debugging
-        console.log('Token obtained successfully, length:', token.length);
-
-        // Security: Validate input data
-        if (!userId || typeof userId !== 'string' || userId.length < 10) {
-            throw new Error('Invalid user ID');
-        }
-
-        const requestData = {
-            ...data,
-            userId,
-            deviceFingerprint,
-        };
-
-        // Security: Add timeout to prevent hanging requests
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), SECURITY_CONFIG.REQUEST_TIMEOUT);
-
-        const response = await fetch(`${SERVER_CONFIG.BASE_URL}${endpoint}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'X-Timestamp': timestamp,
-                'X-Device-ID': deviceFingerprint,
-                'User-Agent': 'MineApp/1.0',
-            },
-            body: JSON.stringify(requestData),
-            signal: controller.signal
+        // Use the new ApiService for better error handling and retry mechanisms
+        return await apiService.secureApiCall(endpoint, data, userId, {
+            timeout: SECURITY_CONFIG.REQUEST_TIMEOUT,
+            maxRetries: 3,
+            retryDelay: 2000
         });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            let errorData;
-            try {
-                const responseText = await response.text();
-                console.log('Response text:', responseText);
-
-                // Try to parse as JSON
-                try {
-                    errorData = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    throw new Error(`Server error: ${response.status} - ${responseText.substring(0, 100)}`);
-                }
-            } catch (textError) {
-                console.error('Response text error:', textError);
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            // Handle specific HTTP status codes
-            if (response.status === 401) {
-                console.error('Authentication failed - user may need to re-login');
-                console.error('Response headers:', response.headers);
-                console.error('Response status:', response.status);
-                // Don't throw error immediately, let the calling function handle it
-                throw new Error('Authentication failed. Please log in again.');
-            } else if (response.status === 403) {
-                throw new Error('Access denied. Your account may be suspended.');
-            } else if (response.status === 404) {
-                throw new Error('Service not found. Please try again later.');
-            } else if (response.status === 500) {
-                throw new Error('Server error. Please try again later.');
-            } else if (response.status === 503) {
-                throw new Error('Service temporarily unavailable. Please try again later.');
-            }
-
-            // Security: Handle specific error types
-            if (response.status === 429) {
-                suspiciousActivityCount++;
-                if (suspiciousActivityCount >= SECURITY_CONFIG.SUSPICIOUS_ACTIVITY_THRESHOLD) {
-                    throw new Error('Account temporarily suspended due to suspicious activity');
-                }
-                throw new Error(errorData.error || 'Rate limit exceeded');
-            }
-
-            if (response.status === 403) {
-                throw new Error('Access denied. Please check your account status.');
-            }
-
-            throw new Error(errorData.error || 'Server request failed');
-        }
-
-        // Reset suspicious activity on successful request
-        suspiciousActivityCount = Math.max(0, suspiciousActivityCount - 1);
-
-        const responseText = await response.text();
-        console.log('Success response text:', responseText);
-
-        try {
-            return JSON.parse(responseText);
-        } catch (parseError) {
-            console.error('Success response JSON parse error:', parseError);
-            throw new Error('Invalid server response format');
-        }
     } catch (error) {
         console.error('Secure API call error:', error);
 
-        // Security: Handle network errors
-        if (error.name === 'AbortError') {
-            throw new Error('Request timeout. Please check your connection.');
+        // Handle specific error types
+        if (error.message.includes('Network unavailable')) {
+            // Queue the request for later when network is available
+            console.log('Network unavailable, queuing request for later');
+            await apiService.queueApiCall(endpoint, data, userId);
+            throw new Error('Request queued for later execution when network is available');
         }
 
-        // Handle authentication errors specifically
-        if (error.message.includes('Authentication failed') ||
-            error.message.includes('Please log in again') ||
-            error.message.includes('User not authenticated') ||
-            error.message.includes('Authentication mismatch')) {
-            console.warn('Authentication error detected, user may need to re-login');
-            // Don't throw the error, let the calling function handle it gracefully
-            throw error;
-        }
-
+        // Re-throw other errors
         throw error;
     }
 };
