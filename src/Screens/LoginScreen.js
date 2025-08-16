@@ -20,7 +20,7 @@ import { doc, updateDoc, serverTimestamp, getDoc, collection, query, where, getD
 import ErrorHandler from '../utils/ErrorHandler';
 import BiometricService from '../services/BiometricService';
 import SecurityService from '../services/SecurityService';
-import SocialAuthService from '../services/SocialAuthService';
+
 import { hapticMedium, hapticSuccess, hapticError, hapticLight } from '../utils/HapticUtils';
 import * as Device from 'expo-device';
 import * as Network from 'expo-network';
@@ -578,80 +578,7 @@ const LoginScreen = ({ navigation }) => {
         }
     };
 
-    // Handle social login
-    const handleSocialLogin = async (provider) => {
-        if (buttonDisabled) return;
 
-        try {
-            setButtonDisabled(true);
-            setButtonCooldown(5);
-            setIsLoading(true);
-            setGeneralError('');
-
-            await hapticMedium();
-
-            let result;
-            if (provider === 'Google') {
-                result = await SocialAuthService.signInWithGoogle();
-            } else if (provider === 'Apple') {
-                result = await SocialAuthService.signInWithApple();
-            } else {
-                throw new Error('Unsupported provider');
-            }
-
-            if (result.success) {
-                await hapticSuccess();
-
-                // Check account status for social login users
-                try {
-                    const user = auth.currentUser;
-                    if (user) {
-                        const accountStatus = await AccountStatusService.canUserAccess(user.uid);
-                        if (accountStatus.canAccess) {
-                            // Account is active, navigate to main app
-                            navigation.replace('Main');
-                        } else {
-                            // Account is disabled or locked
-                            navigation.replace('AccountStatusError');
-                        }
-                    } else {
-                        // Fallback to main app if no user found
-                        navigation.replace('Main');
-                    }
-                } catch (error) {
-                    console.error('Error checking account status for social login:', error);
-                    // On error, assume account status issue
-                    navigation.replace('AccountStatusError');
-                }
-            }
-
-        } catch (error) {
-            console.error(`${provider} login error:`, error);
-            let errorMessage = `${provider} login failed`;
-
-            // Check if it's a Firebase auth error first
-            if (error.code && error.code.startsWith('auth/')) {
-                errorMessage = getFirebaseErrorMessage(error);
-            } else if (error.message.includes('cancelled')) {
-                errorMessage = `${provider} login was cancelled`;
-            } else if (error.message.includes('not available')) {
-                errorMessage = `${provider} login is not available on this device`;
-            } else if (error.message.includes('network')) {
-                errorMessage = 'Network error. Please check your connection';
-            } else {
-                errorMessage = error.message || `${provider} login failed. Please try again.`;
-            }
-
-            setGeneralError(errorMessage);
-            await hapticError();
-        } finally {
-            setIsLoading(false);
-            setTimeout(() => {
-                setButtonDisabled(false);
-                setButtonCooldown(0);
-            }, 5000);
-        }
-    };
 
     return (
         <LinearGradient
@@ -799,33 +726,7 @@ const LoginScreen = ({ navigation }) => {
                         )}
                     </View>
 
-                    {/* Divider */}
-                    <View style={styles.dividerContainer}>
-                        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-                        <Text style={[styles.dividerText, { color: theme.colors.textTertiary }]}>{t('login.or')}</Text>
-                        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-                    </View>
 
-                    {/* Social Login */}
-                    <View style={styles.socialLogin}>
-                        <TouchableOpacity
-                            style={[styles.socialButton, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
-                            onPress={() => handleSocialLogin('Google')}
-                            disabled={isLoading}
-                        >
-                            <Ionicons name="logo-google" size={24} color={theme.colors.textPrimary} />
-                            <Text style={[styles.socialButtonText, { color: theme.colors.textPrimary }]}>{t('login.google')}</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.socialButton, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
-                            onPress={() => handleSocialLogin('Apple')}
-                            disabled={isLoading}
-                        >
-                            <Ionicons name="logo-apple" size={24} color={theme.colors.textPrimary} />
-                            <Text style={[styles.socialButtonText, { color: theme.colors.textPrimary }]}>{t('login.apple')}</Text>
-                        </TouchableOpacity>
-                    </View>
 
                     {/* Sign Up Link */}
                     <View style={styles.signUpContainer}>
@@ -971,41 +872,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginLeft: 8,
     },
-    dividerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    divider: {
-        flex: 1,
-        height: 1,
-    },
-    dividerText: {
-        marginHorizontal: 16,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    socialLogin: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 32,
-    },
-    socialButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        borderWidth: 1,
-        marginHorizontal: 6,
-    },
-    socialButtonText: {
-        fontSize: 16,
-        fontWeight: '500',
-        marginLeft: 8,
-    },
+
     signUpContainer: {
         flexDirection: 'row',
         justifyContent: 'center',

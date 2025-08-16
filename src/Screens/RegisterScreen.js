@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -11,13 +11,13 @@ import {
     ActivityIndicator,
     Platform,
     Vibration,
+    Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from '../utils/HapticUtils';
 import * as Device from 'expo-device';
 import * as Application from 'expo-application';
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp, increment, arrayUnion, updateDoc } from 'firebase/firestore';
@@ -25,7 +25,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import ErrorHandler from '../utils/ErrorHandler';
 import ActivityLogger from '../utils/ActivityLogger';
-import SocialAuthService from '../services/SocialAuthService';
+
+
 
 const RegisterScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -53,9 +54,7 @@ const RegisterScreen = ({ navigation }) => {
     const [isCheckingInviteCode, setIsCheckingInviteCode] = useState(false);
     const errorTimeoutRef = useRef(null);
 
-    // Bottom sheet refs and snap points
-    const bottomSheetModalRef = useRef(null);
-    const snapPoints = useMemo(() => ['25%', '50%', '90%'], []);
+
 
     // Enhanced validation functions
     const validateEmail = (email) => {
@@ -95,6 +94,55 @@ const RegisterScreen = ({ navigation }) => {
         // Last name should be 2-30 characters, letters only
         const re = /^[a-zA-Z]{2,30}$/;
         return re.test(name.trim());
+    };
+
+    // Enhanced error message helper
+    const getErrorMessage = (errorCode, fieldName = '') => {
+        const errorMessages = {
+            'auth/email-already-in-use': {
+                title: 'Email Already Exists',
+                message: 'This email address is already registered. Please use a different email or try logging in instead.',
+                action: 'login',
+                icon: 'mail-unread'
+            },
+            'auth/weak-password': {
+                title: 'Weak Password',
+                message: 'Password must be at least 8 characters with uppercase, lowercase, numbers, and special characters.',
+                action: 'retry',
+                icon: 'lock-closed'
+            },
+            'auth/invalid-email': {
+                title: 'Invalid Email',
+                message: 'Please enter a valid email address format (e.g., user@example.com).',
+                action: 'retry',
+                icon: 'mail'
+            },
+            'auth/network-request-failed': {
+                title: 'Network Error',
+                message: 'Network connection failed. Please check your internet connection and try again.',
+                action: 'retry',
+                icon: 'wifi'
+            },
+            'auth/too-many-requests': {
+                title: 'Too Many Attempts',
+                message: 'Too many registration attempts. Please wait a few minutes before trying again.',
+                action: 'wait',
+                icon: 'time'
+            },
+            'auth/operation-not-allowed': {
+                title: 'Registration Disabled',
+                message: 'Account creation is currently disabled. Please try again later or contact support.',
+                action: 'support',
+                icon: 'settings'
+            }
+        };
+
+        return errorMessages[errorCode] || {
+            title: 'Registration Error',
+            message: 'An unexpected error occurred. Please try again or contact support.',
+            action: 'support',
+            icon: 'alert-circle'
+        };
     };
 
     // Enhanced availability checks
@@ -360,14 +408,10 @@ const RegisterScreen = ({ navigation }) => {
         }
     };
 
-    // Bottom sheet handlers
-    const handlePresentModalPress = useCallback(() => {
-        bottomSheetModalRef.current?.present();
-    }, []);
-
-    const handleDismiss = useCallback(() => {
-        bottomSheetModalRef.current?.dismiss();
-    }, []);
+    // Navigation handler for guide
+    const handleShowGuide = useCallback(() => {
+        navigation.navigate('RegisterGuide');
+    }, [navigation]);
 
 
     // Handle registration with comprehensive validation
@@ -545,544 +589,677 @@ const RegisterScreen = ({ navigation }) => {
                     loginAttempts: 0,
                     accountLocked: false,
                 },
+                isTermsAccepted: false, // Will be updated to true after accepting terms
+                termsAcceptedAt: null,
             });
 
-            console.log('Registration successful, navigating to EmailVerification');
+            console.log('User document created, navigating to Terms of Service');
             hapticSuccess();
-            navigation.navigate("EmailVerification", { email });
+            navigation.navigate("TermsOfService", {
+                isRegistrationFlow: true,
+                email: email,
+                uid: userCredential.user.uid,
+            });
         } catch (error) {
             console.error('Registration error:', error);
             console.error('Error code:', error.code);
             console.error('Error message:', error.message);
 
             let errorMessage = "Registration failed. Please try again.";
+            let errorTitle = "Registration Error";
+            let showLoginOption = false;
+            let showPasswordReset = false;
+
             switch (error.code) {
                 case "auth/email-already-in-use":
-                    errorMessage = "Email already in use";
+                    errorMessage = "This email address is already registered. Please use a different email or try logging in instead.";
+                    errorTitle = "Email Already Exists";
+                    showLoginOption = true;
                     break;
+
                 case "auth/operation-not-allowed":
-                    errorMessage = "Account creation is currently disabled";
+                    errorMessage = "Account creation is currently disabled. Please try again later or contact support.";
+                    errorTitle = "Registration Disabled";
                     break;
+
                 case "auth/too-many-requests":
-                    errorMessage = "Too many attempts. Try again later";
+                    errorMessage = "Too many registration attempts. Please wait a few minutes before trying again.";
+                    errorTitle = "Too Many Attempts";
                     break;
+
                 case "auth/weak-password":
-                    errorMessage = "Password is too weak";
+                    errorMessage = "Password is too weak. Please use at least 8 characters with uppercase, lowercase, numbers, and special characters.";
+                    errorTitle = "Weak Password";
                     break;
+
                 case "auth/invalid-email":
-                    errorMessage = "Invalid email address";
+                    errorMessage = "Please enter a valid email address format (e.g., user@example.com).";
+                    errorTitle = "Invalid Email";
+                    break;
+
+                case "auth/user-disabled":
+                    errorMessage = "This account has been disabled. Please contact support for assistance.";
+                    errorTitle = "Account Disabled";
+                    break;
+
+                case "auth/network-request-failed":
+                    errorMessage = "Network connection failed. Please check your internet connection and try again.";
+                    errorTitle = "Network Error";
+                    break;
+
+                case "auth/invalid-phone-number":
+                    errorMessage = "Invalid phone number format. Please enter a valid phone number.";
+                    errorTitle = "Invalid Phone Number";
+                    break;
+
+                case "auth/phone-number-already-exists":
+                    errorMessage = "This phone number is already registered. Please use a different number or try logging in.";
+                    errorTitle = "Phone Number Exists";
+                    showLoginOption = true;
+                    break;
+
+                case "auth/quota-exceeded":
+                    errorMessage = "Service temporarily unavailable due to high demand. Please try again later.";
+                    errorTitle = "Service Unavailable";
+                    break;
+
+                case "auth/app-not-authorized":
+                    errorMessage = "App is not authorized to access Firebase. Please contact support.";
+                    errorTitle = "App Authorization Error";
+                    break;
+
+                case "auth/key-expired":
+                    errorMessage = "Authentication key has expired. Please restart the app and try again.";
+                    errorTitle = "Authentication Error";
+                    break;
+
+                case "auth/user-token-expired":
+                    errorMessage = "Your session has expired. Please restart the app and try again.";
+                    errorTitle = "Session Expired";
+                    break;
+
+                case "auth/requires-recent-login":
+                    errorMessage = "For security reasons, please log out and log in again before registering.";
+                    errorTitle = "Security Verification Required";
+                    break;
+
+                case "auth/account-exists-with-different-credential":
+                    errorMessage = "An account already exists with this email but different sign-in method. Please try signing in with the original method.";
+                    errorTitle = "Account Exists";
+                    showLoginOption = true;
+                    break;
+
+                case "auth/credential-already-in-use":
+                    errorMessage = "This credential is already associated with another account. Please use different credentials.";
+                    errorTitle = "Credential In Use";
+                    break;
+
+                case "auth/invalid-credential":
+                    errorMessage = "Invalid credentials provided. Please check your information and try again.";
+                    errorTitle = "Invalid Credentials";
+                    break;
+
+                case "auth/invalid-verification-code":
+                    errorMessage = "Invalid verification code. Please check the code and try again.";
+                    errorTitle = "Invalid Code";
+                    break;
+
+                case "auth/invalid-verification-id":
+                    errorMessage = "Verification session expired. Please request a new verification code.";
+                    errorTitle = "Verification Expired";
+                    break;
+
+                case "auth/missing-verification-code":
+                    errorMessage = "Verification code is required. Please enter the code sent to your device.";
+                    errorTitle = "Missing Code";
+                    break;
+
+                case "auth/missing-verification-id":
+                    errorMessage = "Verification session not found. Please request a new verification code.";
+                    errorTitle = "Verification Error";
+                    break;
+
+                case "auth/captcha-check-failed":
+                    errorMessage = "Security verification failed. Please try again or contact support.";
+                    errorTitle = "Security Check Failed";
+                    break;
+
+                case "auth/invalid-app-credential":
+                    errorMessage = "Invalid app credentials. Please restart the app and try again.";
+                    errorTitle = "App Error";
+                    break;
+
+                case "auth/session-expired":
+                    errorMessage = "Your session has expired. Please restart the app and try again.";
+                    errorTitle = "Session Expired";
+                    break;
+
+                case "auth/unauthorized-domain":
+                    errorMessage = "This domain is not authorized for authentication. Please contact support.";
+                    errorTitle = "Unauthorized Domain";
+                    break;
+
+                case "auth/unsupported-persistence-type":
+                    errorMessage = "Authentication persistence type not supported. Please contact support.";
+                    errorTitle = "Unsupported Feature";
+                    break;
+
+                case "auth/invalid-tenant-id":
+                    errorMessage = "Invalid tenant configuration. Please contact support.";
+                    errorTitle = "Configuration Error";
+                    break;
+
+                case "auth/tenant-id-mismatch":
+                    errorMessage = "Tenant configuration mismatch. Please contact support.";
+                    errorTitle = "Configuration Error";
+                    break;
+
+                case "auth/unsupported-tenant-operation":
+                    errorMessage = "Tenant operation not supported. Please contact support.";
+                    errorTitle = "Unsupported Operation";
+                    break;
+
+                default:
+                    // For unknown error codes, provide a generic but helpful message
+                    if (error.message.includes("network") || error.message.includes("timeout")) {
+                        errorMessage = "Network connection issue. Please check your internet connection and try again.";
+                        errorTitle = "Network Error";
+                    } else if (error.message.includes("permission") || error.message.includes("denied")) {
+                        errorMessage = "Permission denied. Please check your app permissions and try again.";
+                        errorTitle = "Permission Error";
+                    } else {
+                        errorMessage = `Registration failed: ${error.message}. Please try again or contact support if the problem persists.`;
+                        errorTitle = "Registration Error";
+                    }
                     break;
             }
+
+            // Show enhanced error alert with options
+            if (showLoginOption) {
+                Alert.alert(
+                    errorTitle,
+                    errorMessage,
+                    [
+                        {
+                            text: "Try Again",
+                            style: "default",
+                            onPress: () => {
+                                // Clear the error and let user try again
+                                setErrors({});
+                            }
+                        },
+                        {
+                            text: "Go to Login",
+                            style: "default",
+                            onPress: () => {
+                                navigation.navigate("Login");
+                            }
+                        },
+                        {
+                            text: "Cancel",
+                            style: "cancel"
+                        }
+                    ]
+                );
+            } else {
+                // Show regular error alert
+                Alert.alert(
+                    errorTitle,
+                    errorMessage,
+                    [
+                        {
+                            text: "Try Again",
+                            style: "default",
+                            onPress: () => {
+                                // Clear the error and let user try again
+                                setErrors({});
+                            }
+                        },
+                        {
+                            text: "Contact Support",
+                            style: "default",
+                            onPress: () => {
+                                // Navigate to support or open email
+                                Linking.openURL('mailto:rawchain01@gmail.com?subject=Registration%20Error%20Support&body=Error%20Code:%20' + error.code + '%0AError%20Message:%20' + error.message);
+                            }
+                        },
+                        {
+                            text: "Cancel",
+                            style: "cancel"
+                        }
+                    ]
+                );
+            }
+
+            // Also trigger the general error display
             triggerError("general", errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Handle social registration
-    const handleSocialRegister = async (provider) => {
-        if (isButtonDisabled || isBlocked) return;
 
-        try {
-            setIsButtonDisabled(true);
-            setIsLoading(true);
-            setGeneralError('');
-
-            await hapticMedium();
-
-            let result;
-            if (provider === 'Google') {
-                result = await SocialAuthService.signInWithGoogle();
-            } else if (provider === 'Apple') {
-                result = await SocialAuthService.signInWithApple();
-            } else {
-                throw new Error('Unsupported provider');
-            }
-
-            if (result.success) {
-                hapticSuccess();
-
-                // Check if email is verified before navigating to main app
-
-                // Navigate to email verification screen
-                navigation.replace('EmailVerification');
-            }
-
-        } catch (error) {
-            console.error(`${provider} registration error:`, error);
-            let errorMessage = `${provider} registration failed`;
-
-            if (error.message.includes('cancelled')) {
-                errorMessage = `${provider} registration was cancelled`;
-            } else if (error.message.includes('not available')) {
-                errorMessage = `${provider} registration is not available on this device`;
-            } else if (error.message.includes('network')) {
-                errorMessage = 'Network error. Please check your connection';
-            } else {
-                errorMessage = error.message || `${provider} registration failed. Please try again.`;
-            }
-
-            setGeneralError(errorMessage);
-            await hapticError();
-        } finally {
-            setIsLoading(false);
-            setTimeout(() => {
-                setIsButtonDisabled(false);
-            }, 5000);
-        }
-    };
 
     return (
-        <BottomSheetModalProvider>
-            <LinearGradient colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']} style={styles.container}>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.keyboardView}
-                >
-                    <ScrollView contentContainerStyle={styles.scrollContainer}>
-                        <View style={styles.header}>
-                            <TouchableOpacity
-                                style={styles.backButton}
-                                onPress={() => {
-                                    hapticLight();
-                                    navigation.goBack();
-                                }}
-                            >
-                                <Ionicons name="arrow-back" size={24} color="#fff" />
-                            </TouchableOpacity>
+        <LinearGradient colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']} style={styles.container}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardView}
+            >
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => {
+                                hapticLight();
+                                navigation.goBack();
+                            }}
+                        >
+                            <Ionicons name="arrow-back" size={24} color="#fff" />
+                        </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.infoButton}
-                                onPress={() => {
-                                    hapticLight();
-                                    handlePresentModalPress();
-                                }}
-                            >
-                                <Ionicons name="information-circle" size={24} color="#FFD700" />
-                            </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.infoButton}
+                            onPress={() => {
+                                hapticLight();
+                                handleShowGuide();
+                            }}
+                        >
+                            <Ionicons name="information-circle" size={24} color="#FFD700" />
+                        </TouchableOpacity>
 
-                            <View style={styles.logoContainer}>
-                                <Ionicons name="diamond" size={50} color="#FFD700" />
+                        <View style={styles.logoContainer}>
+                            <Ionicons name="diamond" size={50} color="#FFD700" />
+                        </View>
+                        <Text style={styles.title}>{t('register.createAccount')}</Text>
+                        <Text style={styles.subtitle}>{t('register.joinRevolution')}</Text>
+                    </View>
+
+                    {/* Enhanced General Error Message */}
+                    {generalError ? (
+                        <View style={styles.enhancedErrorContainer}>
+                            <View style={styles.errorHeader}>
+                                <Ionicons name="alert-circle" size={24} color="#ff4444" />
+                                <Text style={styles.errorTitle}>Registration Error</Text>
+                                <TouchableOpacity
+                                    onPress={() => setGeneralError('')}
+                                    style={styles.errorCloseButton}
+                                >
+                                    <Ionicons name="close" size={20} color="#888" />
+                                </TouchableOpacity>
                             </View>
-                            <Text style={styles.title}>{t('register.createAccount')}</Text>
-                            <Text style={styles.subtitle}>{t('register.joinRevolution')}</Text>
+                            <Text style={styles.enhancedErrorText}>{generalError}</Text>
+                            <View style={styles.errorActions}>
+                                <TouchableOpacity
+                                    style={styles.errorActionButton}
+                                    onPress={() => setGeneralError('')}
+                                >
+                                    <Text style={styles.errorActionText}>Try Again</Text>
+                                </TouchableOpacity>
+                                {generalError.includes('already registered') || generalError.includes('already exists') ? (
+                                    <TouchableOpacity
+                                        style={[styles.errorActionButton, styles.errorActionButtonSecondary]}
+                                        onPress={() => navigation.navigate("Login")}
+                                    >
+                                        <Text style={styles.errorActionTextSecondary}>Go to Login</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={[styles.errorActionButton, styles.errorActionButtonSecondary]}
+                                        onPress={() => Linking.openURL('mailto:rawchain01@gmail.com?subject=Registration%20Error%20Support&body=Error%20Message:%20' + generalError)}
+                                    >
+                                        <Text style={styles.errorActionTextSecondary}>Contact Support</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </View>
+                    ) : null}
+
+                    {/* Helpful Tips Section */}
+                    {generalError && (
+                        <View style={styles.tipsContainer}>
+                            <Text style={styles.tipsTitle}>💡 Quick Solutions:</Text>
+                            <View style={styles.tipItem}>
+                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.tipText}>Check your internet connection</Text>
+                            </View>
+                            <View style={styles.tipItem}>
+                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.tipText}>Ensure password meets requirements</Text>
+                            </View>
+                            <View style={styles.tipItem}>
+                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.tipText}>Use a different email if already registered</Text>
+                            </View>
+                            <View style={styles.tipItem}>
+                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.tipText}>Wait a few minutes if too many attempts</Text>
+                            </View>
+                        </View>
+                    )}
+
+                    <View style={styles.formContainer}>
+                        {/* First Name and Last Name Row */}
+                        <View style={styles.nameRow}>
+                            <View style={styles.nameFieldContainer}>
+                                <View style={[
+                                    styles.inputContainer,
+                                    errors.firstName ? { borderColor: '#ff4444' } : {}
+                                ]}>
+                                    <Ionicons
+                                        name="person"
+                                        size={20}
+                                        color={errors.firstName ? '#ff4444' : "#888"}
+                                        style={styles.inputIcon}
+                                    />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder={t('register.firstNamePlaceholder')}
+                                        placeholderTextColor="#888"
+                                        value={firstName}
+                                        onChangeText={handleFirstNameChange}
+                                        autoCapitalize="words"
+                                        editable={!isLoading}
+                                    />
+                                </View>
+                                {errors.firstName ? (
+                                    <Text style={styles.errorText}>{errors.firstName}</Text>
+                                ) : null}
+                            </View>
+
+                            <View style={styles.nameFieldContainer}>
+                                <View style={[
+                                    styles.inputContainer,
+                                    errors.lastName ? { borderColor: '#ff4444' } : {}
+                                ]}>
+                                    <Ionicons
+                                        name="person"
+                                        size={20}
+                                        color={errors.lastName ? '#ff4444' : "#888"}
+                                        style={styles.inputIcon}
+                                    />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder={t('register.lastNamePlaceholder')}
+                                        placeholderTextColor="#888"
+                                        value={lastName}
+                                        onChangeText={handleLastNameChange}
+                                        autoCapitalize="words"
+                                        editable={!isLoading}
+                                    />
+                                </View>
+                                {errors.lastName ? (
+                                    <Text style={styles.errorText}>{errors.lastName}</Text>
+                                ) : null}
+                            </View>
                         </View>
 
-                        {/* General Error Message */}
-                        {generalError ? (
-                            <View style={styles.errorContainer}>
-                                <Ionicons name="alert-circle" size={20} color="#ff4444" />
-                                <Text style={styles.generalErrorText}>{generalError}</Text>
-                            </View>
+                        {/* Username Field */}
+                        <View style={[
+                            styles.inputContainer,
+                            errors.username ? { borderColor: '#ff4444' } :
+                                usernameAvailable === true ? { borderColor: '#4CAF50' } :
+                                    usernameAvailable === false ? { borderColor: '#ff4444' } : {}
+                        ]}>
+                            <Ionicons
+                                name="at"
+                                size={20}
+                                color={
+                                    errors.username ? '#ff4444' :
+                                        usernameAvailable === true ? '#4CAF50' :
+                                            usernameAvailable === false ? '#ff4444' : "#888"
+                                }
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t('register.usernamePlaceholder')}
+                                placeholderTextColor="#888"
+                                value={username}
+                                onChangeText={handleUsernameChange}
+                                autoCapitalize="none"
+                                editable={!isLoading}
+                            />
+                            {isCheckingUsernameAvailability && (
+                                <ActivityIndicator size="small" color="#FFD700" style={styles.availabilityIndicator} />
+                            )}
+                        </View>
+                        {errors.username ? (
+                            <Text style={styles.errorText}>{errors.username}</Text>
+                        ) : usernameAvailable === true ? (
+                            <Text style={styles.successText}>{t('register.usernameAvailable')}</Text>
+                        ) : usernameAvailable === false ? (
+                            <Text style={styles.errorText}>{t('register.usernameTaken')}</Text>
                         ) : null}
 
-                        <View style={styles.formContainer}>
-                            {/* First Name and Last Name Row */}
-                            <View style={styles.nameRow}>
-                                <View style={styles.nameFieldContainer}>
-                                    <View style={[
-                                        styles.inputContainer,
-                                        errors.firstName ? { borderColor: '#ff4444' } : {}
-                                    ]}>
-                                        <Ionicons
-                                            name="person"
-                                            size={20}
-                                            color={errors.firstName ? '#ff4444' : "#888"}
-                                            style={styles.inputIcon}
-                                        />
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder={t('register.firstNamePlaceholder')}
-                                            placeholderTextColor="#888"
-                                            value={firstName}
-                                            onChangeText={handleFirstNameChange}
-                                            autoCapitalize="words"
-                                            editable={!isLoading}
-                                        />
-                                    </View>
-                                    {errors.firstName ? (
-                                        <Text style={styles.errorText}>{errors.firstName}</Text>
-                                    ) : null}
-                                </View>
-
-                                <View style={styles.nameFieldContainer}>
-                                    <View style={[
-                                        styles.inputContainer,
-                                        errors.lastName ? { borderColor: '#ff4444' } : {}
-                                    ]}>
-                                        <Ionicons
-                                            name="person"
-                                            size={20}
-                                            color={errors.lastName ? '#ff4444' : "#888"}
-                                            style={styles.inputIcon}
-                                        />
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder={t('register.lastNamePlaceholder')}
-                                            placeholderTextColor="#888"
-                                            value={lastName}
-                                            onChangeText={handleLastNameChange}
-                                            autoCapitalize="words"
-                                            editable={!isLoading}
-                                        />
-                                    </View>
-                                    {errors.lastName ? (
-                                        <Text style={styles.errorText}>{errors.lastName}</Text>
-                                    ) : null}
-                                </View>
-                            </View>
-
-                            {/* Username Field */}
-                            <View style={[
-                                styles.inputContainer,
-                                errors.username ? { borderColor: '#ff4444' } :
-                                    usernameAvailable === true ? { borderColor: '#4CAF50' } :
-                                        usernameAvailable === false ? { borderColor: '#ff4444' } : {}
-                            ]}>
-                                <Ionicons
-                                    name="at"
-                                    size={20}
-                                    color={
-                                        errors.username ? '#ff4444' :
-                                            usernameAvailable === true ? '#4CAF50' :
-                                                usernameAvailable === false ? '#ff4444' : "#888"
-                                    }
-                                    style={styles.inputIcon}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={t('register.usernamePlaceholder')}
-                                    placeholderTextColor="#888"
-                                    value={username}
-                                    onChangeText={handleUsernameChange}
-                                    autoCapitalize="none"
-                                    editable={!isLoading}
-                                />
-                                {isCheckingUsernameAvailability && (
-                                    <ActivityIndicator size="small" color="#FFD700" style={styles.availabilityIndicator} />
-                                )}
-                            </View>
-                            {errors.username ? (
-                                <Text style={styles.errorText}>{errors.username}</Text>
-                            ) : usernameAvailable === true ? (
-                                <Text style={styles.successText}>{t('register.usernameAvailable')}</Text>
-                            ) : usernameAvailable === false ? (
-                                <Text style={styles.errorText}>{t('register.usernameTaken')}</Text>
-                            ) : null}
-
-                            {/* Email Field */}
-                            <View style={[
-                                styles.inputContainer,
-                                errors.email ? { borderColor: '#ff4444' } :
-                                    emailAvailable === true ? { borderColor: '#4CAF50' } :
-                                        emailAvailable === false ? { borderColor: '#ff4444' } : {}
-                            ]}>
-                                <Ionicons
-                                    name="mail"
-                                    size={20}
-                                    color={
-                                        errors.email ? '#ff4444' :
-                                            emailAvailable === true ? '#4CAF50' :
-                                                emailAvailable === false ? '#ff4444' : "#888"
-                                    }
-                                    style={styles.inputIcon}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={t('register.emailPlaceholder')}
-                                    placeholderTextColor="#888"
-                                    value={email}
-                                    onChangeText={handleEmailChange}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    editable={!isLoading}
-                                />
-                                {isCheckingEmailAvailability && (
-                                    <ActivityIndicator size="small" color="#FFD700" style={styles.availabilityIndicator} />
-                                )}
-                            </View>
-                            {errors.email ? (
-                                <Text style={styles.errorText}>{errors.email}</Text>
-                            ) : emailAvailable === true ? (
-                                <Text style={styles.successText}>{t('register.emailAvailable')}</Text>
-                            ) : emailAvailable === false ? (
-                                <Text style={styles.errorText}>{t('register.emailRegistered')}</Text>
-                            ) : null}
-
-
-
-                            {/* Password Field */}
-                            <View style={[
-                                styles.inputContainer,
-                                errors.password ? { borderColor: '#ff4444' } : {}
-                            ]}>
-                                <Ionicons
-                                    name="lock-closed"
-                                    size={20}
-                                    color={errors.password ? '#ff4444' : "#888"}
-                                    style={styles.inputIcon}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={t('register.passwordPlaceholder')}
-                                    placeholderTextColor="#888"
-                                    value={password}
-                                    onChangeText={handlePasswordChange}
-                                    secureTextEntry={!showPassword}
-                                    editable={!isLoading}
-                                />
-                                <TouchableOpacity
-                                    style={styles.eyeButton}
-                                    onPress={() => {
-                                        setShowPassword(!showPassword);
-                                        hapticLight();
-                                    }}
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
-                                </TouchableOpacity>
-                            </View>
-                            {errors.password ? (
-                                <Text style={styles.errorText}>{errors.password}</Text>
-                            ) : null}
-
-                            {/* Confirm Password Field */}
-                            <View style={[
-                                styles.inputContainer,
-                                errors.confirmPassword ? { borderColor: '#ff4444' } : {}
-                            ]}>
-                                <Ionicons
-                                    name="lock-closed"
-                                    size={20}
-                                    color={errors.confirmPassword ? '#ff4444' : "#888"}
-                                    style={styles.inputIcon}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={t('register.confirmPasswordPlaceholder')}
-                                    placeholderTextColor="#888"
-                                    value={confirmPassword}
-                                    onChangeText={handleConfirmPasswordChange}
-                                    secureTextEntry={!showConfirmPassword}
-                                    editable={!isLoading}
-                                />
-                                <TouchableOpacity
-                                    style={styles.eyeButton}
-                                    onPress={() => {
-                                        setShowConfirmPassword(!showConfirmPassword);
-                                        hapticLight();
-                                    }}
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
-                                </TouchableOpacity>
-                            </View>
-                            {errors.confirmPassword && (
-                                <Text style={[styles.fieldError, { color: theme.colors.error }]}>
-                                    {errors.confirmPassword}
-                                </Text>
+                        {/* Email Field */}
+                        <View style={[
+                            styles.inputContainer,
+                            errors.email ? { borderColor: '#ff4444' } :
+                                emailAvailable === true ? { borderColor: '#4CAF50' } :
+                                    emailAvailable === false ? { borderColor: '#ff4444' } : {}
+                        ]}>
+                            <Ionicons
+                                name="mail"
+                                size={20}
+                                color={
+                                    errors.email ? '#ff4444' :
+                                        emailAvailable === true ? '#4CAF50' :
+                                            emailAvailable === false ? '#ff4444' : "#888"
+                                }
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t('register.emailPlaceholder')}
+                                placeholderTextColor="#888"
+                                value={email}
+                                onChangeText={handleEmailChange}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                editable={!isLoading}
+                            />
+                            {isCheckingEmailAvailability && (
+                                <ActivityIndicator size="small" color="#FFD700" style={styles.availabilityIndicator} />
                             )}
+                        </View>
+                        {errors.email ? (
+                            <Text style={styles.errorText}>{errors.email}</Text>
+                        ) : emailAvailable === true ? (
+                            <Text style={styles.successText}>{t('register.emailAvailable')}</Text>
+                        ) : emailAvailable === false ? (
+                            <Text style={styles.errorText}>{t('register.emailRegistered')}</Text>
+                        ) : null}
 
-                            {/* Invite Code Field */}
-                            <View style={[
-                                styles.inputContainer,
-                                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-                                inviteCodeValid === false && { borderColor: theme.colors.error },
-                                inviteCodeValid === true && { borderColor: theme.colors.success }
-                            ]}>
-                                <Ionicons
-                                    name="gift"
-                                    size={20}
-                                    color={
-                                        inviteCodeValid === false
-                                            ? theme.colors.error
-                                            : inviteCodeValid === true
-                                                ? theme.colors.success
-                                                : theme.colors.textSecondary
-                                    }
-                                    style={styles.inputIcon}
-                                />
-                                <TextInput
-                                    style={[styles.input, { color: theme.colors.textSecondary }]}
-                                    placeholder={t('register.inviteCodePlaceholder')}
-                                    placeholderTextColor={theme.colors.textSecondary}
-                                    value={inviteCode}
-                                    onChangeText={(text) => {
-                                        setInviteCode(text.toUpperCase());
-                                    }}
-                                    autoCapitalize="characters"
-                                    maxLength={8}
-                                    returnKeyType="done"
-                                />
-                                {isCheckingInviteCode && (
-                                    <ActivityIndicator size="small" color={theme.colors.accent} />
-                                )}
-                                {inviteCodeValid === true && (
-                                    <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
-                                )}
-                                {inviteCodeValid === false && (
-                                    <Ionicons name="close-circle" size={20} color={theme.colors.error} />
-                                )}
-                            </View>
-                            {inviteCodeValid === true && (
-                                <Text style={[styles.fieldSuccess, { color: theme.colors.success }]}>
-                                    {t('register.validInviteCode')}
-                                </Text>
-                            )}
-                            {inviteCodeValid === false && inviteCode.length === 8 && (
-                                <Text style={[styles.fieldError, { color: theme.colors.error }]}>
-                                    {t('register.invalidInviteCode')}
-                                </Text>
-                            )}
 
-                            {/* Registration attempts warning */}
-                            {registrationAttempts > 0 && registrationAttempts < 5 && (
-                                <View style={[styles.warningContainer, { backgroundColor: theme.colors.warning + '20' }]}>
-                                    <Ionicons name="warning" size={20} color={theme.colors.warning} />
-                                    <Text style={[styles.warningText, { color: theme.colors.warning }]}>
-                                        {t('register.failedAttemptsWarning', { attempts: registrationAttempts })}
-                                    </Text>
-                                </View>
-                            )}
 
-                            {/* Blocked status */}
-                            {isBlocked && (
-                                <View style={[styles.blockedContainer, { backgroundColor: theme.colors.error + '20' }]}>
-                                    <Ionicons name="lock-closed" size={20} color={theme.colors.error} />
-                                    <Text style={[styles.blockedText, { color: theme.colors.error }]}>
-                                        {t('register.registrationBlocked')}
-                                    </Text>
-                                </View>
-                            )}
-
+                        {/* Password Field */}
+                        <View style={[
+                            styles.inputContainer,
+                            errors.password ? { borderColor: '#ff4444' } : {}
+                        ]}>
+                            <Ionicons
+                                name="lock-closed"
+                                size={20}
+                                color={errors.password ? '#ff4444' : "#888"}
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t('register.passwordPlaceholder')}
+                                placeholderTextColor="#888"
+                                value={password}
+                                onChangeText={handlePasswordChange}
+                                secureTextEntry={!showPassword}
+                                editable={!isLoading}
+                            />
                             <TouchableOpacity
-                                style={[
-                                    styles.registerButton,
-                                    (isLoading || isButtonDisabled) && { opacity: 0.7 }
-                                ]}
-                                onPress={handleRegister}
-                                disabled={isLoading || isButtonDisabled}
-                            >
-                                {isLoading ? (
-                                    <ActivityIndicator color="#000" size="small" />
-                                ) : isButtonDisabled ? (
-                                    <Text style={styles.registerButtonText}>
-                                        {t('register.waitSeconds', { seconds: 5 - Math.floor(registrationAttempts / 5) })}
-                                    </Text>
-                                ) : (
-                                    <Text style={styles.registerButtonText}>{t('register.createAccount')}</Text>
-                                )}
-                            </TouchableOpacity>
-
-                            <View style={styles.termsContainer}>
-                                <Text style={styles.termsText}>
-                                    {t('register.termsAgreement')}{' '}
-                                    <Text style={styles.termsLink}>{t('common.termsOfService')}</Text> {t('common.and')}{' '}
-                                    <Text style={styles.termsLink}>{t('common.privacyPolicy')}</Text>
-                                </Text>
-                            </View>
-
-                            <View style={styles.divider}>
-                                <View style={styles.dividerLine} />
-                                <Text style={styles.dividerText}>{t('common.or')}</Text>
-                                <View style={styles.dividerLine} />
-                            </View>
-
-                            <View style={styles.socialLogin}>
-                                <TouchableOpacity
-                                    style={styles.socialButton}
-                                    onPress={() => handleSocialRegister('Google')}
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons name="logo-google" size={24} color="#fff" />
-                                    <Text style={styles.socialButtonText}>{t('login.google')}</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.socialButton}
-                                    onPress={() => handleSocialRegister('Apple')}
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons name="logo-apple" size={24} color="#fff" />
-                                    <Text style={styles.socialButtonText}>{t('login.apple')}</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <TouchableOpacity
-                                style={styles.loginButton}
+                                style={styles.eyeButton}
                                 onPress={() => {
+                                    setShowPassword(!showPassword);
                                     hapticLight();
-                                    navigation.navigate('Login');
                                 }}
                                 disabled={isLoading}
                             >
-                                <Text style={styles.loginButtonText}>{t('register.alreadyHaveAccount')}</Text>
+                                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
                             </TouchableOpacity>
                         </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
+                        {errors.password ? (
+                            <Text style={styles.errorText}>{errors.password}</Text>
+                        ) : null}
 
-                {/* Bottom Sheet Modal */}
-                <BottomSheetModal
-                    ref={bottomSheetModalRef}
-                    index={1}
-                    snapPoints={snapPoints}
-                    backgroundStyle={styles.bottomSheetBackground}
-                    handleIndicatorStyle={styles.bottomSheetIndicator}
-                >
-                    <BottomSheetView style={styles.bottomSheetContent}>
-                        <Text style={styles.bottomSheetTitle}>Registration Guide</Text>
-
-                        <View style={styles.infoSection}>
-                            <Text style={styles.infoSectionTitle}>Personal Information</Text>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="person" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>First Name & Last Name: Use your real name as it appears on official documents</Text>
-                            </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="at" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>Username: 3-20 characters, letters, numbers, and underscores only. Will be converted to lowercase.</Text>
-                            </View>
+                        {/* Confirm Password Field */}
+                        <View style={[
+                            styles.inputContainer,
+                            errors.confirmPassword ? { borderColor: '#ff4444' } : {}
+                        ]}>
+                            <Ionicons
+                                name="lock-closed"
+                                size={20}
+                                color={errors.confirmPassword ? '#ff4444' : "#888"}
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t('register.confirmPasswordPlaceholder')}
+                                placeholderTextColor="#888"
+                                value={confirmPassword}
+                                onChangeText={handleConfirmPasswordChange}
+                                secureTextEntry={!showConfirmPassword}
+                                editable={!isLoading}
+                            />
+                            <TouchableOpacity
+                                style={styles.eyeButton}
+                                onPress={() => {
+                                    setShowConfirmPassword(!showConfirmPassword);
+                                    hapticLight();
+                                }}
+                                disabled={isLoading}
+                            >
+                                <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#888" />
+                            </TouchableOpacity>
                         </View>
+                        {errors.confirmPassword && (
+                            <Text style={[styles.fieldError, { color: theme.colors.error }]}>
+                                {errors.confirmPassword}
+                            </Text>
+                        )}
 
-                        <View style={styles.infoSection}>
-                            <Text style={styles.infoSectionTitle}>Account Security</Text>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="mail" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>Email: Must be a valid email address. Used for account verification and password recovery.</Text>
-                            </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="lock-closed" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>Password: Minimum 8 characters with uppercase, lowercase, number, and special character.</Text>
-                            </View>
+                        {/* Invite Code Field */}
+                        <View style={[
+                            styles.inputContainer,
+                            { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                            inviteCodeValid === false && { borderColor: theme.colors.error },
+                            inviteCodeValid === true && { borderColor: theme.colors.success }
+                        ]}>
+                            <Ionicons
+                                name="gift"
+                                size={20}
+                                color={
+                                    inviteCodeValid === false
+                                        ? theme.colors.error
+                                        : inviteCodeValid === true
+                                            ? theme.colors.success
+                                            : theme.colors.textSecondary
+                                }
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={[styles.input, { color: theme.colors.textSecondary }]}
+                                placeholder={t('register.inviteCodePlaceholder')}
+                                placeholderTextColor={theme.colors.textSecondary}
+                                value={inviteCode}
+                                onChangeText={(text) => {
+                                    setInviteCode(text.toUpperCase());
+                                }}
+                                autoCapitalize="characters"
+                                maxLength={8}
+                                returnKeyType="done"
+                            />
+                            {isCheckingInviteCode && (
+                                <ActivityIndicator size="small" color={theme.colors.accent} />
+                            )}
+                            {inviteCodeValid === true && (
+                                <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
+                            )}
+                            {inviteCodeValid === false && (
+                                <Ionicons name="close-circle" size={20} color={theme.colors.error} />
+                            )}
                         </View>
+                        {inviteCodeValid === true && (
+                            <Text style={[styles.fieldSuccess, { color: theme.colors.success }]}>
+                                {t('register.validInviteCode')}
+                            </Text>
+                        )}
+                        {inviteCodeValid === false && inviteCode.length === 8 && (
+                            <Text style={[styles.fieldError, { color: theme.colors.error }]}>
+                                {t('register.invalidInviteCode')}
+                            </Text>
+                        )}
 
-                        <View style={styles.infoSection}>
-                            <Text style={styles.infoSectionTitle}>Important Notes</Text>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>All information is encrypted and securely stored</Text>
+                        {/* Registration attempts warning */}
+                        {registrationAttempts > 0 && registrationAttempts < 5 && (
+                            <View style={[styles.warningContainer, { backgroundColor: theme.colors.warning + '20' }]}>
+                                <Ionicons name="warning" size={20} color={theme.colors.warning} />
+                                <Text style={[styles.warningText, { color: theme.colors.warning }]}>
+                                    {t('register.failedAttemptsWarning', { attempts: registrationAttempts })}
+                                </Text>
                             </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>Email verification is required to access the app</Text>
+                        )}
+
+                        {/* Blocked status */}
+                        {isBlocked && (
+                            <View style={[styles.blockedContainer, { backgroundColor: theme.colors.error + '20' }]}>
+                                <Ionicons name="lock-closed" size={20} color={theme.colors.error} />
+                                <Text style={[styles.blockedText, { color: theme.colors.error }]}>
+                                    {t('register.registrationBlocked')}
+                                </Text>
                             </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>Username and email must be unique</Text>
-                            </View>
-                        </View>
+                        )}
 
                         <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={handleDismiss}
+                            style={[
+                                styles.registerButton,
+                                (isLoading || isButtonDisabled) && { opacity: 0.7 }
+                            ]}
+                            onPress={handleRegister}
+                            disabled={isLoading || isButtonDisabled}
                         >
-                            <Text style={styles.closeButtonText}>Got it!</Text>
+                            {isLoading ? (
+                                <ActivityIndicator color="#000" size="small" />
+                            ) : isButtonDisabled ? (
+                                <Text style={styles.registerButtonText}>
+                                    {t('register.waitSeconds', { seconds: 5 - Math.floor(registrationAttempts / 5) })}
+                                </Text>
+                            ) : (
+                                <Text style={styles.registerButtonText}>{t('register.createAccount')}</Text>
+                            )}
                         </TouchableOpacity>
-                    </BottomSheetView>
-                </BottomSheetModal>
-            </LinearGradient>
-        </BottomSheetModalProvider>
+
+                        <View style={styles.termsContainer}>
+                            <Text style={styles.termsText}>
+                                {t('register.termsAgreement')}{' '}
+                                <Text style={styles.termsLink}>{t('common.termsOfService')}</Text> {t('common.and')}{' '}
+                                <Text style={styles.termsLink}>{t('common.privacyPolicy')}</Text>
+                            </Text>
+                        </View>
+
+
+
+                        <TouchableOpacity
+                            style={styles.loginButton}
+                            onPress={() => {
+                                hapticLight();
+                                navigation.goBack();
+                            }}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.loginButtonText}>{t('register.alreadyHaveAccount')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </LinearGradient>
     );
 };
 
@@ -1147,6 +1324,87 @@ const styles = StyleSheet.create({
     },
     generalErrorText: {
         color: '#ff4444',
+        fontSize: 14,
+        marginLeft: 8,
+        flex: 1,
+    },
+    enhancedErrorContainer: {
+        backgroundColor: 'rgba(255, 68, 68, 0.1)',
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#ff4444',
+        padding: 16,
+    },
+    errorHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    errorTitle: {
+        color: '#ff4444',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
+        flex: 1,
+    },
+    errorCloseButton: {
+        padding: 4,
+    },
+    enhancedErrorText: {
+        color: '#ff4444',
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 16,
+    },
+    errorActions: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    errorActionButton: {
+        flex: 1,
+        backgroundColor: '#ff4444',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    errorActionButtonSecondary: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: '#ff4444',
+    },
+    errorActionText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    errorActionTextSecondary: {
+        color: '#ff4444',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    tipsContainer: {
+        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#4CAF50',
+        padding: 16,
+    },
+    tipsTitle: {
+        color: '#4CAF50',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 12,
+    },
+    tipItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    tipText: {
+        color: '#4CAF50',
         fontSize: 14,
         marginLeft: 8,
         flex: 1,
@@ -1233,127 +1491,13 @@ const styles = StyleSheet.create({
     termsLink: {
         color: '#FFD700',
     },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 30,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: '#444',
-    },
-    dividerText: {
-        color: '#888',
-        marginHorizontal: 16,
-        fontSize: 14,
-    },
-    socialLogin: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-    },
-    socialButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#444',
-        backgroundColor: '#2a2a2a',
-        marginHorizontal: 6,
-    },
-    socialButtonText: {
-        fontSize: 16,
-        fontWeight: '500',
-        marginLeft: 8,
-        color: '#fff',
-    },
+
     loginButton: {
         alignItems: 'center',
     },
     loginButtonText: {
         color: '#FFD700',
         fontSize: 16,
-    },
-    // Bottom Sheet Styles
-    bottomSheetOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 1000,
-    },
-    bottomSheetBackdrop: {
-        flex: 1,
-    },
-    bottomSheet: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: '#2a2a2a',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        maxHeight: '80%',
-        zIndex: 1001,
-    },
-    bottomSheetHandle: {
-        width: 40,
-        height: 4,
-        backgroundColor: '#666',
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginTop: 12,
-        marginBottom: 8,
-    },
-    bottomSheetContent: {
-        padding: 20,
-    },
-    bottomSheetTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    infoSection: {
-        marginBottom: 24,
-    },
-    infoSectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFD700',
-        marginBottom: 12,
-    },
-    infoItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginBottom: 12,
-    },
-    infoText: {
-        fontSize: 14,
-        color: '#ccc',
-        marginLeft: 8,
-        flex: 1,
-        lineHeight: 20,
-    },
-    closeButton: {
-        backgroundColor: '#FFD700',
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    closeButtonText: {
-        color: '#000',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
     // New styles for invite code field
     fieldError: {
@@ -1391,13 +1535,6 @@ const styles = StyleSheet.create({
     blockedText: {
         fontSize: 12,
         marginLeft: 8,
-    },
-    // Bottom Sheet Modal Styles
-    bottomSheetBackground: {
-        backgroundColor: '#2a2a2a',
-    },
-    bottomSheetIndicator: {
-        backgroundColor: '#666',
     },
 });
 

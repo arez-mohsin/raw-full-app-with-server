@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
-import { getCurrentLanguage } from '../i18n';
+import { getCurrentLanguage, getAvailableLanguages } from '../i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -755,6 +755,9 @@ const ProfileScreen = ({ navigation }) => {
                     </Text>
                     <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{userProfile.email}</Text>
                     <Text style={[styles.joinDate, { color: theme.colors.textTertiary }]}>{t('profile.memberSince')} {formatDate(userProfile.joinDate)}</Text>
+                    <Text style={[styles.currentLanguage, { color: theme.colors.textTertiary }]}>
+                        {t('profile.currentLanguage')}: {getAvailableLanguages().find(lang => lang.code === currentLanguage)?.nativeName || currentLanguage.toUpperCase()}
+                    </Text>
                 </View>
 
                 {/* Stats Cards */}
@@ -1053,6 +1056,12 @@ const styles = StyleSheet.create({
     joinDate: {
         fontSize: 14,
         color: '#666',
+        marginBottom: 4,
+    },
+    currentLanguage: {
+        fontSize: 14,
+        color: '#666',
+        fontStyle: 'italic',
     },
     statsContainer: {
         flexDirection: 'row',

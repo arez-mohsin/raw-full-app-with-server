@@ -88,7 +88,7 @@ const NetworkErrorScreen = ({ navigation }) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <Ionicons name="wifi-off" size={60} color="#ff4444" />
+                        <Ionicons name="wifi-outline" size={60} color="#ff4444" />
                     </View>
 
                     <Text style={styles.title}>{t('errors.networkError')}</Text>
@@ -101,7 +101,7 @@ const NetworkErrorScreen = ({ navigation }) => {
                 <View style={styles.statusCard}>
                     <View style={styles.statusHeader}>
                         <Ionicons
-                            name={networkState?.isConnected ? "wifi" : "wifi-off"}
+                            name={networkState?.isConnected ? "wifi" : "wifi-outline"}
                             size={24}
                             color={networkState?.isConnected ? "#4CAF50" : "#ff4444"}
                         />

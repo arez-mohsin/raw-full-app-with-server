@@ -650,7 +650,7 @@ const TasksScreen = ({ navigation }) => {
                 </View> */}
 
                 {/* Level Display */}
-                <View style={[styles.levelCard, { backgroundColor: theme.colors.card, marginTop: 44 }]}>
+                <View style={[styles.levelCard, { backgroundColor: theme.colors.card }]}>
                     <View style={styles.levelHeader}>
                         <Ionicons
                             name="star"
@@ -819,6 +819,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
+        paddingTop: 120, // Extra padding for large title header
     },
     loadingContainer: {
         flex: 1,

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme, useNavigation } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
+// import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,9 +25,8 @@ import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/config/toastConfig';
 
-
-// Import i18n configuration
-import './src/i18n';
+// Import i18n hook
+import { useI18n } from './src/hooks/useI18n';
 ErrorUtils.setGlobalHandler((error, isFatal) => {
   console.error('Global Error:', error);
 });
@@ -35,7 +36,9 @@ import SplashScreen from "./src/Screens/SplashScreen";
 import OnboardingScreen from "./src/Screens/OnboardingScreen";
 import LoginScreen from "./src/Screens/LoginScreen";
 import ForgotPasswordScreen from "./src/Screens/ForgotPasswordScreen";
+import ForgetPasswordGuideScreen from "./src/Screens/ForgetPasswordGuideScreen";
 import RegisterScreen from "./src/Screens/RegisterScreen";
+import RegisterGuideScreen from "./src/Screens/RegisterGuideScreen";
 import EmailVerificationScreen from "./src/Screens/EmailVerificationScreen";
 import HomeScreen from "./src/Screens/HomeScreen";
 import WalletScreen from "./src/Screens/WalletScreen";
@@ -60,8 +63,9 @@ import ToastDemo from "./src/components/ToastDemo";
 import LanguageSelectionScreen from "./src/Screens/LanguageSelectionScreen";
 import ProfileLanguageScreen from "./src/Screens/ProfileLanguageScreen";
 import ChangePasswordScreen from "./src/Screens/ChangePasswordScreen";
+import PasswordResetInfoScreen from "./src/Screens/PasswordResetInfoScreen";
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
@@ -258,6 +262,7 @@ const styles = StyleSheet.create({
 
 function AppContent() {
   const { theme } = useTheme();
+  const { isReady: isI18nReady, isLoading: isI18nLoading } = useI18n();
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -307,7 +312,7 @@ function AppContent() {
     };
   }, [isAuthenticated]);
 
-  if (isLoading) {
+  if (isLoading || isI18nLoading || !isI18nReady) {
     return null;
   }
 
@@ -345,7 +350,33 @@ function AppContent() {
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen
+          name="ForgetPasswordGuide"
+          component={ForgetPasswordGuideScreen}
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="PasswordResetInfo"
+          component={PasswordResetInfoScreen}
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+          }}
+        />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen
+          name="RegisterGuide"
+          component={RegisterGuideScreen}
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            headerShown: false,
+          }}
+        />
         <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="ActivityList" component={ActivityListScreen} />
@@ -405,20 +436,7 @@ function AppContent() {
               backgroundColor: '#1a1a1a',
             },
             headerTransparent: true,
-            headerBlurEffect: 'dark',
-            headerBackground: () => (
-              <BlurView
-                intensity={50}
-                tint="dark"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                }}
-              />
-            ),
+            headerLargeTitle: true,
           }}
           component={TasksScreen} />
         <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />

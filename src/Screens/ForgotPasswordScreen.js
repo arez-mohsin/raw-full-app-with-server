@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
+
 import { hapticLight, hapticError, hapticSuccess } from '../utils/HapticUtils';
 import { auth, db } from '../firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -68,9 +68,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
     const [checkAttempts, setCheckAttempts] = useState(0);
     const errorTimeoutRef = useRef(null);
 
-    // Bottom sheet refs and snap points
-    const bottomSheetModalRef = useRef(null);
-    const snapPoints = useMemo(() => ['25%', '50%', '90%'], []);
+
 
     // Validation functions
     const validateEmail = (email) => {
@@ -155,14 +153,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         }
     };
 
-    // Bottom sheet handlers
-    const handlePresentModalPress = useCallback(() => {
-        bottomSheetModalRef.current?.present();
-    }, []);
 
-    const handleDismiss = useCallback(() => {
-        bottomSheetModalRef.current?.dismiss();
-    }, []);
 
     // Handle password reset
     const handleResetPassword = async () => {
@@ -228,189 +219,132 @@ const ForgotPasswordScreen = ({ navigation }) => {
     };
 
     return (
-        <BottomSheetModalProvider>
-            <LinearGradient colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']} style={styles.container}>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.keyboardView}
-                >
-                    <ScrollView contentContainerStyle={styles.scrollContainer}>
-                        <View style={styles.header}>
-                            <TouchableOpacity
-                                style={styles.backButton}
-                                onPress={() => {
-                                    hapticLight();
-                                    navigation.goBack();
-                                }}
-                            >
-                                <Ionicons name="arrow-back" size={24} color="#fff" />
-                            </TouchableOpacity>
+        <LinearGradient colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']} style={styles.container}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardView}
+            >
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.header}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => {
+                                hapticLight();
+                                navigation.goBack();
+                            }}
+                        >
+                            <Ionicons name="arrow-back" size={24} color="#fff" />
+                        </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.infoButton}
-                                onPress={() => {
-                                    hapticLight();
-                                    handlePresentModalPress();
-                                }}
-                            >
-                                <Ionicons name="information-circle" size={24} color="#FFD700" />
-                            </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.infoButton}
+                            onPress={() => {
+                                hapticLight();
+                                navigation.navigate('ForgetPasswordGuide');
+                            }}
+                        >
+                            <Ionicons name="information-circle" size={24} color="#FFD700" />
+                        </TouchableOpacity>
 
-                            <View style={styles.logoContainer}>
-                                <Ionicons name="lock-open" size={50} color="#FFD700" />
-                            </View>
-                            <Text style={styles.title}>{t('forgotPassword.resetPassword')}</Text>
-                            <Text style={styles.subtitle}>{t('forgotPassword.enterEmailToReset')}</Text>
+                        <View style={styles.logoContainer}>
+                            <Ionicons name="lock-open" size={50} color="#FFD700" />
                         </View>
+                        <Text style={styles.title}>{t('forgotPassword.resetPassword')}</Text>
+                        <Text style={styles.subtitle}>{t('forgotPassword.enterEmailToReset')}</Text>
+                    </View>
 
-                        {/* Success Message */}
-                        {successMessage ? (
-                            <View style={styles.successContainer}>
-                                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                                <Text style={styles.successText}>{successMessage}</Text>
-                            </View>
+                    {/* Success Message */}
+                    {successMessage ? (
+                        <View style={styles.successContainer}>
+                            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                            <Text style={styles.successText}>{successMessage}</Text>
+                        </View>
+                    ) : null}
+
+                    {/* General Error Message */}
+                    {generalError ? (
+                        <View style={styles.errorContainer}>
+                            <Ionicons name="alert-circle" size={20} color="#ff4444" />
+                            <Text style={styles.generalErrorText}>{generalError}</Text>
+                        </View>
+                    ) : null}
+
+                    <View style={styles.formContainer}>
+                        {/* Email Field */}
+                        <View style={[
+                            styles.inputContainer,
+                            errors.email ? { borderColor: '#ff4444' } :
+                                emailExists === true ? { borderColor: '#4CAF50' } :
+                                    emailExists === false ? { borderColor: '#ff4444' } : {}
+                        ]}>
+                            <Ionicons
+                                name="mail"
+                                size={20}
+                                color={
+                                    errors.email ? '#ff4444' :
+                                        emailExists === true ? '#4CAF50' :
+                                            emailExists === false ? '#ff4444' : "#888"
+                                }
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t('forgotPassword.emailPlaceholder')}
+                                placeholderTextColor="#888"
+                                value={email}
+                                onChangeText={handleEmailChange}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                editable={!isLoading}
+                            />
+                            {isCheckingEmail && (
+                                <ActivityIndicator size="small" color="#FFD700" style={styles.availabilityIndicator} />
+                            )}
+                        </View>
+                        {errors.email ? (
+                            <Text style={styles.errorText}>{errors.email}</Text>
+                        ) : emailExists === true ? (
+                            <Text style={styles.successText}>{t('forgotPassword.emailFound')}</Text>
+                        ) : emailExists === false ? (
+                            <Text style={styles.errorText}>{t('forgotPassword.emailNotFound')}</Text>
                         ) : null}
 
-                        {/* General Error Message */}
-                        {generalError ? (
-                            <View style={styles.errorContainer}>
-                                <Ionicons name="alert-circle" size={20} color="#ff4444" />
-                                <Text style={styles.generalErrorText}>{generalError}</Text>
-                            </View>
-                        ) : null}
+                        <TouchableOpacity
+                            style={[
+                                styles.resetButton,
+                                (isLoading || isButtonDisabled) && { opacity: 0.7 }
+                            ]}
+                            onPress={handleResetPassword}
+                            disabled={isLoading || isButtonDisabled}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="#000" size="small" />
+                            ) : (
+                                <Text style={styles.resetButtonText}>{t('forgotPassword.sendResetLink')}</Text>
+                            )}
+                        </TouchableOpacity>
 
-                        <View style={styles.formContainer}>
-                            {/* Email Field */}
-                            <View style={[
-                                styles.inputContainer,
-                                errors.email ? { borderColor: '#ff4444' } :
-                                    emailExists === true ? { borderColor: '#4CAF50' } :
-                                        emailExists === false ? { borderColor: '#ff4444' } : {}
-                            ]}>
-                                <Ionicons
-                                    name="mail"
-                                    size={20}
-                                    color={
-                                        errors.email ? '#ff4444' :
-                                            emailExists === true ? '#4CAF50' :
-                                                emailExists === false ? '#ff4444' : "#888"
-                                    }
-                                    style={styles.inputIcon}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={t('forgotPassword.emailPlaceholder')}
-                                    placeholderTextColor="#888"
-                                    value={email}
-                                    onChangeText={handleEmailChange}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    editable={!isLoading}
-                                />
-                                {isCheckingEmail && (
-                                    <ActivityIndicator size="small" color="#FFD700" style={styles.availabilityIndicator} />
-                                )}
-                            </View>
-                            {errors.email ? (
-                                <Text style={styles.errorText}>{errors.email}</Text>
-                            ) : emailExists === true ? (
-                                <Text style={styles.successText}>{t('forgotPassword.emailFound')}</Text>
-                            ) : emailExists === false ? (
-                                <Text style={styles.errorText}>{t('forgotPassword.emailNotFound')}</Text>
-                            ) : null}
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.resetButton,
-                                    (isLoading || isButtonDisabled) && { opacity: 0.7 }
-                                ]}
-                                onPress={handleResetPassword}
-                                disabled={isLoading || isButtonDisabled}
-                            >
-                                {isLoading ? (
-                                    <ActivityIndicator color="#000" size="small" />
-                                ) : (
-                                    <Text style={styles.resetButtonText}>{t('forgotPassword.sendResetLink')}</Text>
-                                )}
-                            </TouchableOpacity>
-
-                            <View style={styles.infoContainer}>
-                                <Text style={styles.infoText}>
-                                    {t('forgotPassword.infoText')}
-                                </Text>
-                            </View>
-
-                            <TouchableOpacity
-                                style={styles.backToLoginButton}
-                                onPress={() => {
-                                    hapticLight();
-                                    navigation.goBack();
-                                }}
-                                disabled={isLoading}
-                            >
-                                <Text style={styles.backToLoginButtonText}>{t('forgotPassword.backToLogin')}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
-
-                {/* Bottom Sheet Modal */}
-                <BottomSheetModal
-                    ref={bottomSheetModalRef}
-                    index={1}
-                    snapPoints={snapPoints}
-                    backgroundStyle={styles.bottomSheetBackground}
-                    handleIndicatorStyle={styles.bottomSheetIndicator}
-                >
-                    <BottomSheetView style={styles.bottomSheetContent}>
-                        <Text style={styles.bottomSheetTitle}>{t('forgotPassword.passwordResetGuide')}</Text>
-
-                        <View style={styles.infoSection}>
-                            <Text style={styles.infoSectionTitle}>{t('forgotPassword.howItWorks')}</Text>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="mail" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>{t('forgotPassword.enterEmailAssociated')}</Text>
-                            </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="link" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>{t('forgotPassword.sendSecureResetLink')}</Text>
-                            </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="lock-closed" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>{t('forgotPassword.clickLinkToCreatePassword')}</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.infoSection}>
-                            <Text style={styles.infoSectionTitle}>{t('forgotPassword.importantNotes')}</Text>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>{t('forgotPassword.checkSpamFolder')}</Text>
-                            </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>{t('forgotPassword.resetLinkExpires')}</Text>
-                            </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.infoText}>{t('forgotPassword.requestNewLink')}</Text>
-                            </View>
-                            <View style={styles.infoItem}>
-                                <Ionicons name="shield-checkmark" size={16} color="#FFD700" />
-                                <Text style={styles.infoText}>{t('forgotPassword.verifyEmailBeforeSending')}</Text>
-                            </View>
+                        <View style={styles.infoContainer}>
+                            <Text style={styles.infoText}>
+                                {t('forgotPassword.infoText')}
+                            </Text>
                         </View>
 
                         <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={handleDismiss}
+                            style={styles.backToLoginButton}
+                            onPress={() => {
+                                hapticLight();
+                                navigation.goBack();
+                            }}
+                            disabled={isLoading}
                         >
-                            <Text style={styles.closeButtonText}>{t('forgotPassword.gotIt')}</Text>
+                            <Text style={styles.backToLoginButtonText}>{t('forgotPassword.backToLogin')}</Text>
                         </TouchableOpacity>
-                    </BottomSheetView>
-                </BottomSheetModal>
-            </LinearGradient>
-        </BottomSheetModalProvider>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+
+        </LinearGradient>
     );
 };
 
@@ -570,49 +504,7 @@ const styles = StyleSheet.create({
         color: '#FFD700',
         fontSize: 16,
     },
-    // Bottom Sheet Modal Styles
-    bottomSheetBackground: {
-        backgroundColor: '#2a2a2a',
-    },
-    bottomSheetIndicator: {
-        backgroundColor: '#666',
-    },
-    bottomSheetContent: {
-        padding: 20,
-    },
-    bottomSheetTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    infoSection: {
-        marginBottom: 24,
-    },
-    infoSectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFD700',
-        marginBottom: 12,
-    },
-    infoItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginBottom: 12,
-    },
-    closeButton: {
-        backgroundColor: '#FFD700',
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    closeButtonText: {
-        color: '#000',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+
 });
 
 export default ForgotPasswordScreen; 

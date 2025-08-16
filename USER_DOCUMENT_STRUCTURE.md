@@ -32,6 +32,10 @@ This document outlines the comprehensive user document structure created when us
     // User role and status
     role: "user",
     isActive: true,
+    
+    // Terms of Service acceptance
+    isTermsAccepted: true,
+    termsAcceptedAt: serverTimestamp(),
 }
 ```
 
@@ -307,7 +311,11 @@ This document outlines the comprehensive user document structure created when us
         privacyPolicyAcceptedDate: "2024-01-15T10:30:00.000Z",
         ageVerification: true,
         ageVerificationDate: "2024-01-15T10:30:00.000Z",
-    }
+    },
+    
+    // Terms of Service acceptance
+    isTermsAccepted: true,
+    termsAcceptedAt: serverTimestamp(),
 }
 ```
 

@@ -479,7 +479,7 @@ const SplashScreen = ({ navigation }) => {
                     <Animated.View style={[styles.statusContainer, { opacity: textOpacity }]}>
                         <View style={styles.statusRow}>
                             <Ionicons
-                                name={networkStatus === 'connected' ? 'wifi' : 'wifi-off'}
+                                name={networkStatus === 'connected' ? 'wifi' : 'wifi-outline'}
                                 size={16}
                                 color={getStatusColor()}
                             />
