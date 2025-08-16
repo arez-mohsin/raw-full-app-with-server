@@ -378,7 +378,7 @@ const HomeScreen = ({ navigation }) => {
 
     // Original UI state
     const [userData, setUserData] = useState({
-        username: 'CryptoMiner',
+        username: 'RAW MINER',
         totalMined: 0,
         todayMined: 0,
         miningStreak: 7,
@@ -402,6 +402,7 @@ const HomeScreen = ({ navigation }) => {
     const [notificationsListener, setNotificationsListener] = useState(null);
     const [scheduledNotificationId, setScheduledNotificationId] = useState(null);
     const [pushToken, setPushToken] = useState(null);
+
 
 
 
@@ -975,7 +976,7 @@ const HomeScreen = ({ navigation }) => {
                     id: 'welcome',
                     type: 'welcome',
                     amount: 0,
-                    description: 'Welcome to CryptoMiner! Start mining to earn coins.',
+                    description: 'Welcome to RAW! Start mining to earn coins.',
                     timestamp: new Date(),
                 },
                 {
@@ -1021,7 +1022,7 @@ const HomeScreen = ({ navigation }) => {
                         id: 'welcome',
                         type: 'welcome',
                         amount: 0,
-                        description: 'Welcome to CryptoMiner! Start mining to earn coins.',
+                        description: 'Welcome to RAW! Start mining to earn coins.',
                         timestamp: new Date(),
                     },
                     {
@@ -1066,7 +1067,7 @@ const HomeScreen = ({ navigation }) => {
                     id: 'welcome',
                     type: 'welcome',
                     amount: 0,
-                    description: 'Welcome to CryptoMiner! Start mining to earn coins.',
+                    description: 'Welcome to RAW! Start mining to earn coins.',
                     timestamp: new Date(),
                 },
                 {
@@ -1160,7 +1161,7 @@ const HomeScreen = ({ navigation }) => {
                 // Create initial activities for new users
                 if (!data.hasInitialActivities) {
                     try {
-                        await ActivityLogger.logCustom(uid, 'welcome', 0, 'Welcome to CryptoMiner! Start mining to earn coins.');
+                        await ActivityLogger.logCustom(uid, 'welcome', 0, 'Welcome to RAW! Start mining to earn coins.');
                         await ActivityLogger.logCustom(uid, 'login', 0, 'First login bonus activated');
                         await ActivityLogger.logCustom(uid, 'mining', 0, 'Ready to start mining! Tap the mine button to begin.');
 
@@ -1582,6 +1583,9 @@ const HomeScreen = ({ navigation }) => {
                 console.log('Mining started successfully! Session will run for 2 hours.');
                 hapticSuccess();
                 ToastService.success('Your 2-hour mining session has begun! You\'ll receive a notification when it completes.');
+
+                // Return success to indicate mining started
+                return true;
             }
         } catch (error) {
             console.error('Start mining error:', error);
@@ -1924,7 +1928,17 @@ const HomeScreen = ({ navigation }) => {
                     miningSpeed={miningSpeed}
                     formatTime={formatTime}
                     hasScheduledNotification={!!scheduledNotificationId}
+                    onMiningStart={() => {
+                        // Mining started successfully, can add any additional logic here
+                        console.log('Mining started successfully from callback');
+                    }}
                 />
+
+
+
+
+
+
 
                 {/* Mining Progress Bar */}
                 <MiningProgressBar />
@@ -2466,6 +2480,8 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                 </View>
             </ScrollView>
+
+
         </LinearGradient>
     );
 };
@@ -2994,6 +3010,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FFD700',
     },
+
 });
 
 export default HomeScreen;

@@ -651,11 +651,11 @@ const InviteScreen = ({ navigation }) => {
 
     const shareInviteCode = async () => {
         try {
-            const shareMessage = `🎉 Join me on CryptoMiner and earn 50 coins!\n\nUse my invite code: ${inviteCode}\n\nDownload the app and enter this code during registration to get your bonus!`;
+            const shareMessage = `🎉 Join me on RAW MINER and earn 50 coins!\n\nUse my invite code: ${inviteCode}\n\nDownload the app and enter this code during registration to get your bonus!`;
 
             await Share.share({
                 message: shareMessage,
-                title: 'Invite you to CryptoMiner',
+                title: 'Invite you to RAW MINER',
             });
         } catch (error) {
             console.error('Error sharing invite code:', error);

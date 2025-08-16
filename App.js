@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme, useNavigation } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
@@ -7,7 +7,8 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
+import { BlurView } from 'expo-blur';
 import { auth, db } from "./src/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -68,6 +69,7 @@ function TabNavigator() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [canClaimStreak, setCanClaimStreak] = useState(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     checkStreakClaimStatus();
@@ -145,6 +147,22 @@ function TabNavigator() {
 
   return (
     <>
+      {/* Floating Task Button */}
+      <TouchableOpacity
+        style={[
+          styles.floatingTaskButton,
+          {
+            backgroundColor: theme.colors.accent,
+            bottom: insets.bottom + 65 + 5, // 60 (tab height) + 5 (padding) + 5 (gap)
+            right: 20
+          }
+        ]}
+        onPress={() => navigation.navigate('Tasks')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="list" size={28} color="#fff" />
+      </TouchableOpacity>
+
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: (props) => renderTabIcon({ route, ...props }),
@@ -221,6 +239,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  floatingTaskButton: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    zIndex: 1000,
   },
 });
 
@@ -361,7 +393,34 @@ function AppContent() {
         <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
         <Stack.Screen name="Invite" component={InviteScreen} />
-        <Stack.Screen name="Tasks" component={TasksScreen} />
+        <Stack.Screen name="Tasks"
+          options={{
+            headerShown: true,
+            headerTitle: 'Daily Tasks',
+            headerTitleStyle: {
+              color: '#fff',
+            },
+            headerBackTitle: 'Back',
+            headerStyle: {
+              backgroundColor: '#1a1a1a',
+            },
+            headerTransparent: true,
+            headerBlurEffect: 'dark',
+            headerBackground: () => (
+              <BlurView
+                intensity={50}
+                tint="dark"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                }}
+              />
+            ),
+          }}
+          component={TasksScreen} />
         <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
         <Stack.Screen name="NetworkError" component={NetworkErrorScreen} />
         <Stack.Screen name="SecurityError" component={SecurityErrorScreen} />

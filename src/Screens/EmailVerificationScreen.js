@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import { auth, db } from '../firebase';
 import { sendEmailVerification, onAuthStateChanged } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -56,6 +57,28 @@ const EmailVerificationScreen = ({ navigation, route }) => {
         return () => subscription?.remove();
     }, [appState]);
 
+    // Check verification status when screen comes into focus
+    useFocusEffect(
+        React.useCallback(() => {
+            // Small delay to ensure user has time to see the screen
+            const timer = setTimeout(() => {
+                checkVerificationStatus();
+            }, 500);
+
+            // Set up periodic checking while screen is focused
+            const interval = setInterval(() => {
+                if (user && !isVerified) {
+                    checkVerificationStatus();
+                }
+            }, 3000); // Check every 3 seconds
+
+            return () => {
+                clearTimeout(timer);
+                clearInterval(interval);
+            };
+        }, [user, isVerified])
+    );
+
     // Update user document in Firestore when email is verified
     const updateUserEmailVerified = async (userId) => {
         try {
@@ -75,37 +98,46 @@ const EmailVerificationScreen = ({ navigation, route }) => {
     // Check verification status
     const checkVerificationStatus = async () => {
         try {
-            if (user) {
-                await user.reload();
-                const updatedUser = auth.currentUser;
-                if (updatedUser?.emailVerified) {
-                    setIsVerified(true);
+            if (!user) return;
 
-                    // Update user document in Firestore
-                    await updateUserEmailVerified(updatedUser.uid);
+            // Reload user to get latest verification status
+            await user.reload();
+            const updatedUser = auth.currentUser;
 
-                    // Check account status before navigating
-                    try {
-                        const accountStatus = await AccountStatusService.canUserAccess(updatedUser.uid);
-                        if (accountStatus.canAccess) {
-                            // Account is active, navigate to main app
-                            navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'Main' }],
-                            });
-                        } else {
-                            // Account is disabled or locked
-                            navigation.replace('AccountStatusError');
-                        }
-                    } catch (error) {
-                        console.error('Error checking account status:', error);
-                        // On error, assume account status issue
+            if (updatedUser?.emailVerified) {
+                setIsVerified(true);
+                console.log('Email verification detected!');
+
+                // Update user document in Firestore
+                await updateUserEmailVerified(updatedUser.uid);
+
+                // Show success message
+                ToastService.success('🎉 Email verified successfully! Redirecting...');
+
+                // Check account status before navigating
+                try {
+                    const accountStatus = await AccountStatusService.canUserAccess(updatedUser.uid);
+                    if (accountStatus.canAccess) {
+                        // Account is active, navigate to main app
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Main' }],
+                        });
+                    } else {
+                        // Account is disabled or locked
                         navigation.replace('AccountStatusError');
                     }
+                } catch (error) {
+                    console.error('Error checking account status:', error);
+                    // On error, assume account status issue
+                    navigation.replace('AccountStatusError');
                 }
+            } else {
+                console.log('Email not yet verified');
             }
         } catch (error) {
             console.error('Error checking verification status:', error);
+            // Don't show error to user for background checks
         }
     };
 
@@ -303,6 +335,14 @@ const EmailVerificationScreen = ({ navigation, route }) => {
                         <Text style={styles.cardDescription}>
                             {t('emailVerification.checkEmailDescription')}
                         </Text>
+
+                        {/* Verification Status Indicator */}
+                        <View style={styles.statusIndicator}>
+                            <View style={styles.statusDot} />
+                            <Text style={styles.statusText}>
+                                {isVerified ? '✅ Verified' : '🔄 Checking verification status...'}
+                            </Text>
+                        </View>
                     </View>
 
                     {/* Action Buttons */}
@@ -459,7 +499,26 @@ const styles = StyleSheet.create({
         color: '#888',
         textAlign: 'center',
         lineHeight: 20,
-        marginBottom: 0,
+        marginBottom: 15,
+    },
+    statusIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 10,
+    },
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#FFD700',
+        marginRight: 8,
+        opacity: 0.8,
+    },
+    statusText: {
+        fontSize: 12,
+        color: '#888',
+        fontStyle: 'italic',
     },
     stepsContainer: {
         marginTop: 20,

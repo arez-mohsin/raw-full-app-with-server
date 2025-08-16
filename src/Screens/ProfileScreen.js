@@ -422,7 +422,7 @@ const ProfileScreen = ({ navigation }) => {
     const { t } = useTranslation();
     const [userId, setUserId] = useState(null);
     const [userProfile, setUserProfile] = useState({
-        username: 'CryptoMiner',
+        username: 'RAW MINER',
         email: 'user@example.com',
         joinDate: '2024-01-01',
         totalMined: 0,
@@ -536,7 +536,7 @@ const ProfileScreen = ({ navigation }) => {
                 const userData = doc.data();
 
                 setUserProfile({
-                    username: userData.username || 'CryptoMiner',
+                    username: userData.username || 'RAW MINER',
                     email: userData.email || 'user@example.com',
                     joinDate: userData.createdAt ? userData.createdAt.toDate().toISOString() : '2024-01-01',
                     totalMined: userData.totalMined || 0,
@@ -644,7 +644,7 @@ const ProfileScreen = ({ navigation }) => {
                     const userData = userDoc.data();
 
                     setUserProfile({
-                        username: userData.username || 'CryptoMiner',
+                        username: userData.username || 'RAW MINER',
                         email: userData.email || 'user@example.com',
                         joinDate: userData.createdAt ? userData.createdAt.toDate().toISOString() : '2024-01-01',
                         totalMined: userData.totalMined || 0,

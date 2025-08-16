@@ -1,7 +1,10 @@
-import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 
 class ActivityLogger {
+    // In-memory cache to prevent duplicate logging within the same session
+    static activityCache = new Map();
+
     static async logActivity(userId, type, amount, description) {
         try {
             if (!userId) {
@@ -9,19 +12,71 @@ class ActivityLogger {
                 return;
             }
 
+            // Create a unique key for this activity to prevent duplicates
+            const activityKey = `${userId}-${type}-${amount}-${description}`;
+
+            // Check if this exact activity was logged recently (within 5 seconds)
+            if (this.activityCache.has(activityKey)) {
+                const lastLogged = this.activityCache.get(activityKey);
+                const timeDiff = Date.now() - lastLogged;
+                if (timeDiff < 5000) { // 5 seconds
+                    console.log(`⚠️ Duplicate activity prevented: ${type} - ${description} (${amount})`);
+                    return;
+                }
+            }
+
             const activityData = {
                 type,
                 amount: parseFloat(amount) || 0,
                 description,
                 timestamp: serverTimestamp(),
+                // Add a unique identifier to prevent duplicates
+                uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             };
 
             const activitiesRef = collection(db, "users", userId, "activities");
             await addDoc(activitiesRef, activityData);
 
+            // Cache this activity to prevent duplicates
+            this.activityCache.set(activityKey, Date.now());
+
+            // Clean up old cache entries (older than 1 minute)
+            setTimeout(() => {
+                this.activityCache.delete(activityKey);
+            }, 60000);
+
             console.log(`✅ Activity logged: ${type} - ${description} (${amount})`);
         } catch (error) {
-            console.error('❌ Error logging activity:', error);
+            // Handle specific Firestore errors
+            if (error.code === 'permission-denied') {
+                console.warn('⚠️ Permission denied logging activity:', error.message);
+            } else if (error.code === 'unavailable') {
+                console.warn('⚠️ Firestore unavailable, retrying in 1s...');
+                // Retry once after 1 second
+                setTimeout(async () => {
+                    try {
+                        const retryData = {
+                            type,
+                            amount: parseFloat(amount) || 0,
+                            description,
+                            timestamp: serverTimestamp(),
+                            uniqueId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                        };
+                        const retryActivitiesRef = collection(db, "users", userId, "activities");
+                        await addDoc(retryActivitiesRef, retryData);
+                        console.log(`✅ Activity logged on retry: ${type} - ${description} (${amount})`);
+                    } catch (retryError) {
+                        console.error('❌ Retry failed logging activity:', retryError);
+                    }
+                }, 1000);
+            } else if (error.code === 'already-exists' || error.message?.includes('Document already exists')) {
+                console.warn('⚠️ Activity already exists, skipping duplicate log');
+                // Add to cache to prevent future attempts
+                const activityKey = `${userId}-${type}-${amount}-${description}`;
+                this.activityCache.set(activityKey, Date.now());
+            } else {
+                console.error('❌ Error logging activity:', error);
+            }
         }
     }
 
@@ -170,6 +225,23 @@ class ActivityLogger {
     // Custom activity
     static async logCustom(userId, type, amount, description) {
         await this.logActivity(userId, type, amount, description);
+    }
+
+    // Clear activity cache (useful for testing or memory management)
+    static clearCache() {
+        this.activityCache.clear();
+        console.log('🧹 Activity cache cleared');
+    }
+
+    // Get cache statistics
+    static getCacheStats() {
+        return {
+            size: this.activityCache.size,
+            entries: Array.from(this.activityCache.entries()).map(([key, timestamp]) => ({
+                key,
+                age: Date.now() - timestamp
+            }))
+        };
     }
 }
 

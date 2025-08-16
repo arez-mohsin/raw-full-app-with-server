@@ -75,7 +75,7 @@ const TermsOfServiceScreen = ({ navigation }) => {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>6. Intellectual Property</Text>
                         <Text style={styles.paragraph}>
-                            The App and its original content, features, and functionality are and will remain the exclusive property of CryptoMiner and its licensors. The App is protected by copyright, trademark, and other laws.
+                            The App and its original content, features, and functionality are and will remain the exclusive property of RAW and its licensors. The App is protected by copyright, trademark, and other laws.
                         </Text>
                     </View>
 
@@ -89,14 +89,14 @@ const TermsOfServiceScreen = ({ navigation }) => {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>8. Limitation of Liability</Text>
                         <Text style={styles.paragraph}>
-                            IN NO EVENT SHALL CRYPTOMINER BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.
+                            IN NO EVENT SHALL RAW BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.
                         </Text>
                     </View>
 
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>9. Indemnification</Text>
                         <Text style={styles.paragraph}>
-                            You agree to defend, indemnify, and hold harmless CryptoMiner and its officers, directors, employees, and agents from and against any claims, damages, obligations, losses, liabilities, costs, or debt arising from your use of the App.
+                            You agree to defend, indemnify, and hold harmless RAW and its officers, directors, employees, and agents from and against any claims, damages, obligations, losses, liabilities, costs, or debt arising from your use of the App.
                         </Text>
                     </View>
 
@@ -110,7 +110,7 @@ const TermsOfServiceScreen = ({ navigation }) => {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>11. Governing Law</Text>
                         <Text style={styles.paragraph}>
-                            These Terms shall be interpreted and governed by the laws of the jurisdiction in which CryptoMiner operates, without regard to its conflict of law provisions.
+                            These Terms shall be interpreted and governed by the laws of the jurisdiction in which RAW operates, without regard to its conflict of law provisions.
                         </Text>
                     </View>
 
@@ -125,16 +125,14 @@ const TermsOfServiceScreen = ({ navigation }) => {
                         <Text style={styles.sectionTitle}>13. Contact Information</Text>
                         <Text style={styles.paragraph}>
                             If you have any questions about these Terms of Service, please contact us at:{'\n'}
-                            Email: legal@cryptominer.com{'\n'}
-                            Address: [Company Address]{'\n'}
-                            Phone: [Company Phone]
+                            Email: rawchain01@gmail.com{'\n'}
                         </Text>
                     </View>
 
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>14. Acknowledgment</Text>
                         <Text style={styles.paragraph}>
-                            By using the CryptoMiner App, you acknowledge that you have read these Terms of Service, understand them, and agree to be bound by their terms and conditions.
+                            By using the RAW MINER App, you acknowledge that you have read these Terms of Service, understand them, and agree to be bound by their terms and conditions.
                         </Text>
                     </View>
 

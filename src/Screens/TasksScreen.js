@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     RefreshControl,
     Linking,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,7 +29,6 @@ const TasksScreen = ({ navigation }) => {
     const [userExperience, setUserExperience] = useState(0);
     const [userLevel, setUserLevel] = useState(1);
     const [completedTasks, setCompletedTasks] = useState({});
-    const [runningTasks, setRunningTasks] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const insets = useSafeAreaInsets();
@@ -200,29 +200,73 @@ const TasksScreen = ({ navigation }) => {
                 return;
             }
 
-            // For social media tasks, open the URL
+            // For social media tasks, open the URL first
             if (task.type === 'social') {
                 const supported = await Linking.canOpenURL(task.url);
                 if (supported) {
                     await Linking.openURL(task.url);
 
-                    ToastService.info(`Please complete the action on ${task.title} and then tap "Mark as Complete"`);
-                    // For now, we'll just show an info message. In a real app, you might want to add a modal
-                    // or use a different approach for multiple options
+                    // Show alert asking if user completed the task
+                    setTimeout(() => {
+                        Alert.alert(
+                            'Task Completion',
+                            `Did you complete the ${task.title} task?`,
+                            [
+                                {
+                                    text: 'No',
+                                    style: 'cancel',
+                                    onPress: () => {
+                                        ToastService.info('Please complete the task and try again.');
+                                    }
+                                },
+                                {
+                                    text: 'Yes',
+                                    onPress: () => {
+                                        // Complete task immediately
+                                        startTaskImmediately(task);
+                                    }
+                                }
+                            ],
+                            { cancelable: false }
+                        );
+                    }, 1000); // Small delay to ensure user has time to see the link opened
+
+                    return;
                 } else {
                     ToastService.error('Cannot open this link. Please try again.');
+                    return;
                 }
             } else if (task.type === 'action') {
                 // For action tasks like share
                 if (task.id === 'share_app') {
-                    ToastService.info('Please share the app with your friends and then tap "Mark as Complete"');
-                    // For now, we'll just show an info message. In a real app, you might want to add a modal
-                    // or use a different approach for multiple options
+                    Alert.alert(
+                        'Task Completion',
+                        'Did you share the app with your friends?',
+                        [
+                            {
+                                text: 'No',
+                                style: 'cancel',
+                                onPress: () => {
+                                    ToastService.info('Please share the app and try again.');
+                                }
+                            },
+                            {
+                                text: 'Yes',
+                                onPress: () => {
+                                    // Complete task immediately
+                                    startTaskImmediately(task);
+                                }
+                            }
+                        ],
+                        { cancelable: false }
+                    );
+                    return;
                 }
             } else {
-                // For daily tasks, start with 5 second delay
-                startTaskWithDelay(task);
+                // For daily tasks, complete immediately
+                startTaskImmediately(task);
             }
+
         } catch (error) {
             console.error('Error handling task:', error);
             ToastService.error('Failed to process task. Please try again.');
@@ -277,7 +321,10 @@ const TasksScreen = ({ navigation }) => {
             // Haptic feedback for task completion
             hapticSuccess();
 
-            ToastService.success(`${t('common.taskCompletedReward')}${task.reward}${t('common.taskCompletedXp')}${task.xp}${levelUpMessage}\n${t('common.newBalance')}${newBalance.toFixed(3)}${t('common.totalExperience')}${newExperience}`);
+            // Enhanced success message with detailed rewards
+            const successMessage = `✅ Task Completed Successfully!\n\n💰 +${task.reward} coins added to your balance\n⭐ +${task.xp} XP earned\n\n${levelUpMessage}\n\n💎 New Balance: ${newBalance.toFixed(3)} coins\n📊 Total Experience: ${newExperience} XP\n📈 Current Level: ${newLevel}`;
+
+            ToastService.success(successMessage);
 
         } catch (error) {
             console.error('Error completing task:', error);
@@ -286,48 +333,20 @@ const TasksScreen = ({ navigation }) => {
         }
     };
 
-    const startTaskWithDelay = async (task) => {
+    const startTaskImmediately = async (task) => {
         try {
             if (!userId) return;
 
             // Haptic feedback for starting task
             hapticMedium();
 
-            // Set task as running
-            setRunningTasks(prev => ({
-                ...prev,
-                [task.id]: true
-            }));
-
-            // Show starting message
-            ToastService.info(`Starting ${task.title}... Please wait 5 seconds.`);
-
-            // Countdown from 5 to 1
-            for (let i = 5; i > 0; i--) {
-                // Update the running text to show countdown
-                setRunningTasks(prev => ({
-                    ...prev,
-                    [task.id]: i
-                }));
-
-                if (i > 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-            }
-
-            // Complete the task
+            // Complete the task immediately
             await completeTask(task);
 
         } catch (error) {
-            console.error('Error starting task with delay:', error);
+            console.error('Error starting task:', error);
             hapticError();
             ToastService.error('Failed to start task. Please try again.');
-        } finally {
-            // Clear running state
-            setRunningTasks(prev => ({
-                ...prev,
-                [task.id]: false
-            }));
         }
     };
 
@@ -383,38 +402,15 @@ const TasksScreen = ({ navigation }) => {
                             <Ionicons name="checkmark-circle" size={20} color="#fff" />
                             <Text style={styles.completedText}>Completed</Text>
                         </View>
-                    ) : runningTasks[task.id] ? (
-                        <View style={styles.runningContainer}>
-                            <View style={[styles.runningButton, { backgroundColor: theme.colors.warning }]}>
-                                <Ionicons name="time" size={20} color="#fff" />
-                                <Text style={styles.runningText}>
-                                    {typeof runningTasks[task.id] === 'number' ? `${runningTasks[task.id]}s` : 'Running...'}
-                                </Text>
-                            </View>
-                            {typeof runningTasks[task.id] === 'number' && (
-                                <View style={styles.progressBarContainer}>
-                                    <View style={[styles.progressBar, { backgroundColor: theme.colors.border }]}>
-                                        <View
-                                            style={[
-                                                styles.progressFill,
-                                                {
-                                                    backgroundColor: theme.colors.accent,
-                                                    width: `${((6 - runningTasks[task.id]) / 5) * 100}%`
-                                                }
-                                            ]}
-                                        />
-                                    </View>
-                                </View>
-                            )}
-                        </View>
                     ) : (
                         <TouchableOpacity
                             style={[styles.completeButton, { backgroundColor: theme.colors.accent }]}
                             onPress={() => handleTaskComplete(task)}
-                            disabled={runningTasks[task.id]}
                         >
                             <Ionicons name="play" size={20} color="#fff" />
-                            <Text style={styles.completeText}>Start Task</Text>
+                            <Text style={styles.completeText}>
+                                {task.type === 'social' || task.type === 'action' ? 'Open Link' : 'Start Task'}
+                            </Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -469,7 +465,7 @@ const TasksScreen = ({ navigation }) => {
                     />
                 }
             >
-                {/* Header */}
+                {/* Header
                 <View style={styles.header}>
                     <TouchableOpacity
                         style={styles.backButton}
@@ -481,10 +477,10 @@ const TasksScreen = ({ navigation }) => {
                         {t('common.dailyTasks')}
                     </Text>
                     <View style={styles.headerSpacer} />
-                </View>
+                </View> */}
 
                 {/* Level Display */}
-                <View style={[styles.levelCard, { backgroundColor: theme.colors.card }]}>
+                <View style={[styles.levelCard, { backgroundColor: theme.colors.card, marginTop: 44 }]}>
                     <View style={styles.levelHeader}>
                         <Ionicons name="star" size={24} color="#FFD700" />
                         <Text style={[styles.levelTitle, { color: theme.colors.textPrimary }]}>
@@ -787,24 +783,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 8,
     },
-    runningButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FF9800',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 25,
-    },
-    runningText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 8,
-    },
-    runningContainer: {
-        alignItems: 'center',
-        gap: 8,
-    },
+
     progressBarContainer: {
         height: 4,
         width: '100%',
@@ -819,6 +798,7 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: 2,
     },
+
     tipsCard: {
         borderRadius: 16,
         padding: 20,

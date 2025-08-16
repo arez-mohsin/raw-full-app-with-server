@@ -1,4 +1,4 @@
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { AppState } from 'react-native';
 
@@ -39,6 +39,13 @@ class UserStatusService {
                 }
             }
 
+            // Check if document exists before updating
+            const documentExists = await this.checkUserDocumentExists();
+            if (!documentExists) {
+                console.log('User document does not exist, skipping online status update');
+                return;
+            }
+
             await updateDoc(this.userDocRef, {
                 isOnline: true,
                 lastSeen: serverTimestamp(),
@@ -62,6 +69,13 @@ class UserStatusService {
     async retrySetUserOnline() {
         try {
             if (this.currentUser && this.userDocRef) {
+                // Check if document exists before updating
+                const documentExists = await this.checkUserDocumentExists();
+                if (!documentExists) {
+                    console.log('User document does not exist, skipping retry online status update');
+                    return;
+                }
+
                 await updateDoc(this.userDocRef, {
                     isOnline: true,
                     lastSeen: serverTimestamp(),
@@ -77,6 +91,18 @@ class UserStatusService {
         }
     }
 
+    // Check if user document exists
+    async checkUserDocumentExists() {
+        try {
+            if (!this.userDocRef) return false;
+            const docSnap = await getDoc(this.userDocRef);
+            return docSnap.exists();
+        } catch (error) {
+            console.error('Error checking if user document exists:', error);
+            return false;
+        }
+    }
+
     // Update user status to offline
     async setUserOffline() {
         try {
@@ -86,6 +112,13 @@ class UserStatusService {
                     console.log('No authenticated user found for status update');
                     return;
                 }
+            }
+
+            // Check if document exists before updating
+            const documentExists = await this.checkUserDocumentExists();
+            if (!documentExists) {
+                console.log('User document does not exist, skipping offline status update');
+                return;
             }
 
             await updateDoc(this.userDocRef, {
@@ -111,6 +144,13 @@ class UserStatusService {
     async retrySetUserOffline() {
         try {
             if (this.currentUser && this.userDocRef) {
+                // Check if document exists before updating
+                const documentExists = await this.checkUserDocumentExists();
+                if (!documentExists) {
+                    console.log('User document does not exist, skipping retry offline status update');
+                    return;
+                }
+
                 await updateDoc(this.userDocRef, {
                     isOnline: false,
                     lastSeen: serverTimestamp(),

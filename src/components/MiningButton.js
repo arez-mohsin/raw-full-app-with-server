@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+
 
 const MiningButton = ({
     isMining,
@@ -40,8 +41,14 @@ const MiningButton = ({
             }),
         ]).start();
 
-        await startMining();
+        try {
+            await startMining();
+        } catch (error) {
+            console.error('Mining start error:', error);
+        }
     };
+
+
 
     const getButtonText = () => {
         if (loading) return t('mining.starting');
@@ -96,6 +103,8 @@ const MiningButton = ({
                     )}
                 </TouchableOpacity>
             </Animated.View>
+
+
         </View>
     );
 };
@@ -103,7 +112,7 @@ const MiningButton = ({
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
-        marginVertical: 20,
+        marginVertical: 20, 
     },
     buttonContainer: {
         marginBottom: 20,
