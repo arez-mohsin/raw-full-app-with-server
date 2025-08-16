@@ -84,6 +84,58 @@ const LoginScreen = ({ navigation }) => {
         }
     };
 
+    // Get user-friendly Firebase error messages
+    const getFirebaseErrorMessage = (error) => {
+        if (!error || !error.code) {
+            return t('errors.generic');
+        }
+
+        // Map Firebase error codes to user-friendly messages
+        const errorMessages = {
+            'auth/invalid-credential': t('errors.firebase.invalidCredential'),
+            'auth/user-not-found': t('errors.firebase.userNotFound'),
+            'auth/wrong-password': t('errors.firebase.wrongPassword'),
+            'auth/email-already-in-use': t('errors.firebase.emailInUse'),
+            'auth/weak-password': t('errors.firebase.weakPassword'),
+            'auth/invalid-email': t('errors.firebase.invalidEmail'),
+            'auth/user-disabled': t('errors.firebase.userDisabled'),
+            'auth/too-many-requests': t('errors.firebase.tooManyRequests'),
+            'auth/network-request-failed': t('errors.firebase.networkFailed'),
+            'auth/operation-not-allowed': t('errors.firebase.operationNotAllowed'),
+            'auth/account-exists-with-different-credential': t('errors.firebase.accountExists'),
+            'auth/requires-recent-login': t('errors.firebase.requiresRecentLogin'),
+            'auth/invalid-verification-code': t('errors.firebase.invalidVerificationCode'),
+            'auth/invalid-verification-id': t('errors.firebase.invalidVerificationId'),
+            'auth/quota-exceeded': t('errors.firebase.quotaExceeded'),
+            'auth/credential-already-in-use': t('errors.firebase.credentialInUse'),
+            'auth/timeout': t('errors.firebase.timeout'),
+            'auth/cancelled-popup-request': t('errors.firebase.cancelledPopup'),
+            'auth/popup-closed-by-user': t('errors.firebase.popupClosed'),
+            'auth/popup-blocked': t('errors.firebase.popupBlocked'),
+            'auth/unauthorized-domain': t('errors.firebase.unauthorizedDomain'),
+            'auth/unsupported-persistence-type': t('errors.firebase.unsupportedPersistence'),
+            'auth/invalid-persistence-type': t('errors.firebase.invalidPersistence'),
+            'auth/invalid-tenant-id': t('errors.firebase.invalidTenantId'),
+            'auth/unsupported-tenant-operation': t('errors.firebase.unsupportedTenantOperation'),
+            'auth/invalid-dynamic-link-domain': t('errors.firebase.invalidDynamicLink'),
+            'auth/duplicate-credential': t('errors.firebase.duplicateCredential'),
+            'auth/maximum-second-factor-count-exceeded': t('errors.firebase.maxSecondFactors'),
+            'auth/second-factor-already-in-use': t('errors.firebase.secondFactorInUse'),
+            'auth/tenant-id-mismatch': t('errors.firebase.tenantIdMismatch'),
+            'auth/unsupported-first-factor': t('errors.firebase.unsupportedFirstFactor'),
+            'auth/email-change-needs-verification': t('errors.firebase.emailChangeVerification'),
+            'auth/missing-or-invalid-nonce': t('errors.firebase.invalidNonce'),
+            'auth/invalid-app-credential': t('errors.firebase.invalidAppCredential'),
+            'auth/invalid-app-id': t('errors.firebase.invalidAppId'),
+            'auth/invalid-user-token': t('errors.firebase.invalidUserToken'),
+            'auth/not-authorized': t('errors.firebase.notAuthorized'),
+            'auth/argument-error': t('errors.firebase.argumentError'),
+            'auth/invalid-api-key': t('errors.firebase.invalidApiKey'),
+        };
+
+        return errorMessages[error.code] || t('errors.generic');
+    };
+
 
 
     // Get comprehensive device information
@@ -344,17 +396,20 @@ const LoginScreen = ({ navigation }) => {
                             const minutesRemaining = Math.ceil(lockoutStatus.remainingTime / 60000);
                             setGeneralError(`Account temporarily locked due to too many failed attempts. Try again in ${minutesRemaining} minutes.`);
                         } else {
-                            const errorMessage = ErrorHandler.getErrorMessage(error);
+                            const errorMessage = getFirebaseErrorMessage(error);
                             setGeneralError(errorMessage);
                         }
                     } else {
+                        const errorMessage = getFirebaseErrorMessage(error);
                         setGeneralError(errorMessage);
                     }
                 } catch (recordError) {
                     console.error('Error recording failed attempt:', recordError);
+                    const errorMessage = getFirebaseErrorMessage(error);
                     setGeneralError(errorMessage);
                 }
             } else {
+                const errorMessage = getFirebaseErrorMessage(error);
                 setGeneralError(errorMessage);
             }
 
@@ -478,7 +533,10 @@ const LoginScreen = ({ navigation }) => {
             console.error('Biometric login error:', error);
             let errorMessage = 'Biometric login failed';
 
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            // Check if it's a Firebase auth error first
+            if (error.code && error.code.startsWith('auth/')) {
+                errorMessage = getFirebaseErrorMessage(error);
+            } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
                 errorMessage = 'Stored credentials are invalid. Please log in with your password.';
             } else if (error.message.includes('No stored credentials')) {
                 errorMessage = 'No stored credentials found. Please log in with your password.';
@@ -571,7 +629,10 @@ const LoginScreen = ({ navigation }) => {
             console.error(`${provider} login error:`, error);
             let errorMessage = `${provider} login failed`;
 
-            if (error.message.includes('cancelled')) {
+            // Check if it's a Firebase auth error first
+            if (error.code && error.code.startsWith('auth/')) {
+                errorMessage = getFirebaseErrorMessage(error);
+            } else if (error.message.includes('cancelled')) {
                 errorMessage = `${provider} login was cancelled`;
             } else if (error.message.includes('not available')) {
                 errorMessage = `${provider} login is not available on this device`;

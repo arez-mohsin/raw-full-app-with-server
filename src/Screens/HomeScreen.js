@@ -395,6 +395,14 @@ const HomeScreen = ({ navigation }) => {
     const [recentActivities, setRecentActivities] = useState([]);
     const [activitiesLoading, setActivitiesLoading] = useState(true);
 
+    // Safety check to ensure recentActivities is always an array
+    useEffect(() => {
+        if (!Array.isArray(recentActivities)) {
+            console.warn('recentActivities is not an array, resetting to empty array');
+            setRecentActivities([]);
+        }
+    }, [recentActivities]);
+
     // Real-time listener references
     const [userListener, setUserListener] = useState(null);
     const [activitiesListener, setActivitiesListener] = useState(null);
@@ -2435,40 +2443,62 @@ const HomeScreen = ({ navigation }) => {
                                 </Text>
                             </View>
                         ) : (() => {
-                            return recentActivities.length > 0;
+                            try {
+                                // Safety check to ensure recentActivities is always an array
+                                if (!Array.isArray(recentActivities)) {
+                                    console.warn('recentActivities is not an array in render, defaulting to empty');
+                                    return false;
+                                }
+                                return recentActivities.length > 0;
+                            } catch (error) {
+                                console.error('Error checking recentActivities:', error);
+                                return false;
+                            }
                         })() ? (
-                            recentActivities.map((activity, index) => (
-                                <View
-                                    key={activity.id}
-                                    style={[
-                                        styles.activityItem,
-                                        { borderBottomColor: theme.colors.border },
-                                        index === recentActivities.length - 1 && { borderBottomWidth: 0 }
-                                    ]}
-                                >
-                                    <View style={styles.activityIcon}>
-                                        <Ionicons
-                                            name={getActivityIcon(activity.type)}
-                                            size={16}
-                                            color={getActivityColor(activity.type, theme)}
-                                        />
-                                    </View>
-                                    <View style={styles.activityContent}>
-                                        <Text style={[styles.activityText, { color: theme.colors.textPrimary }]}>
-                                            {activity.description}
-                                        </Text>
-                                        <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
-                                            {formatActivityTime(activity.timestamp)}
-                                        </Text>
-                                    </View>
-                                    <Text style={[
-                                        styles.activityAmount,
-                                        { color: activity.amount > 0 ? theme.colors.success : theme.colors.error }
-                                    ]}>
-                                        {activity.amount > 0 ? '+' : ''}{formatCoinBalance(activity.amount)}
-                                    </Text>
-                                </View>
-                            ))
+                            (recentActivities || []).map((activity, index) => {
+                                try {
+                                    // Safety check for each activity
+                                    if (!activity || !activity.id) {
+                                        console.warn('Invalid activity found:', activity);
+                                        return null;
+                                    }
+                                    return (
+                                        <View
+                                            key={activity.id}
+                                            style={[
+                                                styles.activityItem,
+                                                { borderBottomColor: theme.colors.border },
+                                                index === (Array.isArray(recentActivities) ? recentActivities.length - 1 : -1) && { borderBottomWidth: 0 }
+                                            ]}
+                                        >
+                                            <View style={styles.activityIcon}>
+                                                <Ionicons
+                                                    name={getActivityIcon(activity.type)}
+                                                    size={16}
+                                                    color={getActivityColor(activity.type, theme)}
+                                                />
+                                            </View>
+                                            <View style={styles.activityContent}>
+                                                <Text style={[styles.activityText, { color: theme.colors.textPrimary }]}>
+                                                    {activity.description}
+                                                </Text>
+                                                <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
+                                                    {formatActivityTime(activity.timestamp)}
+                                                </Text>
+                                            </View>
+                                            <Text style={[
+                                                styles.activityAmount,
+                                                { color: activity.amount > 0 ? theme.colors.success : theme.colors.error }
+                                            ]}>
+                                                {activity.amount > 0 ? '+' : ''}{formatCoinBalance(activity.amount)}
+                                            </Text>
+                                        </View>
+                                    );
+                                } catch (error) {
+                                    console.error('Error rendering activity:', error);
+                                    return null;
+                                }
+                            })
                         ) : (
                             <View style={styles.emptyActivity}>
                                 <Ionicons name="time-outline" size={24} color={theme.colors.textSecondary} />
