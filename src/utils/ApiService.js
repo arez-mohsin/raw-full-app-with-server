@@ -211,24 +211,59 @@ class ApiService {
         return error;
     }
 
-    // Get fresh Firebase token
+    // Get fresh Firebase token with better error handling
     async getFreshToken() {
         try {
-            const tokenResult = await auth.currentUser.getIdTokenResult();
-
-            if (tokenResult.expirationTime) {
-                const expirationTime = new Date(tokenResult.expirationTime).getTime();
-                const currentTime = Date.now();
-                const timeUntilExpiry = expirationTime - currentTime;
-
-                // If token expires in less than 5 minutes, force refresh
-                if (timeUntilExpiry < 300000) {
-                    console.log('Token expiring soon, forcing refresh');
-                    return await auth.currentUser.getIdToken(true);
-                }
+            // Check if user is still authenticated
+            if (!auth.currentUser) {
+                throw new Error('User not authenticated. Please log in again.');
             }
 
-            return await auth.currentUser.getIdToken();
+            // Check if user is anonymous
+            if (auth.currentUser.isAnonymous) {
+                throw new Error('Anonymous users cannot access secure endpoints. Please log in.');
+            }
+
+            try {
+                const tokenResult = await auth.currentUser.getIdTokenResult();
+
+                if (tokenResult.expirationTime) {
+                    const expirationTime = new Date(tokenResult.expirationTime).getTime();
+                    const currentTime = Date.now();
+                    const timeUntilExpiry = expirationTime - currentTime;
+
+                    // If token expires in less than 10 minutes, force refresh
+                    if (timeUntilExpiry < 600000) {
+                        console.log('Token expiring soon, forcing refresh');
+                        const freshToken = await auth.currentUser.getIdToken(true);
+                        if (!freshToken) {
+                            throw new Error('Failed to refresh token');
+                        }
+                        return freshToken;
+                    }
+                }
+
+                const token = await auth.currentUser.getIdToken();
+                if (!token) {
+                    throw new Error('Failed to get valid token');
+                }
+                return token;
+            } catch (tokenError) {
+                console.log('Token operation failed, attempting force refresh:', tokenError.message);
+
+                // Try to force refresh the token
+                try {
+                    const freshToken = await auth.currentUser.getIdToken(true);
+                    if (freshToken) {
+                        console.log('Token force refresh successful');
+                        return freshToken;
+                    }
+                } catch (refreshError) {
+                    console.log('Token force refresh failed:', refreshError.message);
+                }
+
+                throw tokenError;
+            }
         } catch (error) {
             console.error('Token refresh error:', error);
             throw new Error('Authentication token unavailable. Please log in again.');
@@ -241,7 +276,8 @@ class ApiService {
         if (error.message.includes('Authentication failed') ||
             error.message.includes('Please log in again') ||
             error.message.includes('User not authenticated') ||
-            error.message.includes('Authentication mismatch')) {
+            error.message.includes('Authentication mismatch') ||
+            error.message.includes('Authentication token unavailable')) {
             return true;
         }
 
@@ -252,6 +288,12 @@ class ApiService {
 
         // Don't retry on network unavailability
         if (error.message.includes('Network unavailable')) {
+            return true;
+        }
+
+        // Don't retry on token refresh failures
+        if (error.message.includes('Token refresh error') ||
+            error.message.includes('Failed to get fresh token')) {
             return true;
         }
 

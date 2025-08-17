@@ -83,7 +83,7 @@ Notifications.setNotificationHandler({
     }),
 });
 
-// Validate Firebase authentication token
+// Validate Firebase authentication token with better error handling
 const validateAuthToken = async () => {
     try {
         if (!auth.currentUser) {
@@ -91,27 +91,49 @@ const validateAuthToken = async () => {
             return false;
         }
 
-        // Force token refresh to ensure it's valid
-        console.log('Forcing token refresh for user:', auth.currentUser.uid);
-        const freshToken = await auth.currentUser.getIdToken(true);
-
-        if (!freshToken) {
-            console.log('Failed to get fresh token');
+        // Check if user is still valid
+        if (auth.currentUser.isAnonymous) {
+            console.log('User is anonymous, cannot validate token');
             return false;
         }
 
-        // Verify token is valid
-        const tokenResult = await auth.currentUser.getIdTokenResult();
-        const currentTime = Date.now();
-        const expirationTime = new Date(tokenResult.expirationTime).getTime();
+        try {
+            // Try to get token result first to check expiration
+            const tokenResult = await auth.currentUser.getIdTokenResult();
+            const currentTime = Date.now();
+            const expirationTime = new Date(tokenResult.expirationTime).getTime();
+            const timeUntilExpiry = expirationTime - currentTime;
 
-        if (expirationTime <= currentTime) {
-            console.log('Token still expired after refresh');
+            // If token expires in less than 10 minutes, refresh it
+            if (timeUntilExpiry < 600000) {
+                console.log('Token expiring soon, forcing refresh');
+                const freshToken = await auth.currentUser.getIdToken(true);
+                if (!freshToken) {
+                    console.log('Failed to get fresh token after refresh');
+                    return false;
+                }
+                console.log('Token refreshed successfully');
+            } else {
+                console.log('Token is still valid, expires in', Math.round(timeUntilExpiry / 1000), 'seconds');
+            }
+
+            return true;
+        } catch (tokenError) {
+            console.log('Token validation error, attempting to refresh:', tokenError.message);
+
+            // Try to force refresh the token
+            try {
+                const freshToken = await auth.currentUser.getIdToken(true);
+                if (freshToken) {
+                    console.log('Token refresh successful after error');
+                    return true;
+                }
+            } catch (refreshError) {
+                console.log('Token refresh failed:', refreshError.message);
+            }
+
             return false;
         }
-
-        console.log('Token refreshed and valid, expires in', Math.round((expirationTime - currentTime) / 1000), 'seconds');
-        return true;
     } catch (error) {
         console.error('Token validation failed:', error);
         return false;
@@ -162,9 +184,15 @@ const generateDeviceFingerprint = async () => {
 
 
 
-// Enhanced secure API client with comprehensive security
+// Enhanced secure API client with comprehensive security and better error handling
 const secureApiCall = async (endpoint, data, userId) => {
     try {
+        // Check if user is authenticated
+        if (!auth.currentUser) {
+            console.error('No authenticated user found');
+            throw new Error('Authentication failed. Please log in again.');
+        }
+
         // Validate authentication token first
         const isTokenValid = await validateAuthToken();
         if (!isTokenValid) {
@@ -189,8 +217,19 @@ const secureApiCall = async (endpoint, data, userId) => {
         console.log('Device fingerprint validated:', deviceFingerprint);
 
         // Get a fresh token before making the API call
-        const freshToken = await auth.currentUser.getIdToken(true);
-        console.log('Fresh token obtained for API call, length:', freshToken ? freshToken.length : 0);
+        let freshToken;
+        try {
+            freshToken = await auth.currentUser.getIdToken(true);
+            console.log('Fresh token obtained for API call, length:', freshToken ? freshToken.length : 0);
+        } catch (tokenError) {
+            console.error('Failed to get fresh token:', tokenError);
+            throw new Error('Authentication failed. Please log in again.');
+        }
+
+        if (!freshToken) {
+            console.error('No fresh token available');
+            throw new Error('Authentication failed. Please log in again.');
+        }
 
         // Use the new ApiService for better error handling and retry mechanisms
         return await apiService.secureApiCall(endpoint, data, userId, {
