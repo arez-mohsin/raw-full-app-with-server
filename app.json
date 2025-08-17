@@ -1,13 +1,14 @@
 {
-  "expo": {
-    "name": "RAW",
-    "slug": "raw-app",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/raw-logo-production.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "scheme": "com.arezmohssin99.rawapp",
+      "expo": {
+      "name": "RAW",
+      "slug": "raw-app",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/raw-logo-production.png",
+      "userInterfaceStyle": "light",
+      "newArchEnabled": true,
+      "scheme": "com.arezmohssin99.rawapp",
+
     "splash": {
       "image": "./assets/raw-logo-production.png",
       "resizeMode": "contain",
@@ -18,7 +19,8 @@
       "bundleIdentifier": "com.arezmohssin99.rawapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "googleMobileAdsAppId": "ca-app-pub-9377740349827204~8796495958"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +28,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.arezmohssin99.rawapp"
+      "package": "com.arezmohssin99.rawapp",
+      "googleMobileAdsAppId": "ca-app-pub-9377740349827204~4973194220"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,12 +44,49 @@
           }
         }
       ]
+
     ],
     "extra": {
       "eas": {
         "projectId": "6c86c6c5-fed9-47b5-a386-7efcda517b7d"
       },
-      "firebase": {}
+      "firebase": {},
+      "googleMobileAdsJson": {
+        "android": {
+          "appId": "ca-app-pub-9377740349827204~4973194220"
+        },
+        "ios": {
+          "appId": "ca-app-pub-9377740349827204~8796495958"
+        }
+      },
+      "googleMobileAds": {
+        "android": {
+          "appId": "ca-app-pub-9377740349827204~4973194220"
+        },
+        "ios": {
+          "appId": "ca-app-pub-9377740349827204~8796495958"
+        }
+      },
+      "reactNativeGoogleMobileAds": {
+        "android": {
+          "appId": "ca-app-pub-9377740349827204~4973194220"
+        },
+        "ios": {
+          "appId": "ca-app-pub-9377740349827204~8796495958"
+        }
+      },
+      "googleMobileAdsConfig": {
+        "android": {
+          "appId": "ca-app-pub-9377740349827204~4973194220"
+        },
+        "ios": {
+          "appId": "ca-app-pub-9377740349827204~8796495958"
+        }
+      }
     }
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-9377740349827204~4973194220",
+    "ios_app_id": "ca-app-pub-9377740349827204~8796495958"
   }
 }

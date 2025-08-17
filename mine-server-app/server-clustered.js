@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const config = require('./config');
 
 // Enhanced logging system with async file operations
 class Logger {
@@ -481,7 +482,11 @@ if (cluster.isMaster) {
 
             const requestTime = parseInt(timestamp);
             const currentTime = Date.now();
-            if (Math.abs(currentTime - requestTime) > 300000) {
+
+            // Allow longer time difference in development
+            const maxTimeDifference = config.TIMESTAMP_VALIDATION.MAX_TIME_DIFFERENCE;
+
+            if (Math.abs(currentTime - requestTime) > maxTimeDifference) {
                 logger.security('Request timestamp expired', {
                     ip: req.ip,
                     deviceId: req.headers['x-device-id'],
@@ -491,7 +496,8 @@ if (cluster.isMaster) {
                     userAgent: req.headers['user-agent'],
                     path: req.path,
                     method: req.method,
-                    workerId
+                    workerId,
+                    environment: process.env.NODE_ENV || 'development'
                 });
                 return res.status(401).json({ error: 'Request timestamp expired' });
             }

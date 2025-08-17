@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const config = require('./config');
 
 // Enhanced logging system
 class Logger {
@@ -486,7 +487,11 @@ const authenticateToken = async (req, res, next) => {
 
     const requestTime = parseInt(timestamp);
     const currentTime = Date.now();
-    if (Math.abs(currentTime - requestTime) > 300000) { // 5 minutes
+
+    // Allow longer time difference in development
+    const maxTimeDifference = config.TIMESTAMP_VALIDATION.MAX_TIME_DIFFERENCE;
+
+    if (Math.abs(currentTime - requestTime) > maxTimeDifference) {
       logger.security('Request timestamp expired', {
         ip: req.ip,
         deviceId: req.headers['x-device-id'],
@@ -495,7 +500,8 @@ const authenticateToken = async (req, res, next) => {
         difference: Math.abs(currentTime - requestTime),
         userAgent: req.headers['user-agent'],
         path: req.path,
-        method: req.method
+        method: req.method,
+        environment: process.env.NODE_ENV || 'development'
       });
       return res.status(401).json({ error: 'Request timestamp expired' });
     }

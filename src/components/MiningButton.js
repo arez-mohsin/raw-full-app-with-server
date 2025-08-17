@@ -5,10 +5,12 @@ import {
     StyleSheet,
     TouchableOpacity,
     Animated,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import adMobService from '../services/AdMobService';
 
 
 const MiningButton = ({
@@ -42,9 +44,26 @@ const MiningButton = ({
         ]).start();
 
         try {
-            await startMining();
+            // Show reward ad before starting mining
+            const adResult = await adMobService.showRewardedAd();
+
+            if (adResult.success && adResult.rewardEarned) {
+                // User watched the ad and earned reward, start mining
+                await startMining();
+            } else {
+                // Ad failed or user didn't complete it
+                console.log('Ad not completed or failed:', adResult.reason);
+                // Show a message to the user
+                Alert.alert(
+                    'Ad Required',
+                    'Please watch the ad to start mining. This helps support the app.',
+                    [{ text: 'OK' }]
+                );
+            }
         } catch (error) {
             console.error('Mining start error:', error);
+            // Fallback: start mining without ad if there's an error
+            await startMining();
         }
     };
 
@@ -53,7 +72,7 @@ const MiningButton = ({
     const getButtonText = () => {
         if (loading) return t('mining.starting');
         if (isMining) return t('mining.miningInProgress');
-        return t('mining.startMiningWatchAd');
+        return t('mining.startMiningWatchAd') || 'Start Mining (Watch Ad)';
     };
 
     const getButtonIcon = () => {
@@ -112,7 +131,7 @@ const MiningButton = ({
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
-        marginVertical: 20, 
+        marginVertical: 20,
     },
     buttonContainer: {
         marginBottom: 20,

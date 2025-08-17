@@ -19,6 +19,7 @@ import NotificationService from '../utils/NotificationService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ToastService from '../utils/ToastService';
+import adMobService from '../services/AdMobService';
 
 const DailyStreakScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -116,8 +117,19 @@ const DailyStreakScreen = ({ navigation }) => {
 
         setClaiming(true);
         try {
-            // No ads - direct claim
-            let rewardedEarned = false;
+            // Show reward ad before claiming streak
+            const adResult = await adMobService.showRewardedAd();
+
+            if (!adResult.success || !adResult.rewardEarned) {
+                // Ad failed or user didn't complete it
+                console.log('Ad not completed or failed:', adResult.reason);
+                ToastService.warning('Please watch the ad to claim your streak reward!');
+                setClaiming(false);
+                return;
+            }
+
+            // User watched the ad and earned reward, proceed with claim
+            let rewardedEarned = true;
             let bonusCoins = 0;
 
             const user = auth.currentUser;

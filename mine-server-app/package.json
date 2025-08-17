@@ -4,10 +4,10 @@
   "description": "Enhanced production server for Mine App with security and anti-cheat",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "start:clustered": "node server-clustered.js",
-    "dev": "nodemon server.js",
-    "dev:clustered": "nodemon server-clustered.js",
+    "start": "NODE_ENV=production node server.js",
+    "start:clustered": "NODE_ENV=production node server-clustered.js",
+    "dev": "NODE_ENV=development nodemon server.js",
+    "dev:clustered": "NODE_ENV=development nodemon server-clustered.js",
     "test": "jest"
   },
   "dependencies": {

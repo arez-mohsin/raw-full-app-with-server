@@ -83,3 +83,7 @@ const styles = StyleSheet.create({
 export default MiningLoadingDemo;
 
 
+
+
+
+

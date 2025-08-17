@@ -27,6 +27,12 @@ import { toastConfig } from './src/config/toastConfig';
 
 // Import i18n hook
 import { useI18n } from './src/hooks/useI18n';
+
+// Import AdMob hook
+import { useAdMob } from './src/hooks/useAdMob';
+
+// Import BannerAd component
+import BannerAdComponent from './src/components/BannerAdComponent';
 ErrorUtils.setGlobalHandler((error, isFatal) => {
   console.error('Global Error:', error);
 });
@@ -167,6 +173,11 @@ function TabNavigator() {
         <Ionicons name="list" size={28} color="#fff" />
       </TouchableOpacity>
 
+      {/* Banner Ad at bottom */}
+      <View style={[styles.bannerAdContainer, { bottom: insets.bottom + 60 }]}>
+        <BannerAdComponent />
+      </View>
+
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: (props) => renderTabIcon({ route, ...props }),
@@ -258,6 +269,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     zIndex: 1000,
   },
+  bannerAdContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 function AppContent() {
@@ -266,8 +285,9 @@ function AppContent() {
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [appState, setAppState] = useState(AppState.currentState);
 
-  // Use custom hook for app state management
+  // Use custom hooks
   useAppState();
 
   const checkAppState = async () => {
@@ -279,6 +299,18 @@ function AppContent() {
       console.log("Error checking app state:", error);
     }
   };
+
+
+
+  // Handle app state changes
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState) => {
+      setAppState(nextAppState);
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [appState]);
 
   useEffect(() => {
     checkAppState();

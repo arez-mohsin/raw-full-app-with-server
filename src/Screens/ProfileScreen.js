@@ -24,6 +24,7 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import BiometricService from '../services/BiometricService';
 import ToastService from '../utils/ToastService';
+import AdMobTestComponent from '../components/AdMobTestComponent';
 
 
 // Loading Skeleton Components
@@ -883,6 +884,11 @@ const ProfileScreen = ({ navigation }) => {
                                 <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
                             </View>
                         </TouchableOpacity>
+
+                        {/* AdMob Test Component */}
+                        <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
+                            <AdMobTestComponent />
+                        </View>
 
                         {/* <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
                                 <View style={styles.settingLeft}>

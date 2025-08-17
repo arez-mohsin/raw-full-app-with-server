@@ -19,7 +19,15 @@ import de from './locales/de.json'; //
 import fa from './locales/fa.json'; //
 import ja from './locales/ja.json';
 import it from './locales/it.json';
-import * as Updates from "expo-updates";
+
+// Temporarily disable expo-updates to avoid conflicts with AdMob
+// let Updates = null;
+// try {
+//     Updates = require("expo-updates");
+// } catch (error) {
+//     console.warn('expo-updates not available:', error.message);
+//     Updates = null;
+// }
 
 // Default language is always English
 const defaultLanguage = 'en';
@@ -432,13 +440,12 @@ export const reloadAppWithNavigation = (navigation) => {
                 text: text.button,
                 onPress: async () => {
                     try {
-                        // Use Expo Updates to completely reload the app
-                        await Updates.reloadAsync();
-                        if (__DEV__) console.log('App reloaded with Expo Updates');
-
+                        // Temporarily use fallback reload to avoid expo-updates conflicts
+                        reloadApp();
+                        if (__DEV__) console.log('App reloaded with fallback method');
                     } catch (error) {
-                        console.error('Expo Updates reload failed:', error);
-                        // Fallback to regular reload
+                        console.error('App reload failed:', error);
+                        // Try to reload the app anyway
                         reloadApp();
                     }
                 }
