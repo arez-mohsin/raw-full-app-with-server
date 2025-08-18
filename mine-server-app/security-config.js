@@ -23,7 +23,7 @@ module.exports = {
     IP_WHITELIST: process.env.IP_WHITELIST ? process.env.IP_WHITELIST.split(',') : [],
 
     // Request timeout
-    REQUEST_TIMEOUT: process.env.NODE_ENV === 'production' ? 300000 : 86400000, // 5 min in prod, 24 hours in dev
+    REQUEST_TIMEOUT: 300000, // 5 minutes for both production and development (previously 24 hours for dev)
 
     // Logging
     LOG_SUSPICIOUS_ACTIVITY: true,

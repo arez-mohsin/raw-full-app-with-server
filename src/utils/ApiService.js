@@ -18,7 +18,8 @@ class ApiService {
             maxRetries = this.maxRetries,
             retryDelay = this.retryDelay,
             skipAuth = false,
-            skipRetry = false
+            skipRetry = false,
+            customTimestamp = null
         } = options;
 
         // Check network connectivity first
@@ -64,7 +65,7 @@ class ApiService {
                 };
 
                 // Make the request
-                const response = await this.makeRequest(endpoint, requestData, token, timeout, options.deviceFingerprint);
+                const response = await this.makeRequest(endpoint, requestData, token, timeout, options.deviceFingerprint, options.customTimestamp);
                 return response;
 
             } catch (error) {
@@ -106,15 +107,28 @@ class ApiService {
     }
 
     // Make the actual HTTP request
-    async makeRequest(endpoint, data, token, timeout, deviceFingerprint) {
+    async makeRequest(endpoint, data, token, timeout, deviceFingerprint, customTimestamp = null) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         try {
+            // Generate current timestamp and validate it's reasonable
+            const currentTimestamp = customTimestamp || Date.now();
+            const timestampString = currentTimestamp.toString();
+
+            // Log timestamp for debugging
+            console.log('Timestamp validation:', {
+                currentTimestamp,
+                timestampString,
+                date: new Date(currentTimestamp).toISOString(),
+                serverTimeWindow: '5 minutes (both production and development)',
+                isCustomTimestamp: !!customTimestamp
+            });
+
             const headers = {
                 'Content-Type': 'application/json',
                 'User-Agent': 'RAWApp/1.0',
-                'X-Timestamp': Date.now().toString(),
+                'X-Timestamp': timestampString,
                 'X-Request-ID': this.generateRequestId(),
                 'X-Device-ID': deviceFingerprint || 'unknown-device'
             };
@@ -192,7 +206,7 @@ class ApiService {
     createHttpError(status, data, responseText) {
         const errorMessages = {
             400: 'Bad request. Please check your input.',
-            401: 'Authentication failed. Please log in again.',
+            401: data?.error === 'Request timestamp expired' ? 'Request timestamp expired. Please check your system time.' : 'Authentication failed. Please log in again.',
             403: 'Access denied. Your account may be suspended.',
             404: 'Service not found. Please try again later.',
             429: 'Too many requests. Please wait before trying again.',

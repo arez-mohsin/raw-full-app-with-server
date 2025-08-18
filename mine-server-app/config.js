@@ -9,9 +9,11 @@ const config = {
 
     // Security settings
     TIMESTAMP_VALIDATION: {
-        // Production: 5 minutes (300000ms)
-        // Development: 24 hours (86400000ms)
-        MAX_TIME_DIFFERENCE: process.env.NODE_ENV === 'production' ? 300000 : 86400000
+        // Both production and development: 5 minutes (300000ms)
+        // This ensures consistent behavior and catches timestamp issues early
+        // Previously: Production used 5 minutes, Development used 24 hours
+        // Now: Both use 5 minutes for consistent testing and security
+        MAX_TIME_DIFFERENCE: 300000
     },
 
     // Logging
